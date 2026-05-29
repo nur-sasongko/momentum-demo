@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/(marketing)/')({ component: App })
 
 function App() {
   return (
@@ -70,15 +70,16 @@ function App() {
         <p className="island-kicker mb-2">Quick Start</p>
         <ul className="m-0 list-disc space-y-2 pl-5 text-sm text-[var(--sea-ink-soft)]">
           <li>
-            Edit <code>src/routes/index.tsx</code> to customize the home page.
+            Edit <code>src/routes/(marketing)/index.tsx</code> to customize the
+            home page.
           </li>
           <li>
             Update <code>src/components/Header.tsx</code> and{' '}
             <code>src/components/Footer.tsx</code> for brand links.
           </li>
           <li>
-            Add routes in <code>src/routes</code> and tweak visual tokens in{' '}
-            <code>src/styles.css</code>.
+            Add feature slices under <code>src/routes/(group)/</code> — see{' '}
+            <code>docs/architecture/feature-slices.md</code>.
           </li>
         </ul>
       </section>

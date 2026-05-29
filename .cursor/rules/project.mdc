@@ -1,6 +1,11 @@
-# CLAUDE.md
+---
+description: Project commands, architecture, and conventions for sasongko-app
+alwaysApply: true
+---
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# sasongko-app
+
+This file provides guidance when working with code in this repository.
 
 ## Commands
 
