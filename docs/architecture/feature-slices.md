@@ -37,14 +37,14 @@ Start with 2–3 groups that match real product areas. Avoid empty groups.
 
 Colocate feature code next to its route files. TanStack Router ignores files and folders prefixed with `-`, so use:
 
-| Folder        | Purpose                                      |
-|---------------|----------------------------------------------|
-| `-components/` | Feature-only React components               |
-| `-queries/`    | Query keys, `queryOptions`, loader helpers  |
-| `-mutations/`  | Mutations and server write helpers          |
-| `-schemas/`    | Zod schemas and form validation             |
-| `-types/`      | Types used only inside this feature         |
-| `-tests/`      | Vitest tests for this feature               |
+| Folder         | Purpose                                    |
+| -------------- | ------------------------------------------ |
+| `-components/` | Feature-only React components              |
+| `-queries/`    | Query keys, `queryOptions`, loader helpers |
+| `-mutations/`  | Mutations and server write helpers         |
+| `-schemas/`    | Zod schemas and form validation            |
+| `-types/`      | Types used only inside this feature        |
+| `-tests/`      | Vitest tests for this feature              |
 
 > **Note:** TanStack Router requires the `-` prefix for colocated non-route files. Do not use `_components/` — those would be treated as routes.
 
@@ -67,12 +67,12 @@ Keep business logic, UI markup, and data fetching out of route files.
 
 Keep code feature-local by default. Promote to shared only when the rule below is met:
 
-| Code type        | Promote when                         | Destination              |
-|------------------|--------------------------------------|--------------------------|
-| UI component     | Used by **3+ features**              | `src/components/`        |
-| Utility function | Used by **3+ features**              | `src/lib/`               |
-| Type / constant  | Used by **3+ features**              | `src/types/`             |
-| Query / mutation | Used by **3+ features**              | `src/integrations/` or a dedicated `src/data/` module |
+| Code type        | Promote when            | Destination                                           |
+| ---------------- | ----------------------- | ----------------------------------------------------- |
+| UI component     | Used by **3+ features** | `src/components/`                                     |
+| Utility function | Used by **3+ features** | `src/lib/`                                            |
+| Type / constant  | Used by **3+ features** | `src/types/`                                          |
+| Query / mutation | Used by **3+ features** | `src/integrations/` or a dedicated `src/data/` module |
 
 Before promoting, check that the abstraction is stable. Prefer duplicating small helpers over premature sharing.
 

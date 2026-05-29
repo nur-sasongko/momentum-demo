@@ -9,68 +9,68 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as marketingIndexRouteImport } from './routes/(marketing)/index'
-import { Route as marketingAboutIndexRouteImport } from './routes/(marketing)/about/index'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as HabitsIndexRouteImport } from './routes/habits/index'
 
-const marketingIndexRoute = marketingIndexRouteImport.update({
-  id: '/(marketing)/',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const marketingAboutIndexRoute = marketingAboutIndexRouteImport.update({
-  id: '/(marketing)/about/',
-  path: '/about/',
+const HabitsIndexRoute = HabitsIndexRouteImport.update({
+  id: '/habits/',
+  path: '/habits/',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof marketingIndexRoute
-  '/about/': typeof marketingAboutIndexRoute
+  '/': typeof IndexRoute
+  '/habits/': typeof HabitsIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof marketingIndexRoute
-  '/about': typeof marketingAboutIndexRoute
+  '/': typeof IndexRoute
+  '/habits': typeof HabitsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/(marketing)/': typeof marketingIndexRoute
-  '/(marketing)/about/': typeof marketingAboutIndexRoute
+  '/': typeof IndexRoute
+  '/habits/': typeof HabitsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about/'
+  fullPaths: '/' | '/habits/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about'
-  id: '__root__' | '/(marketing)/' | '/(marketing)/about/'
+  to: '/' | '/habits'
+  id: '__root__' | '/' | '/habits/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  marketingIndexRoute: typeof marketingIndexRoute
-  marketingAboutIndexRoute: typeof marketingAboutIndexRoute
+  IndexRoute: typeof IndexRoute
+  HabitsIndexRoute: typeof HabitsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/(marketing)/': {
-      id: '/(marketing)/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof marketingIndexRouteImport
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/(marketing)/about/': {
-      id: '/(marketing)/about/'
-      path: '/about'
-      fullPath: '/about/'
-      preLoaderRoute: typeof marketingAboutIndexRouteImport
+    '/habits/': {
+      id: '/habits/'
+      path: '/habits'
+      fullPath: '/habits/'
+      preLoaderRoute: typeof HabitsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  marketingIndexRoute: marketingIndexRoute,
-  marketingAboutIndexRoute: marketingAboutIndexRoute,
+  IndexRoute: IndexRoute,
+  HabitsIndexRoute: HabitsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

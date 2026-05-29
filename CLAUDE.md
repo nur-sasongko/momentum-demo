@@ -16,13 +16,15 @@ bun --bun run check     # prettier --check (CI)
 ```
 
 Run a single test file:
+
 ```bash
 bunx vitest run src/path/to/file.test.ts
 ```
 
-Add a Shadcn component (always use `pnpm dlx`, not bun):
+Add a Shadcn component:
+
 ```bash
-pnpm dlx shadcn@latest add <component>
+bunx --bun shadcn@latest add <component>
 ```
 
 ## Architecture
