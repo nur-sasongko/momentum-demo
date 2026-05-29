@@ -14,8 +14,24 @@ import {
   SidebarTrigger,
 } from '#/components/ui/sidebar'
 
-const navItems = [
-  { to: '/notes' as const, label: 'Second Brain', icon: Brain, enabled: false },
+type EnabledNavItem = {
+  to: '/notes' | '/habits'
+  label: string
+  icon: typeof Brain
+  enabled: true
+}
+
+type DisabledNavItem = {
+  to: string
+  label: string
+  icon: typeof Brain
+  enabled: false
+}
+
+type NavItem = EnabledNavItem | DisabledNavItem
+
+const navItems: NavItem[] = [
+  { to: '/notes' as const, label: 'Second Brain', icon: Brain, enabled: true },
   { to: '/finance' as const, label: 'Finance', icon: Wallet, enabled: false },
   { to: '/habits' as const, label: 'Habits', icon: Flame, enabled: true },
 ]
@@ -69,7 +85,7 @@ export function AppSidebar() {
                       }
                       tooltip={item.label}
                     >
-                      <Link to="/habits">
+                      <Link to={item.to}>
                         <Icon />
                         <span>{item.label}</span>
                       </Link>
