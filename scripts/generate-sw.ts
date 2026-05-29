@@ -1,3 +1,5 @@
+/// <reference types="bun-types" />
+
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { injectManifest } from 'workbox-build'
