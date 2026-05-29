@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NotesIndexRouteImport } from './routes/notes/index'
 import { Route as HabitsIndexRouteImport } from './routes/habits/index'
+import { Route as FinanceIndexRouteImport } from './routes/finance/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,33 +29,42 @@ const HabitsIndexRoute = HabitsIndexRouteImport.update({
   path: '/habits/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FinanceIndexRoute = FinanceIndexRouteImport.update({
+  id: '/finance/',
+  path: '/finance/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/finance/': typeof FinanceIndexRoute
   '/habits/': typeof HabitsIndexRoute
   '/notes/': typeof NotesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/finance': typeof FinanceIndexRoute
   '/habits': typeof HabitsIndexRoute
   '/notes': typeof NotesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/finance/': typeof FinanceIndexRoute
   '/habits/': typeof HabitsIndexRoute
   '/notes/': typeof NotesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/habits/' | '/notes/'
+  fullPaths: '/' | '/finance/' | '/habits/' | '/notes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/habits' | '/notes'
-  id: '__root__' | '/' | '/habits/' | '/notes/'
+  to: '/' | '/finance' | '/habits' | '/notes'
+  id: '__root__' | '/' | '/finance/' | '/habits/' | '/notes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FinanceIndexRoute: typeof FinanceIndexRoute
   HabitsIndexRoute: typeof HabitsIndexRoute
   NotesIndexRoute: typeof NotesIndexRoute
 }
@@ -82,11 +92,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HabitsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/finance/': {
+      id: '/finance/'
+      path: '/finance'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof FinanceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FinanceIndexRoute: FinanceIndexRoute,
   HabitsIndexRoute: HabitsIndexRoute,
   NotesIndexRoute: NotesIndexRoute,
 }

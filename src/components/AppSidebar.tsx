@@ -15,7 +15,7 @@ import {
 } from '#/components/ui/sidebar'
 
 type EnabledNavItem = {
-  to: '/notes' | '/habits'
+  to: '/notes' | '/habits' | '/finance'
   label: string
   icon: typeof Brain
   enabled: true
@@ -32,7 +32,7 @@ type NavItem = EnabledNavItem | DisabledNavItem
 
 const navItems: NavItem[] = [
   { to: '/notes' as const, label: 'Second Brain', icon: Brain, enabled: true },
-  { to: '/finance' as const, label: 'Finance', icon: Wallet, enabled: false },
+  { to: '/finance' as const, label: 'Finance', icon: Wallet, enabled: true },
   { to: '/habits' as const, label: 'Habits', icon: Flame, enabled: true },
 ]
 
