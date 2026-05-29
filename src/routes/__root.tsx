@@ -1,5 +1,6 @@
 import {
   HeadContent,
+  Link,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
@@ -30,15 +31,28 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         title: 'MySpace',
       },
+      {
+        name: 'theme-color',
+        content: '#111111',
+      },
     ],
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
       },
+      {
+        rel: 'manifest',
+        href: '/manifest.webmanifest',
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/logo192.png',
+      },
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: RootNotFoundComponent,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -64,5 +78,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function RootNotFoundComponent() {
+  return (
+    <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="text-2xl font-semibold">Page not found</p>
+      <p className="text-sm text-muted-foreground">
+        The page you are looking for does not exist.
+      </p>
+      <Link to="/" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+        Go back home
+      </Link>
+    </main>
   )
 }
