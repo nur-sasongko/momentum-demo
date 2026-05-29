@@ -55,6 +55,12 @@ Tailwind CSS v4 with CSS variables for theming. Global styles in `src/styles.css
 
 Dark/light/auto theme cycling (light → dark → auto), persisted in `localStorage`. An inline `<script>` in `__root.tsx` (`THEME_INIT_SCRIPT`) applies the stored theme before hydration to prevent flash of unstyled content. Theme state lives entirely in `ThemeToggle.tsx` — there is no global store for it.
 
+### PWA
+
+- PWA architecture details live in `docs/architecture/pwa.md`.
+- Build command `bun --bun run build` must generate `dist/client/sw.js` via `scripts/generate-sw.ts` (post-build step).
+- If installability regresses, verify `src/routes/__root.tsx` still includes manifest/theme/icon head tags and check browser Application -> Manifest diagnostics.
+
 ### Demo Files
 
 Files prefixed with `demo` (in `src/routes/demo/`, `src/data/demo-*.ts`, `src/lib/demo-*.ts`) are starter examples and can be safely deleted.

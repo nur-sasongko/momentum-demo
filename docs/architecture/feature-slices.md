@@ -2,6 +2,10 @@
 
 This app uses **route groups + vertical slices** with TanStack Router and TanStack Query.
 
+Related architecture docs:
+
+- `docs/architecture/pwa.md` for installability and offline setup
+
 ## Folder layout
 
 ```
