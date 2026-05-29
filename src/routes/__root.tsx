@@ -9,7 +9,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import { AppShell } from '#/components/AppShell'
 import { THEME_INIT_SCRIPT } from '#/components/ThemeToggle'
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+import TanStackQueryDevtools from '../libs/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
 

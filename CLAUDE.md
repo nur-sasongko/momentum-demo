@@ -39,7 +39,7 @@ Feature-first layout: route groups like `(marketing)/` plus vertical slices (`-c
 
 ### Data & State
 
-- **TanStack Query** — `QueryClient` is created in `src/integrations/tanstack-query/root-provider.tsx` and injected into the router context (`src/router.tsx`). SSR integration is set up via `setupRouterSsrQueryIntegration`, which makes queries SSR-safe without extra boilerplate.
+- **TanStack Query** — `QueryClient` is created in `src/libs/tanstack-query/root-provider.tsx` and injected into the router context (`src/router.tsx`). SSR integration is set up via `setupRouterSsrQueryIntegration`, which makes queries SSR-safe without extra boilerplate.
 - **TanStack Store** — lightweight reactive store; see `src/lib/demo-store.ts` for the pattern.
 - Route loaders (via `loader:` in `createFileRoute`) are the preferred way to fetch data for a route before it renders.
 

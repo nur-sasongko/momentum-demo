@@ -24,7 +24,7 @@ src/
 │           └── -tests/            # Feature tests
 ├── components/
 │   └── ui/                        # Shared Shadcn primitives
-├── integrations/                  # Cross-cutting framework wiring
+├── libs/                           # Cross-cutting framework wiring
 ├── lib/                           # Shared utilities
 └── types/                         # Shared types (create when needed)
 ```
@@ -76,7 +76,7 @@ Keep code feature-local by default. Promote to shared only when the rule below i
 | UI component     | Used by **3+ features** | `src/components/`                                     |
 | Utility function | Used by **3+ features** | `src/lib/`                                            |
 | Type / constant  | Used by **3+ features** | `src/types/`                                          |
-| Query / mutation | Used by **3+ features** | `src/integrations/` or a dedicated `src/data/` module |
+| Query / mutation | Used by **3+ features** | `src/libs/` or a dedicated `src/data/` module |
 
 Before promoting, check that the abstraction is stable. Prefer duplicating small helpers over premature sharing.
 
