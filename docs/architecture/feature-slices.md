@@ -5,6 +5,7 @@ This app uses **vertical slices colocated with routes** on TanStack Router, TanS
 Related architecture docs:
 
 - `docs/architecture/pwa.md` for installability and offline setup
+- `docs/architecture/testing.md` for test runner setup, file placement, and coverage
 - Feature module docs: `docs/habits.md`, `docs/finance.md`, `docs/second-brain.md`
 
 ## Folder layout
@@ -35,7 +36,9 @@ src/
 ├── stores/                        # Zustand stores (persisted client state)
 ├── hooks/                         # Shared React hooks
 ├── utils/                         # Global shared helpers (one concern per file)
-│   └── date.ts                    # e.g. formatTodayDate for TopBar
+│   ├── date.ts                    # e.g. formatTodayDate for TopBar
+│   └── __tests__/                 # Unit tests for global utils
+│       └── date.test.ts
 ├── libs/
 │   ├── utils.ts                   # Shadcn cn() helper only
 │   └── tanstack-query/            # QueryClient + devtools wiring
@@ -140,6 +143,16 @@ Before promoting, check that the abstraction is stable. Prefer duplicating small
 1. Create `src/utils/<concern>.ts` (e.g. `date.ts`, `format.ts`)
 2. Export pure functions with no feature-specific types when possible
 3. Import via `#/utils/<concern>`
+4. Write tests in `src/utils/__tests__/<concern>.test.ts`
+
+### Test placement summary
+
+| Layer | Test location |
+| ----- | ------------- |
+| Global utils | `src/utils/__tests__/<name>.test.ts` |
+| Feature utils / components | `src/routes/<feature>/-tests/` |
+
+Global utils use `__tests__/` (no dash — not a TanStack Router route folder). Route slices use `-tests/` to satisfy the TanStack Router file-prefix requirement.
 
 ## Migration strategy
 

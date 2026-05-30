@@ -14,7 +14,8 @@ Use `bun --bun run` for all scripts (the `--bun` flag ensures Bun's runtime is u
 ```bash
 bun --bun run dev       # dev server at http://localhost:3000
 bun --bun run build     # production build
-bun --bun run test      # run all tests (vitest run)
+bun --bun run test          # run all tests (vitest run) — do NOT use `bun test` (that is Bun's native runner, not Vitest)
+bun --bun run test:coverage # run tests with istanbul coverage report
 bun --bun run lint      # eslint
 bun --bun run format    # prettier --write + eslint --fix
 bun --bun run check     # prettier --check (CI)
