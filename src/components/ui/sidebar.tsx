@@ -1,8 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { cva  } from 'class-variance-authority'
-import type {VariantProps} from 'class-variance-authority';
+import { cva } from 'class-variance-authority'
+import type { VariantProps } from 'class-variance-authority'
 import { PanelLeftIcon } from 'lucide-react'
 import { Slot } from 'radix-ui'
 
@@ -32,6 +32,30 @@ const SIDEBAR_WIDTH = '16rem'
 const SIDEBAR_WIDTH_MOBILE = '18rem'
 const SIDEBAR_WIDTH_ICON = '3rem'
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b'
+
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  const tagName = target.tagName
+  if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
+    return true
+  }
+
+  return (
+    target.isContentEditable ||
+    target.closest('[contenteditable="true"]') != null
+  )
+}
+
+function shouldIgnoreSidebarKeyboardShortcut(event: KeyboardEvent): boolean {
+  if (event.defaultPrevented) {
+    return true
+  }
+
+  return isEditableKeyboardTarget(event.target)
+}
 
 type SidebarContextProps = {
   state: 'expanded' | 'collapsed'
@@ -101,6 +125,10 @@ function SidebarProvider({
         event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
         (event.metaKey || event.ctrlKey)
       ) {
+        if (shouldIgnoreSidebarKeyboardShortcut(event)) {
+          return
+        }
+
         event.preventDefault()
         toggleSidebar()
       }
@@ -700,6 +728,8 @@ function SidebarMenuSubButton({
 }
 
 export {
+  isEditableKeyboardTarget,
+  shouldIgnoreSidebarKeyboardShortcut,
   Sidebar,
   SidebarContent,
   SidebarFooter,
