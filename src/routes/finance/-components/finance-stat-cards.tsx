@@ -7,10 +7,10 @@ import {
 } from '#/components/ui/card'
 import {
   formatCurrency,
-  formatMonthLabel,
   getMonthTotals,
   getTotalBalance,
 } from '../-utils/finance-utils'
+import { formatMonthLabel } from '#/utils/date'
 import { useFinanceStore } from '#/stores/finance-store'
 
 export function FinanceStatCards() {

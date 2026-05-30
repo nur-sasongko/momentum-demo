@@ -1,4 +1,5 @@
 import type { Transaction } from '#/stores/finance-store'
+import { getCurrentMonthKey, toMonthKey } from '#/utils/date'
 
 export const EXPENSE_CATEGORIES = [
   'Food',
@@ -25,16 +26,46 @@ export const CATEGORY_COLORS: Record<
   FinanceCategory,
   { badge: string; chart: string }
 > = {
-  Food: { badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400', chart: '#f59e0b' },
-  Transport: { badge: 'bg-sky-500/15 text-sky-600 dark:text-sky-400', chart: '#0ea5e9' },
-  Shopping: { badge: 'bg-violet-500/15 text-violet-600 dark:text-violet-400', chart: '#8b5cf6' },
-  Bills: { badge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400', chart: '#f43f5e' },
-  Entertainment: { badge: 'bg-pink-500/15 text-pink-600 dark:text-pink-400', chart: '#ec4899' },
-  Health: { badge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400', chart: '#10b981' },
-  Salary: { badge: 'bg-green-500/15 text-green-600 dark:text-green-400', chart: '#22c55e' },
-  Freelance: { badge: 'bg-teal-500/15 text-teal-600 dark:text-teal-400', chart: '#14b8a6' },
-  Investment: { badge: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400', chart: '#6366f1' },
-  Other: { badge: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400', chart: '#71717a' },
+  Food: {
+    badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    chart: '#f59e0b',
+  },
+  Transport: {
+    badge: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
+    chart: '#0ea5e9',
+  },
+  Shopping: {
+    badge: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+    chart: '#8b5cf6',
+  },
+  Bills: {
+    badge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+    chart: '#f43f5e',
+  },
+  Entertainment: {
+    badge: 'bg-pink-500/15 text-pink-600 dark:text-pink-400',
+    chart: '#ec4899',
+  },
+  Health: {
+    badge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    chart: '#10b981',
+  },
+  Salary: {
+    badge: 'bg-green-500/15 text-green-600 dark:text-green-400',
+    chart: '#22c55e',
+  },
+  Freelance: {
+    badge: 'bg-teal-500/15 text-teal-600 dark:text-teal-400',
+    chart: '#14b8a6',
+  },
+  Investment: {
+    badge: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
+    chart: '#6366f1',
+  },
+  Other: {
+    badge: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400',
+    chart: '#71717a',
+  },
 }
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -45,30 +76,6 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 
 export function formatCurrency(amount: number): string {
   return currencyFormatter.format(amount)
-}
-
-export function toMonthKey(date: string): string {
-  return date.slice(0, 7)
-}
-
-export function getCurrentMonthKey(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  return `${year}-${month}`
-}
-
-export function formatMonthLabel(monthKey: string): string {
-  const [year, month] = monthKey.split('-')
-  const date = new Date(Number(year), Number(month) - 1, 1)
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-}
-
-export function formatTransactionDate(date: string): string {
-  return new Date(`${date}T12:00:00`).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  })
 }
 
 export function getAvailableMonths(transactions: Transaction[]): string[] {

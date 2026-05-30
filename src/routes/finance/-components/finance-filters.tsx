@@ -10,10 +10,10 @@ import {
 } from '#/components/ui/select'
 import {
   EXPENSE_CATEGORIES,
-  formatMonthLabel,
   getAvailableMonths,
   INCOME_CATEGORIES,
 } from '../-utils/finance-utils'
+import { formatMonthLabel } from '#/utils/date'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 
@@ -76,7 +76,10 @@ export function FinanceFilters() {
         </div>
       </div>
 
-      <Button className="gap-2 shrink-0" onClick={() => setAddTransactionOpen(true)}>
+      <Button
+        className="gap-2 shrink-0"
+        onClick={() => setAddTransactionOpen(true)}
+      >
         <Plus className="size-4" />
         Add Transaction
       </Button>

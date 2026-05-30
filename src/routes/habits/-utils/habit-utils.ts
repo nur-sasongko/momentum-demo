@@ -1,22 +1,4 @@
-export function toDateKey(offsetDays = 0): string {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  d.setDate(d.getDate() - offsetDays)
-  return d.toISOString().slice(0, 10)
-}
-
-export function getLast7Days(): Array<{ dateKey: string; label: string }> {
-  return Array.from({ length: 7 }, (_, i) => {
-    const offset = 6 - i
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    d.setDate(d.getDate() - offset)
-    return {
-      dateKey: d.toISOString().slice(0, 10),
-      label: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
-    }
-  })
-}
+import { toDateKey } from '#/utils/date'
 
 export function getStreak(history: Record<string, boolean>): number {
   let streak = 0

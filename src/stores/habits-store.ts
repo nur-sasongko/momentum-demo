@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 import type { HabitColor } from '#/routes/habits/-utils/habit-utils'
-import { toDateKey } from '#/routes/habits/-utils/habit-utils'
+import { toDateKey } from '#/utils/date'
 
 export interface Habit {
   id: string

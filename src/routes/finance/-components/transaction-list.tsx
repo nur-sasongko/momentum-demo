@@ -6,8 +6,8 @@ import {
   CATEGORY_COLORS,
   filterTransactions,
   formatCurrency,
-  formatTransactionDate,
 } from '../-utils/finance-utils'
+import { formatTransactionDate } from '#/utils/date'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 

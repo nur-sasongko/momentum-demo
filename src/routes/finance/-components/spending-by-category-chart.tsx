@@ -18,11 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import {
-  formatCurrency,
-  formatMonthLabel,
-  getSpendingByCategory,
-} from '../-utils/finance-utils'
+import { formatCurrency, getSpendingByCategory } from '../-utils/finance-utils'
+import { formatMonthLabel } from '#/utils/date'
 import { useFinanceStore } from '#/stores/finance-store'
 
 export function SpendingByCategoryChart() {
@@ -47,8 +44,14 @@ export function SpendingByCategoryChart() {
         ) : (
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <BarChart
+                data={data}
+                margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-border"
+                />
                 <XAxis
                   dataKey="category"
                   tick={{ fontSize: 12 }}
