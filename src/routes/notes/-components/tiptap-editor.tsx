@@ -1,5 +1,6 @@
-import type { JSONContent } from '@tiptap/core'
+import type { Editor, JSONContent } from '@tiptap/core'
 import { EditorContent, useEditor } from '@tiptap/react'
+import type { RefObject } from 'react'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { EditorBubbleMenu } from '#/routes/notes/-components/bubble-menu'
@@ -14,6 +15,8 @@ interface TiptapEditorProps {
   noteId: string
   content: JSONContent
   onChange: (content: JSONContent) => void
+  editorRef?: RefObject<Editor | null>
+  onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void
   isReadOnly?: boolean
   className?: string
 }
@@ -22,6 +25,8 @@ export function TiptapEditor({
   noteId,
   content,
   onChange,
+  editorRef,
+  onHistoryChange,
   isReadOnly = false,
   className,
 }: TiptapEditorProps) {
@@ -62,6 +67,40 @@ export function TiptapEditor({
     },
     [noteId],
   )
+
+  useEffect(() => {
+    if (editorRef) {
+      editorRef.current = editor
+    }
+    return () => {
+      if (editorRef) {
+        editorRef.current = null
+      }
+    }
+  }, [editor, editorRef])
+
+  useEffect(() => {
+    if (editor === null || onHistoryChange === undefined) {
+      return
+    }
+
+    const prev = { canUndo: false, canRedo: false }
+    const notify = () => {
+      const canUndo = editor.can().undo()
+      const canRedo = editor.can().redo()
+      if (canUndo !== prev.canUndo || canRedo !== prev.canRedo) {
+        prev.canUndo = canUndo
+        prev.canRedo = canRedo
+        onHistoryChange(canUndo, canRedo)
+      }
+    }
+
+    notify()
+    editor.on('transaction', notify)
+    return () => {
+      editor.off('transaction', notify)
+    }
+  }, [editor, onHistoryChange])
 
   useEffect(() => {
     if (editor === null) {

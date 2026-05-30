@@ -1,5 +1,6 @@
-import { Lock, Tag, Trash2, Unlock } from 'lucide-react'
-import { useState } from 'react'
+import type { Editor } from '@tiptap/core'
+import { Lock, Redo2, Tag, Trash2, Undo2, Unlock } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
@@ -25,6 +26,17 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const updateNote = useNotesStore((s) => s.updateNote)
   const deleteNote = useNotesStore((s) => s.deleteNote)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const editorRef = useRef<Editor | null>(null)
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+
+  const handleHistoryChange = useCallback((undo: boolean, redo: boolean) => {
+    setCanUndo(undo)
+    setCanRedo(redo)
+  }, [])
+
+  const undoDisabled = note.isReadOnly || !canUndo
+  const redoDisabled = note.isReadOnly || !canRedo
 
   const primaryTag = note.tags.length > 0 ? note.tags[0] : 'Untagged'
 
@@ -54,6 +66,26 @@ export function NoteEditor({ note }: NoteEditorProps) {
         </div>
 
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={undoDisabled}
+            onClick={() => editorRef.current?.chain().focus().undo().run()}
+            aria-label="Undo"
+            className="text-muted-foreground"
+          >
+            <Undo2 className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={redoDisabled}
+            onClick={() => editorRef.current?.chain().focus().redo().run()}
+            aria-label="Redo"
+            className="text-muted-foreground"
+          >
+            <Redo2 className="size-4" />
+          </Button>
           <Button
             variant={note.isReadOnly ? 'secondary' : 'ghost'}
             size="icon-sm"
@@ -104,6 +136,8 @@ export function NoteEditor({ note }: NoteEditorProps) {
             noteId={note.id}
             content={note.content}
             isReadOnly={note.isReadOnly}
+            editorRef={editorRef}
+            onHistoryChange={handleHistoryChange}
             onChange={(content) => updateNote(note.id, { content })}
           />
         </div>

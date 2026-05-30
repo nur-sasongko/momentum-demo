@@ -2,8 +2,7 @@ import type { Editor, Range } from '@tiptap/core'
 import { Extension } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion from '@tiptap/suggestion'
-import type { RefAttributes } from 'react'
-import type { SuggestionProps } from '@tiptap/suggestion'
+import type { ComponentProps } from 'react'
 
 import type { SlashCommandMenuRef } from '#/routes/notes/-components/slash-command-menu'
 import { SlashCommandMenu } from '#/routes/notes/-components/slash-command-menu'
@@ -312,6 +311,8 @@ export interface SlashCommandExtensionOptions {
   currentNoteId: string
 }
 
+const SLASH_MENU_NAVIGATION_KEYS = new Set(['ArrowUp', 'ArrowDown', 'Enter'])
+
 export const SlashCommandExtension =
   Extension.create<SlashCommandExtensionOptions>({
     name: 'slashCommand',
@@ -340,18 +341,17 @@ export const SlashCommandExtension =
           render: () => {
             let component: ReactRenderer<
               SlashCommandMenuRef,
-              SuggestionProps<SlashCommandItem, SlashCommandItem> &
-                RefAttributes<SlashCommandMenuRef>
+              ComponentProps<typeof SlashCommandMenu>
             > | null = null
 
             return {
               onStart: (props) => {
-                component = new ReactRenderer(SlashCommandMenu, {
+                const renderer = new ReactRenderer(SlashCommandMenu, {
                   editor: props.editor,
                   props,
                 })
-
-                document.body.appendChild(component.element)
+                component = renderer
+                document.body.appendChild(renderer.element)
               },
               onUpdate: (props) => {
                 component?.updateProps(props)
@@ -363,7 +363,13 @@ export const SlashCommandExtension =
                   return true
                 }
 
-                return component?.ref?.onKeyDown(props) ?? false
+                const handled = component?.ref?.onKeyDown(props)
+                if (handled !== undefined) {
+                  return handled
+                }
+
+                // Block editor cursor movement while the menu mounts.
+                return SLASH_MENU_NAVIGATION_KEYS.has(props.event.key)
               },
               onExit: () => {
                 component?.destroy()

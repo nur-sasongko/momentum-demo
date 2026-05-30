@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+
 import { cn } from '#/libs/utils'
 
 export function fuzzyMatch(query: string, target: string): boolean {
@@ -41,6 +43,15 @@ export function SuggestionMenu<T extends SuggestionMenuItem>({
   onSelect,
   emptyMessage = 'No results',
 }: SuggestionMenuProps<T>) {
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  useEffect(() => {
+    const selectedItem = itemRefs.current[selectedIndex]
+    if (typeof selectedItem?.scrollIntoView === 'function') {
+      selectedItem.scrollIntoView({ block: 'nearest' })
+    }
+  }, [selectedIndex, items.length])
+
   if (items.length === 0) {
     return (
       <div className="z-50 w-72 overflow-hidden rounded-lg border border-border bg-popover p-2 text-sm text-muted-foreground shadow-lg">
@@ -54,6 +65,9 @@ export function SuggestionMenu<T extends SuggestionMenuItem>({
       {items.map((item, index) => (
         <button
           key={item.id}
+          ref={(element) => {
+            itemRefs.current[index] = element
+          }}
           type="button"
           className={cn(
             'flex w-full flex-col rounded-md px-3 py-2 text-left transition-colors',

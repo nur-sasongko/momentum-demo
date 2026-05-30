@@ -1,6 +1,14 @@
 import type { Editor, Range } from '@tiptap/core'
 import type { SuggestionKeyDownProps } from '@tiptap/suggestion'
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 import type { SlashCommandItem } from '#/routes/notes/-components/slash-command-extension'
 import { TableGridPicker } from '#/routes/notes/-components/table-grid-picker'
@@ -29,50 +37,76 @@ export const SlashCommandMenu = forwardRef<
   const [gridPickerItem, setGridPickerItem] = useState<SlashCommandItem | null>(
     null,
   )
+  const selectedIndexRef = useRef(selectedIndex)
+  selectedIndexRef.current = selectedIndex
+
+  const itemIdsKey = useMemo(
+    () => items.map((item) => item.id).join(','),
+    [items],
+  )
 
   useEffect(() => {
     setSelectedIndex(0)
     setGridPickerItem(null)
-  }, [items])
+  }, [itemIdsKey])
 
-  const selectItem = (item: SlashCommandItem) => {
-    if (item.showGridPicker) {
-      setGridPickerItem(item)
-      return
-    }
-    command(item)
-  }
+  useEffect(() => {
+    setSelectedIndex((index) => {
+      if (items.length === 0) {
+        return 0
+      }
 
-  useImperativeHandle(ref, () => ({
-    onKeyDown: ({ event }) => {
-      if (gridPickerItem) {
-        if (event.key === 'Escape') {
-          setGridPickerItem(null)
+      return Math.min(index, items.length - 1)
+    })
+  }, [items.length])
+
+  const selectItem = useCallback(
+    (item: SlashCommandItem) => {
+      if (item.showGridPicker) {
+        setGridPickerItem(item)
+        return
+      }
+      command(item)
+    },
+    [command],
+  )
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      onKeyDown: ({ event }) => {
+        if (gridPickerItem) {
+          if (event.key === 'Escape') {
+            setGridPickerItem(null)
+            return true
+          }
+          return false
+        }
+
+        if (items.length === 0) {
+          return event.key === 'Enter'
+        }
+
+        if (event.key === 'ArrowUp') {
+          setSelectedIndex((index) => Math.max(index - 1, 0))
           return true
         }
-        return false
-      }
 
-      if (event.key === 'ArrowUp') {
-        setSelectedIndex((index) => (index + items.length - 1) % items.length)
-        return true
-      }
-
-      if (event.key === 'ArrowDown') {
-        setSelectedIndex((index) => (index + 1) % items.length)
-        return true
-      }
-
-      if (event.key === 'Enter') {
-        if (items.length > 0) {
-          selectItem(items[selectedIndex])
+        if (event.key === 'ArrowDown') {
+          setSelectedIndex((index) => Math.min(index + 1, items.length - 1))
+          return true
         }
-        return true
-      }
 
-      return false
-    },
-  }))
+        if (event.key === 'Enter') {
+          selectItem(items[selectedIndexRef.current])
+          return true
+        }
+
+        return false
+      },
+    }),
+    [gridPickerItem, items, selectItem],
+  )
 
   const rect = clientRect?.() ?? null
 

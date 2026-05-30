@@ -31,10 +31,11 @@ bunx vitest run src/path/to/file.test.ts  # run a single test file
 
 ## Test file placement
 
-| Layer                                              | Test location                        | Why                                                                                  |
-| -------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------ |
-| Global utils (`src/utils/`)                        | `src/utils/__tests__/<name>.test.ts` | Keeps source files clean; `__tests__/` is standard outside route folders             |
-| Feature utils/components (`src/routes/<feature>/`) | `src/routes/<feature>/-tests/`       | TanStack Router ignores `-` prefixed folders; keeps tests colocated with the feature |
+| Layer                                 | Test location                                               | Why                                                                        |
+| ------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Global utils (`src/utils/`)           | `src/utils/__tests__/<name>.test.ts`                        | Keeps source files clean; `__tests__/` is standard outside route folders   |
+| Feature components (`src/routes/...`) | `src/routes/<feature>/-components/__test__/<name>.test.tsx` | Keeps tests next to the component they verify                              |
+| Feature utilities (`src/routes/...`)  | `src/routes/<feature>/-utils/__test__/<name>.test.ts`       | Keeps tests next to helper modules and avoids a catch-all feature test bin |
 
 ## Writing a global utility test
 

@@ -62,15 +62,15 @@ Pathless route groups like `(marketing)/` are optional. Current features use top
 
 Colocate feature code next to its route files. TanStack Router ignores files and folders prefixed with `-`, so use:
 
-| Folder         | Purpose                                    |
-| -------------- | ------------------------------------------ |
-| `-components/` | Feature-only React components              |
-| `-utils/`      | Feature-only pure helpers and constants    |
-| `-queries/`    | Query keys, `queryOptions`, loader helpers |
-| `-mutations/`  | Mutations and server write helpers         |
-| `-schemas/`    | Zod schemas and form validation            |
-| `-types/`      | Types used only inside this feature        |
-| `-tests/`      | Vitest tests for this feature              |
+| Folder                | Purpose                                       |
+| --------------------- | --------------------------------------------- |
+| `-components/`        | Feature-only React components                 |
+| `-utils/`             | Feature-only pure helpers and constants       |
+| `-queries/`           | Query keys, `queryOptions`, loader helpers    |
+| `-mutations/`         | Mutations and server write helpers            |
+| `-schemas/`           | Zod schemas and form validation               |
+| `-types/`             | Types used only inside this feature           |
+| `<concern>/__test__/` | Vitest tests colocated in each concern folder |
 
 > **Note:** TanStack Router requires the `-` prefix for colocated non-route files. Do not use `_components/` — those would be treated as routes.
 
@@ -152,12 +152,13 @@ When committing, use a global scope such as `globals` (e.g. `feat(globals): add 
 
 ### Test placement summary
 
-| Layer                      | Test location                        |
-| -------------------------- | ------------------------------------ |
-| Global utils               | `src/utils/__tests__/<name>.test.ts` |
-| Feature utils / components | `src/routes/<feature>/-tests/`       |
+| Layer              | Test location                                               |
+| ------------------ | ----------------------------------------------------------- |
+| Global utils       | `src/utils/__tests__/<name>.test.ts`                        |
+| Feature components | `src/routes/<feature>/-components/__test__/<name>.test.tsx` |
+| Feature utils      | `src/routes/<feature>/-utils/__test__/<name>.test.ts`       |
 
-Global utils use `__tests__/` (no dash — not a TanStack Router route folder). Route slices use `-tests/` to satisfy the TanStack Router file-prefix requirement.
+Global utilities keep `__tests__/`. Feature tests should be colocated by concern (`-components/__test__/`, `-utils/__test__/`, etc.) instead of a feature-level `-tests/` folder.
 
 ## Migration strategy
 

@@ -2,8 +2,7 @@ import { Extension } from '@tiptap/core'
 import { PluginKey } from '@tiptap/pm/state'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion from '@tiptap/suggestion'
-import type { RefAttributes } from 'react'
-import type { SuggestionProps } from '@tiptap/suggestion'
+import type { ComponentProps } from 'react'
 
 import type { NoteLinkMenuRef } from '#/routes/notes/-components/note-link-menu'
 import { NoteLinkMenu } from '#/routes/notes/-components/note-link-menu'
@@ -97,18 +96,17 @@ export const NoteLinkExtension = Extension.create<NoteLinkExtensionOptions>({
         render: () => {
           let component: ReactRenderer<
             NoteLinkMenuRef,
-            SuggestionProps<NoteLinkItem, NoteLinkItem> &
-              RefAttributes<NoteLinkMenuRef>
+            ComponentProps<typeof NoteLinkMenu>
           > | null = null
 
           return {
             onStart: (props) => {
-              component = new ReactRenderer(NoteLinkMenu, {
+              const renderer = new ReactRenderer(NoteLinkMenu, {
                 editor: props.editor,
                 props,
               })
-
-              document.body.appendChild(component.element)
+              component = renderer
+              document.body.appendChild(renderer.element)
             },
             onUpdate: (props) => {
               component?.updateProps(props)

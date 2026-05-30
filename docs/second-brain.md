@@ -237,7 +237,7 @@ UI: `sonner` via Shadcn `Toaster` in the root layout.
 
 - Tag editing UI in the editor (tags exist on the model but are not editable in the UI).
 - Favorites filter/sort using `isFavorite`.
-- Automated tests for slash commands, table menus, and read-only guards (`src/routes/notes/-tests/`).
+- Automated tests for slash commands, table menus, and read-only guards (`src/routes/notes/-components/__test__/`).
 - Optional export/import of notes (JSON or Markdown).
 - Server sync / multi-device persistence (currently local-first only).
 - Tab key navigation between table cells and auto-append row on last cell (Notion-style).
