@@ -17,7 +17,7 @@ import {
   HABIT_COLOR_CLASSES,
   HABIT_EMOJIS,
 } from '#/lib/habit-utils'
-import { cn } from '#/lib/utils'
+import { cn } from '#/libs/utils'
 import { useHabitsStore } from '#/stores/habits-store'
 
 const newHabitSchema = z.object({

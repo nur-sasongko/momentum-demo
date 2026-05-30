@@ -2,7 +2,7 @@ import { Flame } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '#/components/ui/card'
 import { HABIT_COLOR_CLASSES, getLast7Days, getStreak } from '#/lib/habit-utils'
-import { cn } from '#/lib/utils'
+import { cn } from '#/libs/utils'
 import type { Habit } from '#/stores/habits-store'
 import { useHabitsStore } from '#/stores/habits-store'
 

@@ -14,7 +14,7 @@ import {
   getAvailableMonths,
   INCOME_CATEGORIES,
 } from '#/lib/finance-utils'
-import { cn } from '#/lib/utils'
+import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 
 const ALL_CATEGORIES = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES]

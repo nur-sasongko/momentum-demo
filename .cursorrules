@@ -43,7 +43,7 @@ Feature-first layout: route groups like `(marketing)/` plus vertical slices (`-c
 
 ### Path Aliases
 
-`#/*` resolves to `src/*` (defined in both `package.json` `imports` and `tsconfig.json`). `@/*` is also available but `#/*` is preferred. Shadcn aliases (`#/components/ui`, `#/lib/utils`, `#/hooks`) follow this convention.
+`#/*` resolves to `src/*` (defined in both `package.json` `imports` and `tsconfig.json`). `@/*` is also available but `#/*` is preferred. Shadcn aliases (`#/components/ui`, `#/libs/utils`, `#/hooks`) follow this convention.
 
 ### Styling
 

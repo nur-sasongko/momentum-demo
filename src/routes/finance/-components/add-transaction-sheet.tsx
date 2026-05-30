@@ -27,7 +27,7 @@ import {
   getCategoriesForType,
   INCOME_CATEGORIES,
 } from '#/lib/finance-utils'
-import { cn } from '#/lib/utils'
+import { cn } from '#/libs/utils'
 import { useIsMobile } from '#/hooks/use-mobile'
 import { useFinanceStore } from '#/stores/finance-store'
 

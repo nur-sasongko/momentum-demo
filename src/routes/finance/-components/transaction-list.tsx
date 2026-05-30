@@ -8,7 +8,7 @@ import {
   formatCurrency,
   formatTransactionDate,
 } from '#/lib/finance-utils'
-import { cn } from '#/lib/utils'
+import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 
 import type { Transaction } from '#/stores/finance-store'
