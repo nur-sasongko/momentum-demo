@@ -15,14 +15,7 @@ import { SidebarTrigger, useSidebar } from '#/components/ui/sidebar'
 import { useHabitsStore } from '#/stores/habits-store'
 
 import type { Theme } from '#/components/ThemeToggle'
-
-function formatTodayDate() {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  })
-}
+import { formatTodayDate } from '#/utils/date'
 
 const themeOptions: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
