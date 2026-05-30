@@ -139,12 +139,16 @@ Before promoting, check that the abstraction is stable. Prefer duplicating small
 5. Register navigation in `src/components/AppSidebar.tsx`
 6. Copy patterns from an existing slice such as `src/routes/habits/` or `src/routes/finance/`
 
+When committing, use Conventional Commits with the feature name as scope (e.g. `feat(habits): add streak badge`). See `docs/architecture/commit-workflow.md`.
+
 ## Adding a global utility
 
 1. Create `src/utils/<concern>.ts` (e.g. `date.ts`, `format.ts`)
 2. Export pure functions with no feature-specific types when possible
 3. Import via `#/utils/<concern>`
 4. Write tests in `src/utils/__tests__/<concern>.test.ts`
+
+When committing, use a global scope such as `globals` (e.g. `feat(globals): add shared utils date`). See `docs/architecture/commit-workflow.md`.
 
 ### Test placement summary
 

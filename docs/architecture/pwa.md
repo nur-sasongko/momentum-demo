@@ -2,6 +2,12 @@
 
 This project supports Progressive Web App (PWA) installability and offline caching on top of TanStack Start SSR.
 
+Related architecture docs:
+
+- `docs/architecture/feature-slices.md` for slice layout and code organization
+- `docs/architecture/testing.md` for test runner setup, file placement, and coverage
+- `docs/architecture/commit-workflow.md` for Husky hooks, staged checks, and commit message format
+
 ## Why this setup exists
 
 TanStack Start uses SSR build behavior that does not reliably emit `sw.js` from `vite-plugin-pwa` alone in this repository.  

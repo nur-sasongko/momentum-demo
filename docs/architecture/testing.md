@@ -2,6 +2,12 @@
 
 This project uses **Vitest** as the test runner with **jsdom** for DOM environment and **istanbul** for coverage.
 
+Related architecture docs:
+
+- `docs/architecture/commit-workflow.md` for Husky hooks, staged checks, and commit message format
+- `docs/architecture/feature-slices.md` for slice layout and test file placement conventions
+- `docs/architecture/pwa.md` for installability and offline setup
+
 ## Running tests
 
 ```bash
@@ -11,6 +17,8 @@ bunx vitest run src/path/to/file.test.ts  # run a single test file
 ```
 
 > **Important:** Do NOT use `bun test`. That invokes Bun's native test runner which has no Vitest globals (`vi`, `describe`, `it`, etc.). Always use `bun --bun run test`.
+
+> **Commit hooks vs tests:** The `pre-commit` hook runs `lint-staged` (Prettier + ESLint on staged files only). It does **not** run the test suite. Run `bun --bun run test` manually before pushing. See `docs/architecture/commit-workflow.md` for hook behavior and commit message rules.
 
 ## Config
 
@@ -23,10 +31,10 @@ bunx vitest run src/path/to/file.test.ts  # run a single test file
 
 ## Test file placement
 
-| Layer | Test location | Why |
-| ----- | ------------- | --- |
-| Global utils (`src/utils/`) | `src/utils/__tests__/<name>.test.ts` | Keeps source files clean; `__tests__/` is standard outside route folders |
-| Feature utils/components (`src/routes/<feature>/`) | `src/routes/<feature>/-tests/` | TanStack Router ignores `-` prefixed folders; keeps tests colocated with the feature |
+| Layer                                              | Test location                        | Why                                                                                  |
+| -------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------ |
+| Global utils (`src/utils/`)                        | `src/utils/__tests__/<name>.test.ts` | Keeps source files clean; `__tests__/` is standard outside route folders             |
+| Feature utils/components (`src/routes/<feature>/`) | `src/routes/<feature>/-tests/`       | TanStack Router ignores `-` prefixed folders; keeps tests colocated with the feature |
 
 ## Writing a global utility test
 
