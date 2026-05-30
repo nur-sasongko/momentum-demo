@@ -1,4 +1,10 @@
+import { generateText } from '@tiptap/core'
+import type { JSONContent } from '@tiptap/core'
+
+import { createContentExtensions } from '#/routes/notes/-utils/tiptap-extensions'
 import type { Note } from '#/stores/notes-store'
+
+const contentExtensions = createContentExtensions()
 
 export function formatRelativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()
@@ -23,12 +29,12 @@ export function formatRelativeTime(iso: string): string {
   return `${diffDays} days`
 }
 
-export function getExcerpt(body: string, maxLength = 120): string {
-  const plain = body
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/[*_~`>#-]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+export function noteContentToPlainText(content: JSONContent): string {
+  return generateText(content, contentExtensions)
+}
+
+export function getExcerpt(content: JSONContent, maxLength = 120): string {
+  const plain = noteContentToPlainText(content).replace(/\s+/g, ' ').trim()
 
   if (plain.length <= maxLength) {
     return plain
@@ -65,7 +71,7 @@ export function filterNotes(
 
       const haystack = [
         note.title,
-        note.body,
+        noteContentToPlainText(note.content),
         ...note.tags,
       ]
         .join(' ')

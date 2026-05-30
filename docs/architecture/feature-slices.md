@@ -7,7 +7,7 @@ Related architecture docs:
 - `docs/architecture/pwa.md` for installability and offline setup
 - `docs/architecture/testing.md` for test runner setup, file placement, and coverage
 - `docs/architecture/commit-workflow.md` for Husky hooks, staged checks, and commit message format
-- Feature module docs: `docs/habits.md`, `docs/finance.md`, `docs/second-brain.md`
+- Feature module docs: `docs/habits.md`, `docs/finance.md`, `docs/second-brain.md` (Notion-style Tiptap notes editor)
 
 ## Folder layout
 
@@ -78,12 +78,12 @@ The `-utils/` prefix marks **route-scoped** helpers. Global helpers belong in `s
 
 ### Current examples
 
-| Scope   | Path                                         | Consumer                                |
-| ------- | -------------------------------------------- | --------------------------------------- |
-| Global  | `src/utils/date.ts`                          | `TopBar.tsx`                            |
-| Finance | `src/routes/finance/-utils/finance-utils.ts` | finance components + `finance-store.ts` |
-| Habits  | `src/routes/habits/-utils/habit-utils.ts`    | habits components + `habits-store.ts`   |
-| Notes   | `src/routes/notes/-utils/notes-utils.ts`     | notes components                        |
+| Scope   | Path                                                             | Consumer                                                        |
+| ------- | ---------------------------------------------------------------- | --------------------------------------------------------------- |
+| Global  | `src/utils/date.ts`                                              | `TopBar.tsx`                                                    |
+| Finance | `src/routes/finance/-utils/finance-utils.ts`                     | finance components + `finance-store.ts`                         |
+| Habits  | `src/routes/habits/-utils/habit-utils.ts`                        | habits components + `habits-store.ts`                           |
+| Notes   | `src/routes/notes/-utils/notes-utils.ts`, `tiptap-extensions.ts` | notes components + `notes-store.ts`; see `docs/second-brain.md` |
 
 Feature utils stay in the route slice. Shared stores currently live in `src/stores/` and may import from `#/routes/<feature>/-utils/...`.
 
@@ -105,14 +105,14 @@ Keep business logic, UI markup, and data fetching out of route files.
 
 ## Shared vs feature-local code
 
-| Layer            | Location                            | Examples                                       |
-| ---------------- | ----------------------------------- | ---------------------------------------------- |
-| Framework wiring | `src/libs/`                         | TanStack Query provider, `cn()`                |
-| Global helpers   | `src/utils/`                        | `formatTodayDate`                              |
-| Feature UI       | `src/routes/<feature>/-components/` | `habit-card.tsx`, `note-editor.tsx`            |
-| Feature helpers  | `src/routes/<feature>/-utils/`      | `formatCurrency`, `getStreak`                  |
-| Client state     | `src/stores/`                       | Zustand + `persist` for habits, finance, notes |
-| App shell        | `src/components/`                   | `AppShell`, `AppSidebar`, `TopBar`             |
+| Layer            | Location                            | Examples                                                 |
+| ---------------- | ----------------------------------- | -------------------------------------------------------- |
+| Framework wiring | `src/libs/`                         | TanStack Query provider, `cn()`                          |
+| Global helpers   | `src/utils/`                        | `formatTodayDate`                                        |
+| Feature UI       | `src/routes/<feature>/-components/` | `habit-card.tsx`, `note-editor.tsx`, `tiptap-editor.tsx` |
+| Feature helpers  | `src/routes/<feature>/-utils/`      | `formatCurrency`, `getStreak`                            |
+| Client state     | `src/stores/`                       | Zustand + `persist` for habits, finance, notes           |
+| App shell        | `src/components/`                   | `AppShell`, `AppSidebar`, `TopBar`                       |
 
 ## Promotion rules (feature → shared)
 

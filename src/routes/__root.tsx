@@ -9,6 +9,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import { AppShell } from '#/components/AppShell'
 import { THEME_INIT_SCRIPT } from '#/components/ThemeToggle'
+import { Toaster } from '#/components/ui/sonner'
 import TanStackQueryDevtools from '../libs/tanstack-query/devtools'
 
 import appCss from '../styles.css?url'
@@ -77,6 +78,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             TanStackQueryDevtools,
           ]}
         />
+        <Toaster />
         <Scripts />
       </body>
     </html>
@@ -90,7 +92,10 @@ function RootNotFoundComponent() {
       <p className="text-sm text-muted-foreground">
         The page you are looking for does not exist.
       </p>
-      <Link to="/" className="text-sm font-medium text-primary underline-offset-4 hover:underline">
+      <Link
+        to="/"
+        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+      >
         Go back home
       </Link>
     </main>
