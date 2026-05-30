@@ -12,15 +12,9 @@ import {
   Trash2,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
 import {
   Tooltip,
   TooltipContent,
@@ -29,11 +23,30 @@ import {
 } from '#/components/ui/tooltip'
 import type { TableAlign } from '#/routes/notes/-utils/table-utils'
 import { setColumnAlignment } from '#/routes/notes/-utils/table-utils'
+import { cn } from '#/libs/utils'
 import { BubbleMenu } from '@tiptap/react/menus'
 
 interface TableBubbleMenuProps {
   editor: Editor
 }
+
+const ALIGN_OPTIONS: { align: TableAlign; label: string; icon: ReactNode }[] = [
+  {
+    align: 'left',
+    label: 'Align left',
+    icon: <AlignLeft className="size-4" />,
+  },
+  {
+    align: 'center',
+    label: 'Align center',
+    icon: <AlignCenter className="size-4" />,
+  },
+  {
+    align: 'right',
+    label: 'Align right',
+    icon: <AlignRight className="size-4" />,
+  },
+]
 
 function TableMenuButton({
   label,
@@ -77,6 +90,7 @@ function Divider() {
 
 export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
   const [alignOpen, setAlignOpen] = useState(false)
+  const alignPopoverRef = useRef<HTMLDivElement>(null)
 
   const canMerge = editor.can().mergeCells()
   const canSplit = editor.can().splitCell()
@@ -85,6 +99,37 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
     setColumnAlignment(editor, align)
     setAlignOpen(false)
   }
+
+  useEffect(() => {
+    if (!alignOpen) {
+      return
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAlignOpen(false)
+      }
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (
+        target instanceof Node &&
+        alignPopoverRef.current &&
+        !alignPopoverRef.current.contains(target)
+      ) {
+        setAlignOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('pointerdown', onPointerDown, true)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('pointerdown', onPointerDown, true)
+    }
+  }, [alignOpen])
 
   return (
     <BubbleMenu
@@ -152,34 +197,53 @@ export function TableBubbleMenu({ editor }: TableBubbleMenuProps) {
           <Split className="size-4" />
         </TableMenuButton>
 
-        <DropdownMenu open={alignOpen} onOpenChange={setAlignOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Align column"
-              className="size-8 text-foreground"
-              onMouseDown={(event) => event.preventDefault()}
+        <div ref={alignPopoverRef} className="relative">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Align column"
+                aria-expanded={alignOpen}
+                className="size-8 text-foreground"
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  setAlignOpen((open) => !open)
+                }}
+              >
+                <AlignLeft className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Align column</TooltipContent>
+          </Tooltip>
+
+          {alignOpen ? (
+            <div
+              role="menu"
+              className="absolute top-full left-0 z-50 mt-1 min-w-40 rounded-md border border-border bg-popover p-1 shadow-md"
             >
-              <AlignLeft className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onSelect={() => alignColumn('left')}>
-              <AlignLeft className="size-4" />
-              Align left
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => alignColumn('center')}>
-              <AlignCenter className="size-4" />
-              Align center
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => alignColumn('right')}>
-              <AlignRight className="size-4" />
-              Align right
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {ALIGN_OPTIONS.map(({ align, label, icon }) => (
+                <button
+                  key={align}
+                  type="button"
+                  role="menuitem"
+                  className={cn(
+                    'flex w-full cursor-default items-center gap-2 whitespace-nowrap rounded-sm px-2 py-1.5 text-sm outline-hidden',
+                    'hover:bg-accent hover:text-accent-foreground',
+                  )}
+                  onMouseDown={(event) => {
+                    event.preventDefault()
+                    alignColumn(align)
+                  }}
+                >
+                  {icon}
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
 
         <TableMenuButton
           label="Delete table"

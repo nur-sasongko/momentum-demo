@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core'
 import { findParentNode } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
+import { CellSelection, TableMap } from 'prosemirror-tables'
 
 export type TableAlign = 'left' | 'center' | 'right'
 
@@ -52,19 +53,35 @@ export function setColumnAlignment(editor: Editor, align: TableAlign): void {
 
   const { table, cellIndex } = context
   const tableNode = table.node
-  const positions: number[] = []
+  const tableMap = TableMap.get(tableNode)
+  const positions = new Set<number>()
+  const selection = editor.state.selection
 
-  let rowPos = table.start
-  tableNode.forEach((rowNode) => {
-    let cellPos = rowPos + 1
-    rowNode.forEach((cellNode, _offset, index) => {
-      if (index === cellIndex) {
-        positions.push(cellPos)
+  const selectedColumns =
+    selection instanceof CellSelection
+      ? (() => {
+          const anchor = tableMap.findCell(
+            selection.$anchorCell.pos - table.start,
+          )
+          const head = tableMap.findCell(selection.$headCell.pos - table.start)
+          const startColumn = Math.min(anchor.left, head.left)
+          const endColumn = Math.max(anchor.right, head.right)
+          return Array.from(
+            { length: endColumn - startColumn },
+            (_, index) => startColumn + index,
+          )
+        })()
+      : [cellIndex]
+
+  for (let rowIndex = 0; rowIndex < tableMap.height; rowIndex += 1) {
+    for (const columnIndex of selectedColumns) {
+      if (columnIndex < 0 || columnIndex >= tableMap.width) {
+        continue
       }
-      cellPos += cellNode.nodeSize
-    })
-    rowPos += rowNode.nodeSize
-  })
+      const cellPos = tableMap.positionAt(rowIndex, columnIndex, tableNode)
+      positions.add(table.start + cellPos)
+    }
+  }
 
   editor
     .chain()
