@@ -215,11 +215,118 @@ body {
 }
 
 .note-tiptap pre code {
-  @apply bg-transparent p-0 text-sm text-foreground;
+  @apply bg-transparent p-0 text-sm;
 }
 
 .note-tiptap code {
   @apply rounded bg-muted px-1.5 py-0.5 text-sm text-foreground;
+}
+
+/* Code block with persistent language header */
+.note-tiptap .note-code-block {
+  @apply my-2 overflow-hidden rounded-lg border border-border bg-muted/40;
+}
+
+.note-tiptap .note-code-block__header {
+  @apply flex items-center justify-between gap-2 border-b border-border bg-muted/70 px-2 py-1.5;
+}
+
+.note-tiptap .note-code-block__pre {
+  @apply m-0 overflow-x-auto rounded-none border-0 bg-transparent p-4;
+}
+
+.note-tiptap .note-code-block__pre code {
+  @apply block min-h-[1.5em] bg-transparent p-0 font-mono text-sm leading-relaxed;
+  color: var(--code-fg);
+  tab-size: 4;
+}
+
+/* Syntax token colors (lowlight / highlight.js) */
+.note-tiptap .note-code-block__pre code {
+  --code-fg: oklch(0.28 0.02 280);
+  --code-comment: oklch(0.52 0.02 280);
+  --code-keyword: oklch(0.48 0.18 300);
+  --code-string: oklch(0.45 0.14 150);
+  --code-number: oklch(0.5 0.16 50);
+  --code-function: oklch(0.42 0.16 250);
+  --code-variable: oklch(0.38 0.12 30);
+  --code-tag: oklch(0.46 0.16 25);
+  --code-attr: oklch(0.44 0.14 200);
+  --code-builtin: oklch(0.46 0.14 330);
+  --code-meta: oklch(0.5 0.08 280);
+}
+
+.dark .note-tiptap .note-code-block__pre code {
+  --code-fg: oklch(0.88 0.02 280);
+  --code-comment: oklch(0.58 0.02 280);
+  --code-keyword: oklch(0.78 0.14 300);
+  --code-string: oklch(0.78 0.12 150);
+  --code-number: oklch(0.8 0.12 80);
+  --code-function: oklch(0.78 0.12 250);
+  --code-variable: oklch(0.82 0.1 50);
+  --code-tag: oklch(0.78 0.12 25);
+  --code-attr: oklch(0.8 0.1 200);
+  --code-builtin: oklch(0.8 0.1 330);
+  --code-meta: oklch(0.72 0.06 280);
+}
+
+.note-tiptap .note-code-block__pre code :is(.hljs-comment, .hljs-quote) {
+  color: var(--code-comment);
+  font-style: italic;
+}
+
+.note-tiptap
+  .note-code-block__pre
+  code
+  :is(.hljs-keyword, .hljs-selector-tag, .hljs-literal) {
+  color: var(--code-keyword);
+}
+
+.note-tiptap
+  .note-code-block__pre
+  code
+  :is(.hljs-string, .hljs-regexp, .hljs-addition) {
+  color: var(--code-string);
+}
+
+.note-tiptap
+  .note-code-block__pre
+  code
+  :is(.hljs-number, .hljs-symbol, .hljs-bullet) {
+  color: var(--code-number);
+}
+
+.note-tiptap
+  .note-code-block__pre
+  code
+  :is(.hljs-title, .hljs-section, .hljs-function, .hljs-built_in) {
+  color: var(--code-function);
+}
+
+.note-tiptap
+  .note-code-block__pre
+  code
+  :is(.hljs-variable, .hljs-template-variable, .hljs-link) {
+  color: var(--code-variable);
+}
+
+.note-tiptap .note-code-block__pre code :is(.hljs-tag, .hljs-name) {
+  color: var(--code-tag);
+}
+
+.note-tiptap
+  .note-code-block__pre
+  code
+  :is(.hljs-attr, .hljs-attribute, .hljs-selector-id, .hljs-selector-class) {
+  color: var(--code-attr);
+}
+
+.note-tiptap .note-code-block__pre code :is(.hljs-type, .hljs-class) {
+  color: var(--code-builtin);
+}
+
+.note-tiptap .note-code-block__pre code :is(.hljs-meta, .hljs-deletion) {
+  color: var(--code-meta);
 }
 
 .note-tiptap blockquote {

@@ -54,7 +54,7 @@ Related architecture: `docs/architecture/feature-slices.md`.
 - Text selection bubble menu: `src/routes/notes/-components/bubble-menu.tsx`
 - Slash commands: `src/routes/notes/-components/slash-command-extension.ts`, `slash-command-menu.tsx`, `suggestion-menu.tsx`
 - Note links (`[[`): `src/routes/notes/-components/note-link-extension.ts`, `note-link-menu.tsx`
-- Code block languages: `src/routes/notes/-components/code-block-language-menu.tsx`
+- Code block header: `code-block-view.tsx`, `code-block-language-selector.tsx`, `code-block-copy-button.tsx`, `code-block-extension.ts`
 - Custom callout block: `src/routes/notes/-components/callout-extension.ts`
 
 ### Table UI
@@ -134,7 +134,7 @@ Tag chips filter the list; tag editing in the editor UI is still read-only (firs
 - `EditorContent` with `note-tiptap prose` classes
 - `EditorBubbleMenu` — text selection only (hidden inside tables and in read-only mode)
 - `TableBubbleMenu` — when cursor is in a table
-- `CodeBlockLanguageMenu` — when cursor is in a code block
+- Persistent code block language header on each block (not a floating menu)
 - `TableContextMenu` — right-click inside table cells
 
 ### Extension stack
@@ -144,7 +144,7 @@ Configured in `createContentExtensions()` / `createEditorExtensions()`:
 | Extension                    | Role                                                                                                  |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
 | StarterKit                   | Headings, lists, bold/italic, blockquote, HR, etc. (`codeBlock` and `link` disabled — replaced below) |
-| CodeBlockLowlight            | Syntax-highlighted code blocks                                                                        |
+| NoteCodeBlock (lowlight)     | Syntax-highlighted code blocks with persistent language header                                        |
 | TaskList + TaskItem          | Todo checklists (`- [ ]`)                                                                             |
 | Highlight                    | Multicolor text highlight                                                                             |
 | Link                         | External and internal note links                                                                      |
@@ -185,7 +185,15 @@ On non-empty text selection (not in code blocks or tables):
 
 ### Code blocks
 
-When the cursor is inside a code block, a floating menu offers language presets (JavaScript, TypeScript, Python, etc.).
+Each code block renders with a **persistent header bar** above the code (always visible):
+
+- **Left:** Shadcn `Select` for language (Plain text, JavaScript, TypeScript, Python, Bash, CSS, HTML, JSON).
+- **Right:** Copy button that copies plain code text (no markdown fence) to the clipboard with Sonner toast feedback.
+
+- Language is stored on the `codeBlock` node (`language` attribute) and applied via `NoteCodeBlock` (lowlight).
+- Syntax tokens are colorized per language using highlight.js classes (`.hljs-*`) styled in `src/styles.css` for light and dark themes.
+- Plain text clears the language attribute so content is not auto-highlighted.
+- In read-only mode, the header remains visible; language select is disabled but copy still works.
 
 ## Table system
 

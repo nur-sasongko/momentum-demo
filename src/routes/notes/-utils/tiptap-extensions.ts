@@ -1,4 +1,4 @@
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { NoteCodeBlock } from '#/routes/notes/-components/code-block-extension'
 import Highlight from '@tiptap/extension-highlight'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
@@ -33,9 +33,9 @@ export function createContentExtensions() {
       codeBlock: false,
       link: false,
     }),
-    CodeBlockLowlight.configure({
+    NoteCodeBlock.configure({
       lowlight,
-      defaultLanguage: 'plaintext',
+      defaultLanguage: null,
     }),
     TaskList,
     TaskItem.configure({

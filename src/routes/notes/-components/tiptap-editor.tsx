@@ -4,7 +4,6 @@ import type { RefObject } from 'react'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { EditorBubbleMenu } from '#/routes/notes/-components/bubble-menu'
-import { CodeBlockLanguageMenu } from '#/routes/notes/-components/code-block-language-menu'
 import { TableBubbleMenu } from '#/routes/notes/-components/table-bubble-menu'
 import { TableContextMenu } from '#/routes/notes/-components/table-context-menu'
 import { createEditorExtensions } from '#/routes/notes/-utils/tiptap-extensions'
@@ -133,7 +132,6 @@ export function TiptapEditor({
         <>
           <EditorBubbleMenu editor={editor} />
           <TableBubbleMenu editor={editor} />
-          <CodeBlockLanguageMenu editor={editor} />
           <TableContextMenu editor={editor} containerRef={containerRef} />
         </>
       ) : null}
