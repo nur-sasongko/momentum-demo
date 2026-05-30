@@ -10,17 +10,22 @@ import TableRow from '@tiptap/extension-table-row'
 import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import Typography from '@tiptap/extension-typography'
-import { ReactNodeViewRenderer } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { common, createLowlight } from 'lowlight'
 
 import { Callout } from '#/routes/notes/-components/callout-extension'
 import { NoteLinkExtension } from '#/routes/notes/-components/note-link-extension'
 import { SlashCommandExtension } from '#/routes/notes/-components/slash-command-extension'
-import { TableRowNodeView } from '#/routes/notes/-components/table-row-nodeview'
 import type { Note } from '#/stores/notes-store'
 
 const lowlight = createLowlight(common)
+
+const tableCellAlignAttribute = {
+  default: null,
+  parseHTML: (element: HTMLElement) => element.style.textAlign || null,
+  renderHTML: ({ align }: { align: string | null }) =>
+    align ? { style: `text-align: ${align}` } : {},
+}
 
 export function createContentExtensions() {
   return [
@@ -55,13 +60,23 @@ export function createContentExtensions() {
         class: 'notion-table',
       },
     }),
-    TableRow.extend({
-      addNodeView() {
-        return ReactNodeViewRenderer(TableRowNodeView)
+    TableRow,
+    TableHeader.extend({
+      addAttributes() {
+        return {
+          ...this.parent?.(),
+          align: tableCellAlignAttribute,
+        }
       },
     }),
-    TableHeader,
-    TableCell,
+    TableCell.extend({
+      addAttributes() {
+        return {
+          ...this.parent?.(),
+          align: tableCellAlignAttribute,
+        }
+      },
+    }),
     Image.configure({
       inline: false,
       allowBase64: true,

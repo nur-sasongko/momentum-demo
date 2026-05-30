@@ -33,12 +33,14 @@ export function getTableContext(editor: Editor) {
     return null
   }
 
+  const { $from } = editor.state.selection
+
   return {
     table,
     row,
     cell,
-    rowIndex: row.index,
-    cellIndex: cell?.index ?? 0,
+    rowIndex: $from.index(row.depth),
+    cellIndex: cell ? $from.index(cell.depth) : 0,
   }
 }
 
@@ -52,7 +54,7 @@ export function setColumnAlignment(editor: Editor, align: TableAlign): void {
   const tableNode = table.node
   const positions: number[] = []
 
-  let rowPos = table.start + 1
+  let rowPos = table.start
   tableNode.forEach((rowNode) => {
     let cellPos = rowPos + 1
     rowNode.forEach((cellNode, _offset, index) => {
@@ -69,8 +71,11 @@ export function setColumnAlignment(editor: Editor, align: TableAlign): void {
     .focus()
     .command(({ tr, dispatch }) => {
       for (const pos of positions) {
-        const cellNode = editor.state.doc.nodeAt(pos)
-        if (!cellNode) {
+        const cellNode = tr.doc.nodeAt(pos)
+        if (
+          !cellNode ||
+          !['tableCell', 'tableHeader'].includes(cellNode.type.name)
+        ) {
           continue
         }
         tr.setNodeMarkup(pos, undefined, {

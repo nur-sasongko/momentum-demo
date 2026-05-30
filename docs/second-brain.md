@@ -62,7 +62,6 @@ Related architecture: `docs/architecture/feature-slices.md`.
 - Grid picker (slash `/table`): `src/routes/notes/-components/table-grid-picker.tsx`
 - Table bubble menu: `src/routes/notes/-components/table-bubble-menu.tsx`
 - Table context menu: `src/routes/notes/-components/table-context-menu.tsx`
-- Row drag handle NodeView: `src/routes/notes/-components/table-row-nodeview.tsx`
 
 ### App-wide
 
@@ -151,7 +150,7 @@ Configured in `createContentExtensions()` / `createEditorExtensions()`:
 | Link                         | External and internal note links                                                                      |
 | Typography                   | Markdown-like input rules (smart quotes, etc.)                                                        |
 | Callout                      | Custom `callout` block node                                                                           |
-| Table + TableRow/Header/Cell | Tables with resize and row NodeView                                                                   |
+| Table + TableRow/Header/Cell | Tables with column resize and cell selection                                                          |
 | Image                        | URL or file upload (base64)                                                                           |
 | Placeholder                  | "Type / for commands…"                                                                                |
 | SlashCommandExtension        | `/` command palette                                                                                   |
@@ -201,11 +200,11 @@ Tables aim for a **simple Notion-like** experience.
 | Multi-select    | Tiptap table selection + `.selectedCell` styling                   |
 | Bubble menu     | Row/column add/delete, merge, split, column align, delete table    |
 | Context menu    | Right-click: row/column/cell/table sections                        |
-| Row reorder     | Drag handle on row hover (`table-row-nodeview.tsx`)                |
+| Row reorder     | Planned follow-up (not enabled in current stabilization pass)      |
 
 Table helpers live in `table-utils.ts` (`insertTableAtRange`, `setColumnAlignment`, `moveTableRow`).
 
-Styling in `src/styles.css`: fixed layout, `min-width: 80px`, header row background, `selectedCell`, `column-resize-handle`, `.table-row-drag-handle`.
+Styling in `src/styles.css`: fixed layout, `min-width: 80px`, header row background, `selectedCell`, `column-resize-handle`.
 
 ## Read-only mode
 

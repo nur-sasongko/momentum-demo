@@ -91,8 +91,11 @@ export const SlashCommandMenu = forwardRef<
       >
         <TableGridPicker
           onSelect={(rows, cols) => {
-            gridPickerItem.command({ editor, range, rows, cols })
-            command(gridPickerItem)
+            command({
+              ...gridPickerItem,
+              command: (props) =>
+                gridPickerItem.command({ ...props, rows, cols }),
+            })
           }}
           onCancel={() => setGridPickerItem(null)}
         />

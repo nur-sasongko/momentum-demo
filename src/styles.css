@@ -283,20 +283,6 @@ body {
   @apply relative overflow-x-auto;
 }
 
-.note-tiptap tr.group\/table-row:hover .table-row-drag-handle,
-.note-tiptap tr.table-row-node-view:hover .table-row-drag-handle {
-  @apply opacity-100;
-}
-
-.note-tiptap .table-row-drag-handle {
-  @apply absolute -left-5 top-1/2 z-10 -translate-y-1/2 cursor-grab select-none
-         text-xs text-muted-foreground opacity-0 transition-opacity;
-}
-
-.note-tiptap .table-row-drag-handle:active {
-  @apply cursor-grabbing;
-}
-
 .note-tiptap .note-callout {
   @apply rounded-lg border border-primary/20 bg-primary/5 px-4 py-3;
 }
