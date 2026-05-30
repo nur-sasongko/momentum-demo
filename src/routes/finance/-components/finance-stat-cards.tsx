@@ -10,7 +10,7 @@ import {
   formatMonthLabel,
   getMonthTotals,
   getTotalBalance,
-} from '#/lib/finance-utils'
+} from '../-utils/finance-utils'
 import { useFinanceStore } from '#/stores/finance-store'
 
 export function FinanceStatCards() {

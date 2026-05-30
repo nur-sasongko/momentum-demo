@@ -1,4 +1,4 @@
-import { formatRelativeTime, getExcerpt } from '#/lib/notes-utils'
+import { formatRelativeTime, getExcerpt } from '../-utils/notes-utils'
 import { cn } from '#/libs/utils'
 import type { Note } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'

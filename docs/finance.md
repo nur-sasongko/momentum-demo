@@ -13,7 +13,7 @@ The Finance module is the personal finance tracker at `/finance`. It provides ba
 
 - Route entry: `src/routes/finance/index.tsx`
 - Finance store: `src/stores/finance-store.ts`
-- Finance utilities: `src/lib/finance-utils.ts`
+- Finance utilities: `src/routes/finance/-utils/finance-utils.ts`
 - Stat cards: `src/routes/finance/-components/finance-stat-cards.tsx`
 - Filters: `src/routes/finance/-components/finance-filters.tsx`
 - Category chart: `src/routes/finance/-components/spending-by-category-chart.tsx`
@@ -68,7 +68,7 @@ UI filter state (`selectedMonth`, `selectedCategory`, `isAddTransactionOpen`) is
 
 ## Core Utilities
 
-Defined in `src/lib/finance-utils.ts`:
+Defined in `src/routes/finance/-utils/finance-utils.ts`:
 
 - `formatCurrency(amount)` — USD formatting via `Intl.NumberFormat`
 - `toMonthKey(date)` / `getCurrentMonthKey()` — month grouping keys

@@ -2,7 +2,7 @@ import { Plus, Search } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { filterNotes, getAllTags } from '#/lib/notes-utils'
+import { filterNotes, getAllTags } from '../-utils/notes-utils'
 import { cn } from '#/libs/utils'
 import { NoteListItem } from '#/routes/notes/-components/note-list-item'
 import { useNotesStore } from '#/stores/notes-store'

@@ -2,7 +2,7 @@ import { Eye, EyeOff, Tag, Trash2 } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { Textarea } from '#/components/ui/textarea'
-import { formatRelativeTime } from '#/lib/notes-utils'
+import { formatRelativeTime } from '../-utils/notes-utils'
 import { MarkdownPreview } from '#/routes/notes/-components/markdown-preview'
 import type { Note } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'

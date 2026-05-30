@@ -13,7 +13,7 @@ The Second Brain module is the notes experience at `/notes`. It provides a two-p
 
 - Route entry: `src/routes/notes/index.tsx`
 - Notes store: `src/stores/notes-store.ts`
-- Notes utilities: `src/lib/notes-utils.ts`
+- Notes utilities: `src/routes/notes/-utils/notes-utils.ts`
 - List pane: `src/routes/notes/-components/note-list.tsx`
 - List row: `src/routes/notes/-components/note-list-item.tsx`
 - Editor pane: `src/routes/notes/-components/note-editor.tsx`
@@ -67,7 +67,7 @@ Autosave is implicit: all updates flow through store actions and persist middlew
 
 ## Search, Tags, and Sorting
 
-Search/filter logic is centralized in `src/lib/notes-utils.ts`.
+Search/filter logic is centralized in `src/routes/notes/-utils/notes-utils.ts`.
 
 - `getAllTags(notes)` returns unique sorted tags for chips.
 - `filterNotes(notes, query, tag)`:

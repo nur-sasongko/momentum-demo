@@ -22,7 +22,7 @@ import {
   formatCurrency,
   formatMonthLabel,
   getSpendingByCategory,
-} from '#/lib/finance-utils'
+} from '../-utils/finance-utils'
 import { useFinanceStore } from '#/stores/finance-store'
 
 export function SpendingByCategoryChart() {

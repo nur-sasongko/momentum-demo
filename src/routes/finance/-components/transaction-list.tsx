@@ -7,7 +7,7 @@ import {
   filterTransactions,
   formatCurrency,
   formatTransactionDate,
-} from '#/lib/finance-utils'
+} from '../-utils/finance-utils'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 

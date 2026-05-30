@@ -26,12 +26,12 @@ import {
   EXPENSE_CATEGORIES,
   getCategoriesForType,
   INCOME_CATEGORIES,
-} from '#/lib/finance-utils'
+} from '../-utils/finance-utils'
 import { cn } from '#/libs/utils'
 import { useIsMobile } from '#/hooks/use-mobile'
 import { useFinanceStore } from '#/stores/finance-store'
 
-import type { FinanceCategory } from '#/lib/finance-utils'
+import type { FinanceCategory } from '../-utils/finance-utils'
 import type { TransactionType } from '#/stores/finance-store'
 
 const addTransactionSchema = z.object({

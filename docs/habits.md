@@ -13,7 +13,7 @@ The Habits module is the daily habit tracker at `/habits`. It focuses on quick d
 
 - Route entry: `src/routes/habits/index.tsx`
 - Habits store: `src/stores/habits-store.ts`
-- Habit utilities: `src/lib/habit-utils.ts`
+- Habit utilities: `src/routes/habits/-utils/habit-utils.ts`
 - Summary panel: `src/routes/habits/-components/habit-summary.tsx`
 - Grid and empty state: `src/routes/habits/-components/habit-grid.tsx`
 - Habit card: `src/routes/habits/-components/habit-card.tsx`
@@ -60,7 +60,7 @@ State is managed with Zustand + `persist` middleware (`useHabitsStore`).
 
 ## Core Utilities
 
-Defined in `src/lib/habit-utils.ts`:
+Defined in `src/routes/habits/-utils/habit-utils.ts`:
 
 - `toDateKey(offsetDays)` builds date keys for storage/lookups
 - `getLast7Days()` returns date keys + weekday labels for card UI

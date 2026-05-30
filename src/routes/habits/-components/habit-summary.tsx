@@ -1,5 +1,5 @@
 import { Progress } from '#/components/ui/progress'
-import { toDateKey } from '#/lib/habit-utils'
+import { toDateKey } from '../-utils/habit-utils'
 import { useHabitsStore } from '#/stores/habits-store'
 
 export function HabitSummary() {

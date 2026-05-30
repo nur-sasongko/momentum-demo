@@ -16,7 +16,7 @@ import {
   HABIT_COLORS,
   HABIT_COLOR_CLASSES,
   HABIT_EMOJIS,
-} from '#/lib/habit-utils'
+} from '../-utils/habit-utils'
 import { cn } from '#/libs/utils'
 import { useHabitsStore } from '#/stores/habits-store'
 

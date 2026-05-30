@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import { getCurrentMonthKey } from '#/lib/finance-utils'
+import { getCurrentMonthKey } from '#/routes/finance/-utils/finance-utils'
 
-import type { FinanceCategory } from '#/lib/finance-utils'
+import type { FinanceCategory } from '#/routes/finance/-utils/finance-utils'
 
 export type TransactionType = 'income' | 'expense'
 
