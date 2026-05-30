@@ -6,6 +6,7 @@ Related architecture docs:
 
 - `docs/architecture/pwa.md` for installability and offline setup
 - `docs/architecture/testing.md` for test runner setup, file placement, and coverage
+- `docs/architecture/commit-workflow.md` for Husky hooks, staged checks, and commit message format
 - Feature module docs: `docs/habits.md`, `docs/finance.md`, `docs/second-brain.md`
 
 ## Folder layout
@@ -49,11 +50,11 @@ Pathless route groups like `(marketing)/` are optional. Current features use top
 
 ## Utility placement
 
-| Scope | Folder | Import | Examples |
-| ----- | ------ | ------ | -------- |
-| Global (app-wide) | `src/utils/` | `#/utils/<name>` | `formatTodayDate` in `date.ts` |
-| Feature-only | `src/routes/<feature>/-utils/` | relative or `#/routes/<feature>/-utils/<name>` | `formatCurrency`, `getStreak` |
-| Framework / styling | `src/libs/` | `#/libs/<name>` | `cn()` in `utils.ts`, TanStack Query wiring |
+| Scope               | Folder                         | Import                                         | Examples                                    |
+| ------------------- | ------------------------------ | ---------------------------------------------- | ------------------------------------------- |
+| Global (app-wide)   | `src/utils/`                   | `#/utils/<name>`                               | `formatTodayDate` in `date.ts`              |
+| Feature-only        | `src/routes/<feature>/-utils/` | relative or `#/routes/<feature>/-utils/<name>` | `formatCurrency`, `getStreak`               |
+| Framework / styling | `src/libs/`                    | `#/libs/<name>`                                | `cn()` in `utils.ts`, TanStack Query wiring |
 
 > **Legacy note:** An earlier typo folder `src/utlis/` existed briefly. The canonical global folder is **`src/utils/`**. Do not add new modules under `src/utlis/`.
 
@@ -77,12 +78,12 @@ The `-utils/` prefix marks **route-scoped** helpers. Global helpers belong in `s
 
 ### Current examples
 
-| Scope | Path | Consumer |
-| ----- | ---- | -------- |
-| Global | `src/utils/date.ts` | `TopBar.tsx` |
+| Scope   | Path                                         | Consumer                                |
+| ------- | -------------------------------------------- | --------------------------------------- |
+| Global  | `src/utils/date.ts`                          | `TopBar.tsx`                            |
 | Finance | `src/routes/finance/-utils/finance-utils.ts` | finance components + `finance-store.ts` |
-| Habits | `src/routes/habits/-utils/habit-utils.ts` | habits components + `habits-store.ts` |
-| Notes | `src/routes/notes/-utils/notes-utils.ts` | notes components |
+| Habits  | `src/routes/habits/-utils/habit-utils.ts`    | habits components + `habits-store.ts`   |
+| Notes   | `src/routes/notes/-utils/notes-utils.ts`     | notes components                        |
 
 Feature utils stay in the route slice. Shared stores currently live in `src/stores/` and may import from `#/routes/<feature>/-utils/...`.
 
@@ -104,26 +105,26 @@ Keep business logic, UI markup, and data fetching out of route files.
 
 ## Shared vs feature-local code
 
-| Layer | Location | Examples |
-| ----- | -------- | -------- |
-| Framework wiring | `src/libs/` | TanStack Query provider, `cn()` |
-| Global helpers | `src/utils/` | `formatTodayDate` |
-| Feature UI | `src/routes/<feature>/-components/` | `habit-card.tsx`, `note-editor.tsx` |
-| Feature helpers | `src/routes/<feature>/-utils/` | `formatCurrency`, `getStreak` |
-| Client state | `src/stores/` | Zustand + `persist` for habits, finance, notes |
-| App shell | `src/components/` | `AppShell`, `AppSidebar`, `TopBar` |
+| Layer            | Location                            | Examples                                       |
+| ---------------- | ----------------------------------- | ---------------------------------------------- |
+| Framework wiring | `src/libs/`                         | TanStack Query provider, `cn()`                |
+| Global helpers   | `src/utils/`                        | `formatTodayDate`                              |
+| Feature UI       | `src/routes/<feature>/-components/` | `habit-card.tsx`, `note-editor.tsx`            |
+| Feature helpers  | `src/routes/<feature>/-utils/`      | `formatCurrency`, `getStreak`                  |
+| Client state     | `src/stores/`                       | Zustand + `persist` for habits, finance, notes |
+| App shell        | `src/components/`                   | `AppShell`, `AppSidebar`, `TopBar`             |
 
 ## Promotion rules (feature → shared)
 
 Keep code feature-local by default. Promote to shared only when the rule below is met:
 
-| Code type        | Promote when            | Destination                                           |
-| ---------------- | ----------------------- | ----------------------------------------------------- |
-| UI component     | Used by **3+ features** | `src/components/`                                     |
-| Utility function | Used by **3+ features** | `src/utils/` (one file per concern)                   |
-| Type / constant  | Used by **3+ features** | `src/types/`                                          |
-| Query / mutation | Used by **3+ features** | `src/libs/` or a dedicated `src/data/` module         |
-| Zustand store    | Used by **3+ features** | `src/stores/` (or extract shared slice first)         |
+| Code type        | Promote when            | Destination                                   |
+| ---------------- | ----------------------- | --------------------------------------------- |
+| UI component     | Used by **3+ features** | `src/components/`                             |
+| Utility function | Used by **3+ features** | `src/utils/` (one file per concern)           |
+| Type / constant  | Used by **3+ features** | `src/types/`                                  |
+| Query / mutation | Used by **3+ features** | `src/libs/` or a dedicated `src/data/` module |
+| Zustand store    | Used by **3+ features** | `src/stores/` (or extract shared slice first) |
 
 App-shell helpers used across components (but not tied to one feature) may go directly into `src/utils/` without waiting for 3+ feature usage.
 
@@ -147,10 +148,10 @@ Before promoting, check that the abstraction is stable. Prefer duplicating small
 
 ### Test placement summary
 
-| Layer | Test location |
-| ----- | ------------- |
-| Global utils | `src/utils/__tests__/<name>.test.ts` |
-| Feature utils / components | `src/routes/<feature>/-tests/` |
+| Layer                      | Test location                        |
+| -------------------------- | ------------------------------------ |
+| Global utils               | `src/utils/__tests__/<name>.test.ts` |
+| Feature utils / components | `src/routes/<feature>/-tests/`       |
 
 Global utils use `__tests__/` (no dash — not a TanStack Router route folder). Route slices use `-tests/` to satisfy the TanStack Router file-prefix requirement.
 
