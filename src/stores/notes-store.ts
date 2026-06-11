@@ -208,11 +208,22 @@ export const SEED_NOTES: Note[] = [
   },
 ]
 
+export type TagFilterMode = 'AND' | 'OR'
+export type NotesSortBy =
+  | 'updated-desc'
+  | 'created-desc'
+  | 'title-asc'
+  | 'title-desc'
+
 interface NotesState {
   notes: Note[]
   selectedId: string | null
   searchQuery: string
-  activeTag: string | null
+  activeTags: string[]
+  tagFilterMode: TagFilterMode
+  untaggedOnly: boolean
+  favoritesOnly: boolean
+  sortBy: NotesSortBy
   addNote: () => void
   updateNote: (
     id: string,
@@ -223,7 +234,15 @@ interface NotesState {
   deleteNote: (id: string) => void
   selectNote: (id: string) => void
   setSearch: (query: string) => void
-  setActiveTag: (tag: string | null) => void
+  setActiveTags: (tags: string[]) => void
+  toggleActiveTag: (tag: string) => void
+  setTagFilterMode: (mode: TagFilterMode) => void
+  setUntaggedOnly: (value: boolean) => void
+  setFavoritesOnly: (value: boolean) => void
+  setSortBy: (sort: NotesSortBy) => void
+  toggleFavorite: (id: string) => void
+  renameTag: (oldTag: string, newTag: string) => void
+  deleteTag: (tag: string) => void
 }
 
 export const useNotesStore = create<NotesState>()(
@@ -232,7 +251,11 @@ export const useNotesStore = create<NotesState>()(
       notes: SEED_NOTES,
       selectedId: SEED_NOTES[3]?.id ?? null,
       searchQuery: '',
-      activeTag: null,
+      activeTags: [],
+      tagFilterMode: 'OR',
+      untaggedOnly: false,
+      favoritesOnly: false,
+      sortBy: 'updated-desc',
       addNote: () => {
         const now = new Date().toISOString()
         const id = crypto.randomUUID()
@@ -254,15 +277,22 @@ export const useNotesStore = create<NotesState>()(
       },
       updateNote: (id, patch) =>
         set((state) => ({
-          notes: state.notes.map((note) =>
-            note.id === id
-              ? {
-                  ...note,
-                  ...patch,
-                  updatedAt: new Date().toISOString(),
-                }
-              : note,
-          ),
+          notes: state.notes.map((note) => {
+            if (note.id !== id) return note
+            const contentChanged =
+              patch.content !== undefined &&
+              JSON.stringify(patch.content) !== JSON.stringify(note.content)
+            const titleChanged =
+              patch.title !== undefined && patch.title !== note.title
+            return {
+              ...note,
+              ...patch,
+              updatedAt:
+                contentChanged || titleChanged
+                  ? new Date().toISOString()
+                  : note.updatedAt,
+            }
+          }),
         })),
       deleteNote: (id) =>
         set((state) => {
@@ -286,24 +316,115 @@ export const useNotesStore = create<NotesState>()(
         }),
       selectNote: (id) => set({ selectedId: id }),
       setSearch: (query) => set({ searchQuery: query }),
-      setActiveTag: (tag) => set({ activeTag: tag }),
+      setActiveTags: (tags) =>
+        set({
+          activeTags: tags,
+          untaggedOnly: tags.length > 0 ? false : get().untaggedOnly,
+        }),
+      toggleActiveTag: (tag) =>
+        set((state) => {
+          const exists = state.activeTags.includes(tag)
+          const nextTags = exists
+            ? state.activeTags.filter((t) => t !== tag)
+            : [...state.activeTags, tag]
+          return {
+            activeTags: nextTags,
+            untaggedOnly: nextTags.length > 0 ? false : state.untaggedOnly,
+          }
+        }),
+      setTagFilterMode: (mode) => set({ tagFilterMode: mode }),
+      setUntaggedOnly: (value) =>
+        set({
+          untaggedOnly: value,
+          activeTags: value ? [] : get().activeTags,
+        }),
+      setFavoritesOnly: (value) => set({ favoritesOnly: value }),
+      setSortBy: (sort) => set({ sortBy: sort }),
+      toggleFavorite: (id) =>
+        set((state) => ({
+          notes: state.notes.map((note) =>
+            note.id === id ? { ...note, isFavorite: !note.isFavorite } : note,
+          ),
+        })),
+      renameTag: (oldTag, newTag) =>
+        set((state) => {
+          const trimmed = newTag.trim()
+          const lowerOld = oldTag.toLowerCase()
+          if (!trimmed || trimmed.toLowerCase() === lowerOld) return state
+          return {
+            notes: state.notes.map((note) => {
+              if (!note.tags.some((t) => t.toLowerCase() === lowerOld)) {
+                return note
+              }
+              const seen = new Set<string>()
+              const next: string[] = []
+              for (const t of note.tags) {
+                const replacement = t.toLowerCase() === lowerOld ? trimmed : t
+                const key = replacement.toLowerCase()
+                if (seen.has(key)) continue
+                seen.add(key)
+                next.push(replacement)
+              }
+              return { ...note, tags: next }
+            }),
+            activeTags: state.activeTags.map((t) =>
+              t.toLowerCase() === lowerOld ? trimmed : t,
+            ),
+          }
+        }),
+      deleteTag: (tag) =>
+        set((state) => ({
+          notes: state.notes.map((note) =>
+            note.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
+              ? {
+                  ...note,
+                  tags: note.tags.filter(
+                    (t) => t.toLowerCase() !== tag.toLowerCase(),
+                  ),
+                }
+              : note,
+          ),
+          activeTags: state.activeTags.filter(
+            (t) => t.toLowerCase() !== tag.toLowerCase(),
+          ),
+        })),
     }),
     {
       name: 'myspace-notes',
-      version: 3,
+      version: 4,
       migrate: (persistedState, version) => {
-        if (version < 3) {
-          const state = persistedState as { notes: Note[] }
-          return {
-            ...state,
+        const state = persistedState as Partial<NotesState> & {
+          notes?: Note[]
+          activeTag?: string | null
+        }
+        let next: Partial<NotesState> = { ...state }
+        if (version < 3 && Array.isArray(state.notes)) {
+          next = {
+            ...next,
             notes: state.notes.map((note) =>
               normalizeNote(note as Note & { isReadOnly?: boolean }),
             ),
           }
         }
-        return persistedState as NotesState
+        if (version < 4) {
+          const legacyTag = state.activeTag ?? null
+          next = {
+            ...next,
+            activeTags: legacyTag ? [legacyTag] : [],
+            tagFilterMode: 'OR',
+            untaggedOnly: false,
+            favoritesOnly: false,
+            sortBy: 'updated-desc',
+          }
+          delete (next as { activeTag?: unknown }).activeTag
+        }
+        return next as NotesState
       },
-      partialize: (state) => ({ notes: state.notes }),
+      partialize: (state) => ({
+        notes: state.notes,
+        sortBy: state.sortBy,
+        favoritesOnly: state.favoritesOnly,
+      }),
       onRehydrateStorage: () => (state) => {
         if (state && state.notes.length === 0) {
           state.notes = SEED_NOTES

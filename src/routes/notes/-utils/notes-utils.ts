@@ -2,7 +2,9 @@ import { generateText } from '@tiptap/core'
 import type { JSONContent } from '@tiptap/core'
 
 import { createContentExtensions } from '#/routes/notes/-utils/tiptap-extensions'
-import type { Note } from '#/stores/notes-store'
+import type { Note, NotesSortBy, TagFilterMode } from '#/stores/notes-store'
+
+const MAX_TAG_LENGTH = 32
 
 const contentExtensions = createContentExtensions()
 
@@ -42,6 +44,19 @@ export function getExcerpt(content: JSONContent, maxLength = 120): string {
   return `${plain.slice(0, maxLength).trim()}…`
 }
 
+export function isEmptyDoc(content: JSONContent): boolean {
+  const nodes = content.content ?? []
+  if (nodes.length === 0) return true
+  if (nodes.length === 1 && nodes[0].type === 'paragraph') {
+    const children = nodes[0].content ?? []
+    return (
+      children.length === 0 ||
+      children.every((n) => n.type === 'text' && !n.text?.trim())
+    )
+  }
+  return false
+}
+
 export function getAllTags(notes: Note[]): string[] {
   const tags = new Set<string>()
   for (const note of notes) {
@@ -52,22 +67,78 @@ export function getAllTags(notes: Note[]): string[] {
   return Array.from(tags).sort((a, b) => a.localeCompare(b))
 }
 
+export function normalizeTag(raw: string): string {
+  return raw
+    .replace(/^#+/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, MAX_TAG_LENGTH)
+}
+
+export function addTagsCaseInsensitive(
+  existing: string[],
+  candidate: string,
+): string[] {
+  const lower = candidate.toLowerCase()
+  if (existing.some((t) => t.toLowerCase() === lower)) {
+    return existing
+  }
+  return [...existing, candidate]
+}
+
+export interface NotesFilterOptions {
+  query: string
+  activeTags: string[]
+  tagFilterMode: TagFilterMode
+  untaggedOnly: boolean
+  favoritesOnly: boolean
+  sortBy: NotesSortBy
+}
+
+function compareSort(a: Note, b: Note, sortBy: NotesSortBy): number {
+  switch (sortBy) {
+    case 'updated-desc':
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    case 'created-desc':
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    case 'title-asc':
+      return (a.title || 'Untitled').localeCompare(b.title || 'Untitled')
+    case 'title-desc':
+      return (b.title || 'Untitled').localeCompare(a.title || 'Untitled')
+  }
+}
+
 export function filterNotes(
   notes: Note[],
-  query: string,
-  tag: string | null,
+  options: NotesFilterOptions,
 ): Note[] {
+  const {
+    query,
+    activeTags,
+    tagFilterMode,
+    untaggedOnly,
+    favoritesOnly,
+    sortBy,
+  } = options
   const normalizedQuery = query.trim().toLowerCase()
+  const lowerActiveTags = activeTags.map((t) => t.toLowerCase())
 
   return notes
     .filter((note) => {
-      if (tag && !note.tags.includes(tag)) {
-        return false
+      if (favoritesOnly && !note.isFavorite) return false
+
+      if (untaggedOnly) {
+        if (note.tags.length > 0) return false
+      } else if (lowerActiveTags.length > 0) {
+        const lowerNoteTags = note.tags.map((t) => t.toLowerCase())
+        const matches =
+          tagFilterMode === 'AND'
+            ? lowerActiveTags.every((t) => lowerNoteTags.includes(t))
+            : lowerActiveTags.some((t) => lowerNoteTags.includes(t))
+        if (!matches) return false
       }
 
-      if (!normalizedQuery) {
-        return true
-      }
+      if (!normalizedQuery) return true
 
       const haystack = [
         note.title,
@@ -79,8 +150,5 @@ export function filterNotes(
 
       return haystack.includes(normalizedQuery)
     })
-    .sort(
-      (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    )
+    .sort((a, b) => compareSort(a, b, sortBy))
 }

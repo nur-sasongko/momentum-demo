@@ -8,15 +8,19 @@ import { useNotesStore } from '#/stores/notes-store'
 interface NoteListItemProps {
   note: Note
   isActive: boolean
+  onSelect?: () => void
 }
 
-export function NoteListItem({ note, isActive }: NoteListItemProps) {
+export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
   const selectNote = useNotesStore((s) => s.selectNote)
 
   return (
     <button
       type="button"
-      onClick={() => selectNote(note.id)}
+      onClick={() => {
+        selectNote(note.id)
+        onSelect?.()
+      }}
       className={cn(
         'w-full border-b border-border px-4 py-3 text-left transition-colors',
         isActive ? 'bg-primary/10' : 'hover:bg-muted/50',
@@ -43,7 +47,7 @@ export function NoteListItem({ note, isActive }: NoteListItemProps) {
       </p>
       {note.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1">
-          {note.tags.map((tag) => (
+          {[...new Set(note.tags)].map((tag) => (
             <span key={tag} className="text-xs text-primary">
               #{tag}
             </span>

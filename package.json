@@ -6,7 +6,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "vite dev",
     "build": "vite build && bun run generate-sw",
     "generate-sw": "bun scripts/generate-sw.ts",
     "preview": "vite preview",

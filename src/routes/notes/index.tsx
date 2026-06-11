@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 
 import { NoteEditor } from '#/routes/notes/-components/note-editor'
 import { NoteList } from '#/routes/notes/-components/note-list'
 import { NotesEmptyState } from '#/routes/notes/-components/notes-empty-state'
+import { useIsMobile } from '#/hooks/use-mobile'
 import { useNotesStore } from '#/stores/notes-store'
 
 export const Route = createFileRoute('/notes/')({
@@ -15,9 +17,14 @@ export const Route = createFileRoute('/notes/')({
 function NotesPage() {
   const notes = useNotesStore((s) => s.notes)
   const selectedId = useNotesStore((s) => s.selectedId)
+  const isMobile = useIsMobile()
+  const [mobileView, setMobileView] = useState<'list' | 'editor'>('list')
 
-  const selectedNote =
-    notes.find((note) => note.id === selectedId) ?? notes[0]
+  const selectedNote = notes.find((note) => note.id === selectedId) ?? notes[0]
+
+  const handleNoteSelect = () => {
+    if (isMobile) setMobileView('editor')
+  }
 
   if (notes.length === 0) {
     return (
@@ -29,8 +36,15 @@ function NotesPage() {
 
   return (
     <div className="route-fade-in flex h-[calc(100dvh-3.5rem)] overflow-hidden">
-      <NoteList />
-      <NoteEditor note={selectedNote} />
+      {(!isMobile || mobileView === 'list') && (
+        <NoteList onNoteSelect={handleNoteSelect} />
+      )}
+      {(!isMobile || mobileView === 'editor') && (
+        <NoteEditor
+          note={selectedNote}
+          onBack={isMobile ? () => setMobileView('list') : undefined}
+        />
+      )}
     </div>
   )
 }

@@ -1,5 +1,14 @@
 import type { Editor } from '@tiptap/core'
-import { Lock, Redo2, Tag, Trash2, Undo2, Unlock } from 'lucide-react'
+import {
+  ChevronLeft,
+  Lock,
+  Redo2,
+  Star,
+  Tag,
+  Trash2,
+  Undo2,
+  Unlock,
+} from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -13,18 +22,22 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { cn } from '#/libs/utils'
-import { formatRelativeTime } from '../-utils/notes-utils'
+import { formatRelativeTime, getAllTags } from '../-utils/notes-utils'
+import { TagInput } from '#/routes/notes/-components/tag-input'
 import { TiptapEditor } from '#/routes/notes/-components/tiptap-editor'
 import type { Note } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'
 
 interface NoteEditorProps {
   note: Note
+  onBack?: () => void
 }
 
-export function NoteEditor({ note }: NoteEditorProps) {
+export function NoteEditor({ note, onBack }: NoteEditorProps) {
+  const allNotes = useNotesStore((s) => s.notes)
   const updateNote = useNotesStore((s) => s.updateNote)
   const deleteNote = useNotesStore((s) => s.deleteNote)
+  const toggleFavorite = useNotesStore((s) => s.toggleFavorite)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const editorRef = useRef<Editor | null>(null)
   const [canUndo, setCanUndo] = useState(false)
@@ -38,7 +51,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const undoDisabled = note.isReadOnly || !canUndo
   const redoDisabled = note.isReadOnly || !canRedo
 
-  const primaryTag = note.tags.length > 0 ? note.tags[0] : 'Untagged'
+  const tagSuggestions = getAllTags(allNotes)
 
   const handleDelete = () => {
     deleteNote(note.id)
@@ -54,12 +67,28 @@ export function NoteEditor({ note }: NoteEditorProps) {
 
   return (
     <section className="flex min-w-0 flex-1 flex-col">
-      <div className="flex items-center justify-between border-b border-border px-6 py-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Tag className="size-4" />
-          <span>{primaryTag}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-3 md:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
+          {onBack ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={onBack}
+              aria-label="Back to notes"
+              className="text-muted-foreground"
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+          ) : null}
+          <Tag className="size-4 shrink-0" />
+          <TagInput
+            value={note.tags}
+            onChange={(tags) => updateNote(note.id, { tags })}
+            suggestions={tagSuggestions}
+            disabled={note.isReadOnly}
+          />
           {note.isReadOnly ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
               Read-only
             </span>
           ) : null}
@@ -85,6 +114,21 @@ export function NoteEditor({ note }: NoteEditorProps) {
             className="text-muted-foreground"
           >
             <Redo2 className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => toggleFavorite(note.id)}
+            aria-label={
+              note.isFavorite ? 'Remove from favorites' : 'Add to favorites'
+            }
+            aria-pressed={note.isFavorite}
+            className={cn(
+              'text-muted-foreground',
+              note.isFavorite && 'text-amber-500 hover:text-amber-500',
+            )}
+          >
+            <Star className={cn('size-4', note.isFavorite && 'fill-current')} />
           </Button>
           <Button
             variant={note.isReadOnly ? 'secondary' : 'ghost'}

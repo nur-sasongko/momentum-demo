@@ -43,7 +43,7 @@ export function SpendingByCategoryChart() {
           </p>
         ) : (
           <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={256}>
               <BarChart
                 data={data}
                 margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
@@ -65,7 +65,9 @@ export function SpendingByCategoryChart() {
                   className="text-muted-foreground"
                 />
                 <Tooltip
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value) =>
+                    typeof value === 'number' ? formatCurrency(value) : ''
+                  }
                   contentStyle={{
                     backgroundColor: 'hsl(var(--popover))',
                     border: '1px solid hsl(var(--border))',
