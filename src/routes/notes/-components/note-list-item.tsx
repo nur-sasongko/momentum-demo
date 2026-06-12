@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react'
+import { Lock, Star } from 'lucide-react'
 
 import { formatRelativeTime, getExcerpt } from '../-utils/notes-utils'
 import { cn } from '#/libs/utils'
@@ -32,6 +32,12 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
             <Lock
               className="size-3 shrink-0 text-muted-foreground"
               aria-label="Read-only"
+            />
+          ) : null}
+          {note.isFavorite ? (
+            <Star
+              className="size-3 shrink-0 fill-current text-amber-500"
+              aria-label="Favorited"
             />
           ) : null}
           <h3 className="line-clamp-1 text-sm font-semibold text-foreground">
