@@ -17,7 +17,9 @@ import { formatMonthLabel } from '#/utils/date'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 
-const ALL_CATEGORIES = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES]
+const ALL_CATEGORIES = [
+  ...new Set([...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES]),
+]
 
 export function FinanceFilters() {
   const transactions = useFinanceStore((s) => s.transactions)
