@@ -1,7 +1,6 @@
 import { useRouterState } from '@tanstack/react-router'
 import { Check, Monitor, Moon, Plus, Sun, User } from 'lucide-react'
 
-import { useTheme } from '#/components/ThemeToggle'
 import { Button } from '#/components/ui/button'
 import {
   DropdownMenu,
@@ -12,9 +11,10 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { SidebarTrigger, useSidebar } from '#/components/ui/sidebar'
+import { useTheme } from '#/hooks/use-theme'
 import { useHabitsStore } from '#/stores/habits-store'
 
-import type { Theme } from '#/components/ThemeToggle'
+import type { Theme } from '#/hooks/use-theme'
 import { formatTodayDate } from '#/utils/date'
 
 const themeOptions: { value: Theme; label: string; icon: typeof Sun }[] = [
@@ -28,8 +28,7 @@ export function TopBar() {
   const setNewHabitOpen = useHabitsStore((s) => s.setNewHabitOpen)
   const isHabits = pathname === '/habits'
   const { state, isMobile, openMobile } = useSidebar()
-  const showSidebarTrigger =
-    isMobile ? !openMobile : state === 'collapsed'
+  const showSidebarTrigger = isMobile ? !openMobile : state === 'collapsed'
   const { theme, setTheme } = useTheme()
 
   return (
