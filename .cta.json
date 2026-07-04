@@ -1,5 +1,5 @@
 {
-  "projectName": "sasongko-app",
+  "projectName": "momentum",
   "mode": "file-router",
   "typescript": true,
   "packageManager": "bun",

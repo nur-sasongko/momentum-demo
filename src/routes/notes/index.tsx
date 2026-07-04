@@ -9,7 +9,7 @@ import { useNotesStore } from '#/stores/notes-store'
 
 export const Route = createFileRoute('/notes/')({
   head: () => ({
-    meta: [{ title: 'Second Brain — MySpace' }],
+    meta: [{ title: 'Second Brain — Momentum' }],
   }),
   component: NotesPage,
 })

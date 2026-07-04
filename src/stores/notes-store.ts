@@ -31,9 +31,9 @@ function daysAgo(days: number, minutesOffset = 0): string {
 export const SEED_NOTES: Note[] = [
   {
     id: 'note-welcome',
-    title: 'Welcome to MySpace',
+    title: 'Welcome to Momentum',
     content: buildSeedContent([
-      { type: 'heading', level: 1, text: 'Welcome to MySpace' },
+      { type: 'heading', level: 1, text: 'Welcome to Momentum' },
       {
         type: 'paragraph',
         text: 'Your personal space for notes, habits, and finance — all in one place.',

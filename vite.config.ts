@@ -18,8 +18,8 @@ const config = defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png'],
       manifest: {
-        name: 'MySpace',
-        short_name: 'MySpace',
+        name: 'Momentum',
+        short_name: 'Momentum',
         description: 'Personal productivity app',
         theme_color: '#111111',
         background_color: '#111111',

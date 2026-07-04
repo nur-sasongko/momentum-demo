@@ -10,7 +10,7 @@ import { useFinanceStore } from '#/stores/finance-store'
 
 export const Route = createFileRoute('/finance/')({
   head: () => ({
-    meta: [{ title: 'Finance — MySpace' }],
+    meta: [{ title: 'Finance — Momentum' }],
   }),
   component: FinancePage,
 })

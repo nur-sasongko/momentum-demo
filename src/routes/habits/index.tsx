@@ -6,7 +6,7 @@ import { NewHabitModal } from '#/routes/habits/-components/new-habit-modal'
 
 export const Route = createFileRoute('/habits/')({
   head: () => ({
-    meta: [{ title: 'Habits — MySpace' }],
+    meta: [{ title: 'Habits — Momentum' }],
   }),
   component: HabitsPage,
 })

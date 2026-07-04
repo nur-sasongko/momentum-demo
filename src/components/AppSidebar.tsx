@@ -44,12 +44,16 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-1">
-            <SidebarMenuButton size="lg" tooltip="MySpace" className="min-w-0 flex-1">
+            <SidebarMenuButton
+              size="lg"
+              tooltip="Momentum"
+              className="min-w-0 flex-1"
+            >
               <span className="flex size-8 items-center justify-center rounded-lg bg-primary/20 text-xs font-semibold text-primary">
-                MS
+                M
               </span>
               <span className="font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
-                MySpace
+                Momentum
               </span>
             </SidebarMenuButton>
             <SidebarTrigger className="shrink-0 group-data-[collapsible=icon]:hidden" />
