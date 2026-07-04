@@ -6,12 +6,10 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
-  SidebarTrigger,
+  useSidebar,
 } from '#/components/ui/sidebar'
 
 type EnabledNavItem = {
@@ -38,29 +36,10 @@ const navItems: NavItem[] = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const { isMobile, setOpenMobile } = useSidebar()
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-1">
-            <SidebarMenuButton
-              size="lg"
-              tooltip="Momentum"
-              className="min-w-0 flex-1"
-            >
-              <span className="flex size-8 items-center justify-center rounded-lg bg-primary/20 text-xs font-semibold text-primary">
-                M
-              </span>
-              <span className="font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
-                Momentum
-              </span>
-            </SidebarMenuButton>
-            <SidebarTrigger className="shrink-0 group-data-[collapsible=icon]:hidden" />
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
+    <Sidebar className="border-r">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -71,7 +50,7 @@ export function AppSidebar() {
                 if (!item.enabled) {
                   return (
                     <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton disabled tooltip="Coming soon">
+                      <SidebarMenuButton disabled>
                         <Icon />
                         <span>{item.label}</span>
                       </SidebarMenuButton>
@@ -87,9 +66,17 @@ export function AppSidebar() {
                         pathname === item.to ||
                         pathname.startsWith(`${item.to}/`)
                       }
-                      tooltip={item.label}
                     >
-                      <Link to={item.to}>
+                      <Link
+                        to={item.to}
+                        onClick={(event) => {
+                          if (isMobile) {
+                            setOpenMobile(false)
+                          } else {
+                            event.currentTarget.blur()
+                          }
+                        }}
+                      >
                         <Icon />
                         <span>{item.label}</span>
                       </Link>
@@ -101,7 +88,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarRail />
     </Sidebar>
   )
 }

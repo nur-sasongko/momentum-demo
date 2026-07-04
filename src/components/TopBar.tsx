@@ -27,14 +27,13 @@ export function TopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const setNewHabitOpen = useHabitsStore((s) => s.setNewHabitOpen)
   const isHabits = pathname === '/habits'
-  const { state, isMobile, openMobile } = useSidebar()
-  const showSidebarTrigger = isMobile ? !openMobile : state === 'collapsed'
+  const { isMobile, openMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 md:px-6">
+    <header className="flex h-(--topbar-height) shrink-0 items-center justify-between border-b border-border px-4 md:px-6">
       <div className="flex items-center gap-2">
-        {showSidebarTrigger && <SidebarTrigger />}
+        {isMobile && !openMobile && <SidebarTrigger />}
         <p className="text-sm font-medium tracking-tight text-foreground md:text-base">
           {formatTodayDate()}
         </p>
@@ -44,7 +43,7 @@ export function TopBar() {
         {isHabits && (
           <Button
             size="icon"
-            className="size-9 rounded-full"
+            className="size-8 rounded-full"
             onClick={() => setNewHabitOpen(true)}
             aria-label="New habit"
           >
@@ -56,10 +55,10 @@ export function TopBar() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-8 rounded-full p-0"
+              className="size-7 rounded-full p-0"
               aria-label="Profile menu"
             >
-              <span className="flex size-8 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
+              <span className="flex size-7 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
                 NS
               </span>
             </Button>
