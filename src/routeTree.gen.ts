@@ -9,68 +9,98 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as NotesIndexRouteImport } from './routes/notes/index'
-import { Route as HabitsIndexRouteImport } from './routes/habits/index'
-import { Route as FinanceIndexRouteImport } from './routes/finance/index'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
+import { Route as AuthenticatedHabitsIndexRouteImport } from './routes/_authenticated/habits/index'
+import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance/index'
 
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NotesIndexRoute = NotesIndexRouteImport.update({
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
   id: '/notes/',
   path: '/notes/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const HabitsIndexRoute = HabitsIndexRouteImport.update({
-  id: '/habits/',
-  path: '/habits/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FinanceIndexRoute = FinanceIndexRouteImport.update({
-  id: '/finance/',
-  path: '/finance/',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const AuthenticatedHabitsIndexRoute =
+  AuthenticatedHabitsIndexRouteImport.update({
+    id: '/habits/',
+    path: '/habits/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceIndexRoute =
+  AuthenticatedFinanceIndexRouteImport.update({
+    id: '/finance/',
+    path: '/finance/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/finance/': typeof FinanceIndexRoute
-  '/habits/': typeof HabitsIndexRoute
-  '/notes/': typeof NotesIndexRoute
+  '/login/': typeof LoginIndexRoute
+  '/finance/': typeof AuthenticatedFinanceIndexRoute
+  '/habits/': typeof AuthenticatedHabitsIndexRoute
+  '/notes/': typeof AuthenticatedNotesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/finance': typeof FinanceIndexRoute
-  '/habits': typeof HabitsIndexRoute
-  '/notes': typeof NotesIndexRoute
+  '/login': typeof LoginIndexRoute
+  '/finance': typeof AuthenticatedFinanceIndexRoute
+  '/habits': typeof AuthenticatedHabitsIndexRoute
+  '/notes': typeof AuthenticatedNotesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/finance/': typeof FinanceIndexRoute
-  '/habits/': typeof HabitsIndexRoute
-  '/notes/': typeof NotesIndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login/': typeof LoginIndexRoute
+  '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
+  '/_authenticated/habits/': typeof AuthenticatedHabitsIndexRoute
+  '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/finance/' | '/habits/' | '/notes/'
+  fullPaths: '/' | '/login/' | '/finance/' | '/habits/' | '/notes/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/finance' | '/habits' | '/notes'
-  id: '__root__' | '/' | '/finance/' | '/habits/' | '/notes/'
+  to: '/' | '/login' | '/finance' | '/habits' | '/notes'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login/'
+    | '/_authenticated/finance/'
+    | '/_authenticated/habits/'
+    | '/_authenticated/notes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  FinanceIndexRoute: typeof FinanceIndexRoute
-  HabitsIndexRoute: typeof HabitsIndexRoute
-  NotesIndexRoute: typeof NotesIndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginIndexRoute: typeof LoginIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -78,35 +108,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/notes/': {
-      id: '/notes/'
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/notes/': {
+      id: '/_authenticated/notes/'
       path: '/notes'
       fullPath: '/notes/'
-      preLoaderRoute: typeof NotesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedNotesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/habits/': {
-      id: '/habits/'
+    '/_authenticated/habits/': {
+      id: '/_authenticated/habits/'
       path: '/habits'
       fullPath: '/habits/'
-      preLoaderRoute: typeof HabitsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedHabitsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/finance/': {
-      id: '/finance/'
+    '/_authenticated/finance/': {
+      id: '/_authenticated/finance/'
       path: '/finance'
       fullPath: '/finance/'
-      preLoaderRoute: typeof FinanceIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedFinanceIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedFinanceIndexRoute: typeof AuthenticatedFinanceIndexRoute
+  AuthenticatedHabitsIndexRoute: typeof AuthenticatedHabitsIndexRoute
+  AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedFinanceIndexRoute: AuthenticatedFinanceIndexRoute,
+  AuthenticatedHabitsIndexRoute: AuthenticatedHabitsIndexRoute,
+  AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  FinanceIndexRoute: FinanceIndexRoute,
-  HabitsIndexRoute: HabitsIndexRoute,
-  NotesIndexRoute: NotesIndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginIndexRoute: LoginIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

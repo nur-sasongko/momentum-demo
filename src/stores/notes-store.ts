@@ -2,7 +2,7 @@ import type { JSONContent } from '@tiptap/core'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import { buildSeedContent } from '#/routes/notes/-utils/tiptap-content'
+import { buildSeedContent } from '#/routes/_authenticated/notes/-utils/tiptap-content'
 
 export interface Note {
   id: string

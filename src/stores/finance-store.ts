@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 
 import { getCurrentMonthKey } from '#/utils/date'
 
-import type { FinanceCategory } from '#/routes/finance/-utils/finance-utils'
+import type { FinanceCategory } from '#/routes/_authenticated/finance/-utils/finance-utils'
 
 export type TransactionType = 'income' | 'expense'
 

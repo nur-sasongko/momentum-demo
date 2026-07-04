@@ -20,6 +20,8 @@
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
     "@hookform/resolvers": "^5.4.0",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.110.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/match-sorter-utils": "latest",
     "@tanstack/react-devtools": "latest",

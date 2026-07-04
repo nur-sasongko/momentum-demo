@@ -1,5 +1,10 @@
-import { useRouterState } from '@tanstack/react-router'
-import { Check, Monitor, Moon, Plus, Sun, User } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  useNavigate,
+  useRouteContext,
+  useRouterState,
+} from '@tanstack/react-router'
+import { Check, LogOut, Monitor, Moon, Plus, Sun } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import {
@@ -11,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { SidebarTrigger, useSidebar } from '#/components/ui/sidebar'
+import { signOut } from '#/libs/auth/auth-adapter'
 import { useTheme } from '#/hooks/use-theme'
 import { useHabitsStore } from '#/stores/habits-store'
 
@@ -29,6 +35,16 @@ export function TopBar() {
   const isHabits = pathname === '/habits'
   const { isMobile, openMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
+  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
+  const initials = user?.email?.slice(0, 2).toUpperCase() ?? '?'
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  async function handleLogout() {
+    await signOut()
+    queryClient.clear()
+    await navigate({ to: '/login' })
+  }
 
   return (
     <header className="flex h-(--topbar-height) shrink-0 items-center justify-between border-b border-border px-4 md:px-6">
@@ -59,7 +75,7 @@ export function TopBar() {
               aria-label="Profile menu"
             >
               <span className="flex size-7 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
-                NS
+                {initials}
               </span>
             </Button>
           </DropdownMenuTrigger>
@@ -81,9 +97,9 @@ export function TopBar() {
               )
             })}
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>
-              <User />
-              Profile
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

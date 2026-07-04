@@ -7,7 +7,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
-import { AppShell } from '#/components/AppShell'
+import { getUser } from '#/libs/auth/auth-adapter'
 import { THEME_INIT_SCRIPT } from '#/hooks/use-theme'
 import { Toaster } from '#/components/ui/sonner'
 import TanStackQueryDevtools from '../libs/tanstack-query/devtools'
@@ -21,6 +21,7 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+  beforeLoad: async () => ({ user: await getUser() }),
   head: () => ({
     meta: [
       {
@@ -65,7 +66,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="font-sans antialiased selection:bg-primary/30">
-        <AppShell>{children}</AppShell>
+        {children}
         <TanStackDevtools
           config={{
             position: 'bottom-right',
