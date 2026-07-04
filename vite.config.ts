@@ -16,7 +16,14 @@ const config = defineConfig({
     viteReact(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png'],
+      includeAssets: [
+        'favicon.ico',
+        'icon.svg',
+        'logo192.png',
+        'logo512.png',
+        'maskable512.png',
+        'apple-touch-icon.png',
+      ],
       // vite-plugin-pwa is only used here for manifest.webmanifest generation;
       // the real service worker is built by scripts/generate-sw.ts from src/sw.ts
       // (see docs/architecture/pwa.md). Disable its own precache glob so it stops
@@ -44,7 +51,7 @@ const config = defineConfig({
             type: 'image/png',
           },
           {
-            src: 'logo512.png',
+            src: 'maskable512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',

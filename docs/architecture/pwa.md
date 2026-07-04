@@ -59,5 +59,5 @@ If install button does not appear, inspect Manifest installability diagnostics f
 ## Maintenance notes
 
 - Keep manifest metadata in `vite.config.ts` aligned with product name/theme.
-- Replace starter icons (`logo192.png`, `logo512.png`) before release.
+- Icon master art is `public/icon.svg` (also served as the SVG favicon). The PNG derivatives (`logo192.png`, `logo512.png`, `maskable512.png`, `apple-touch-icon.png`) and `favicon.ico` are rendered from it — regenerate all of them together when the mark changes. `maskable512.png` keeps the mark inside the ~80% safe zone on a full-bleed background; `apple-touch-icon.png` is full-bleed square (iOS applies its own corner mask).
 - If changing build output behavior, re-check that `dist/sw.js` is still created.
