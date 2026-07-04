@@ -19,6 +19,13 @@ const config = defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png'],
+      // vite-plugin-pwa is only used here for manifest.webmanifest generation;
+      // the real service worker is built by scripts/generate-sw.ts from src/sw.ts
+      // (see docs/architecture/pwa.md). Disable its own precache glob so it stops
+      // scanning dist/ for assets and warning when none match.
+      workbox: {
+        globPatterns: [],
+      },
       manifest: {
         name: 'Momentum',
         short_name: 'Momentum',
