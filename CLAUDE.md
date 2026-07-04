@@ -32,11 +32,11 @@ bunx --bun shadcn@latest add <component>
 
 ## Architecture
 
-**TanStack Start SSR app** — React 19 with server-side rendering via `@tanstack/react-start`. The Vite config (`vite.config.ts`) wires together TanStack Start, React, and Tailwind CSS v4 plugins.
+**Static SPA** — React 19 client-rendered via `@tanstack/react-router` (no SSR — see [`docs/specs/core-remove-ssr.md`](docs/specs/core-remove-ssr.md)). Entry point is `index.html` → `src/entry-client.tsx`, which mounts `RouterProvider`. The Vite config (`vite.config.ts`) wires together the TanStack Router plugin (route generation), React, and Tailwind CSS v4 plugins. `vite build` produces a flat static `dist/` deployable to any static host (with SPA-fallback rewrites configured).
 
 ### Routing
 
-File-based routing via `@tanstack/react-router`. Drop a file in `src/routes/` and the router plugin auto-generates `src/routeTree.gen.ts` — never edit that file manually. The root layout (`src/routes/__root.tsx`) resolves the current user (`beforeLoad`) and wraps all routes with theme initialization and devtools panels only — it does not render app chrome.
+File-based routing via `@tanstack/react-router`. Drop a file in `src/routes/` and the router plugin auto-generates `src/routeTree.gen.ts` — never edit that file manually. The root layout (`src/routes/__root.tsx`) resolves the current user (`beforeLoad`, client-only session check) and renders devtools panels and the toaster only — it does not render app chrome or document head tags (those live in `index.html`).
 
 `/habits`, `/finance`, `/notes` are nested under the `_authenticated` pathless layout (`src/routes/_authenticated.tsx`), which redirects unauthenticated visitors to `/login` and renders `<AppShell>` (sidebar/`TopBar` chrome). Public routes like `/login` and `/(marketing)/about` sit outside `_authenticated` and render without that chrome.
 
@@ -52,7 +52,7 @@ Feature-first layout: vertical slices (`-components/`, `-utils/`, `-queries/`, e
 
 ### Data & State
 
-- **TanStack Query** — `QueryClient` is created in `src/libs/tanstack-query/root-provider.tsx` and injected into the router context (`src/router.tsx`). SSR integration is set up via `setupRouterSsrQueryIntegration`, which makes queries SSR-safe without extra boilerplate.
+- **TanStack Query** — `QueryClient` is created in `src/libs/tanstack-query/root-provider.tsx`, injected into the router context, and provided to the tree via the router's `Wrap` option (`src/router.tsx`), which renders `QueryClientProvider`.
 - **Zustand** — persisted client state in `src/stores/` (e.g. `habits-store.ts`, `finance-store.ts`, `notes-store.ts`). Feature helpers live in `src/routes/<feature>/-utils/`.
 - Route loaders (via `loader:` in `createFileRoute`) are the preferred way to fetch data for a route before it renders.
 
@@ -66,19 +66,19 @@ Tailwind CSS v4 with CSS variables for theming. Global styles in `src/styles.css
 
 ### Theme System
 
-Dark/light/auto theme cycling (light → dark → auto), persisted in `localStorage`. An inline `<script>` in `__root.tsx` (`THEME_INIT_SCRIPT`) applies the stored theme before hydration to prevent flash of unstyled content. Theme state lives entirely in `ThemeToggle.tsx` — there is no global store for it.
+Dark/light/auto theme cycling (light → dark → auto), persisted in `localStorage`. An inline `<script>` in `index.html` (kept in sync with `THEME_INIT_SCRIPT` in `src/hooks/use-theme.ts`) applies the stored theme before first paint to prevent flash of unstyled content. Theme state lives entirely in `ThemeToggle.tsx` — there is no global store for it.
 
 ### Backend / Supabase
 
 - Env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) are validated at import-time by `src/libs/env.ts` (`#/libs/env`) — fails fast with a clear error if missing/invalid. See `.env.example`.
-- Supabase client factories live in `src/libs/supabase/`: `client.ts` (`getSupabaseBrowserClient()`, memoized per tab) and `server.ts` (`getSupabaseServerClient()`, one instance per request, wired to TanStack Start's `getCookies`/`setCookie`). Route/component code should never import `@supabase/supabase-js`/`@supabase/ssr` directly — always go through these factories or the auth adapter to keep the app portable to a self-hosted Supabase instance or a different backend later. See [`docs/specs/core-supabase-postgres.md`](docs/specs/core-supabase-postgres.md).
-- Auth adapter — `src/libs/auth/auth-adapter.ts` (`#/libs/auth/auth-adapter`) exposes `signInWithPassword`, `signOut`, `getUser`, `getSession`; the only file (besides the client factories above) that touches Supabase auth APIs directly. `getUser()`'s server branch revalidates against Supabase Auth (the real security boundary, used in the root `beforeLoad`); its client branch reads the local session cookie only (`getSession()`), avoiding a network round-trip on every SPA navigation. See [`docs/specs/core-auth-login-logout.md`](docs/specs/core-auth-login-logout.md).
+- The Supabase client factory lives at `src/libs/supabase/client.ts` (`getSupabaseBrowserClient()`, memoized per tab, `@supabase/supabase-js`'s browser client with localStorage-based sessions). Route/component code should never import `@supabase/supabase-js` directly — always go through this factory or the auth adapter to keep the app portable to a self-hosted Supabase instance or a different backend later. See [`docs/specs/core-supabase-postgres.md`](docs/specs/core-supabase-postgres.md).
+- Auth adapter — `src/libs/auth/auth-adapter.ts` (`#/libs/auth/auth-adapter`) exposes `signInWithPassword`, `signOut`, `getUser`, `getSession`; the only file (besides the client factory above) that touches Supabase auth APIs directly. Both `getUser()` and `getSession()` are client-only — there is no server-side revalidation (no SSR, no remote app data to gate; see [`docs/specs/core-remove-ssr.md`](docs/specs/core-remove-ssr.md)). See [`docs/specs/core-auth-login-logout.md`](docs/specs/core-auth-login-logout.md).
 
 ### PWA
 
 - PWA architecture details live in `docs/architecture/pwa.md`.
-- Build command `bun --bun run build` must generate `dist/client/sw.js` via `scripts/generate-sw.ts` (post-build step).
-- If installability regresses, verify `src/routes/__root.tsx` still includes manifest/theme/icon head tags and check browser Application -> Manifest diagnostics.
+- Build command `bun --bun run build` must generate `dist/sw.js` via `scripts/generate-sw.ts` (post-build step).
+- If installability regresses, verify `index.html` still includes manifest/theme/icon head tags and check browser Application -> Manifest diagnostics.
 
 ## Specs
 

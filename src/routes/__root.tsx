@@ -1,18 +1,14 @@
 import {
-  HeadContent,
   Link,
-  Scripts,
+  Outlet,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import { getUser } from '#/libs/auth/auth-adapter'
-import { THEME_INIT_SCRIPT } from '#/hooks/use-theme'
 import { Toaster } from '#/components/ui/sonner'
 import TanStackQueryDevtools from '../libs/tanstack-query/devtools'
-
-import appCss from '../styles.css?url'
 
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -22,67 +18,28 @@ interface MyRouterContext {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   beforeLoad: async () => ({ user: await getUser() }),
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'Momentum',
-      },
-      {
-        name: 'theme-color',
-        content: '#111111',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-      {
-        rel: 'manifest',
-        href: '/manifest.webmanifest',
-      },
-      {
-        rel: 'apple-touch-icon',
-        href: '/logo192.png',
-      },
-    ],
-  }),
-  shellComponent: RootDocument,
   notFoundComponent: RootNotFoundComponent,
+  component: RootComponent,
 })
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootComponent() {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <HeadContent />
-      </head>
-      <body className="font-sans antialiased selection:bg-primary/30">
-        {children}
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
-        <Toaster />
-        <Scripts />
-      </body>
-    </html>
+    <>
+      <Outlet />
+      <TanStackDevtools
+        config={{
+          position: 'bottom-right',
+        }}
+        plugins={[
+          {
+            name: 'Tanstack Router',
+            render: <TanStackRouterDevtoolsPanel />,
+          },
+          TanStackQueryDevtools,
+        ]}
+      />
+      <Toaster />
+    </>
   )
 }
 

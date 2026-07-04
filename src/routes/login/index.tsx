@@ -17,9 +17,6 @@ export const Route = createFileRoute('/login/')({
       throw redirect({ to: search.redirect ?? '/habits' })
     }
   },
-  head: () => ({
-    meta: [{ title: 'Log in — Momentum' }],
-  }),
   component: LoginPage,
 })
 

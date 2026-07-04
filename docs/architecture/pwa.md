@@ -1,6 +1,6 @@
 # PWA Architecture
 
-This project supports Progressive Web App (PWA) installability and offline caching on top of TanStack Start SSR.
+This project supports Progressive Web App (PWA) installability and offline caching on top of a static Vite SPA build (see `docs/specs/core-remove-ssr.md`).
 
 Related architecture docs:
 
@@ -10,25 +10,24 @@ Related architecture docs:
 
 ## Why this setup exists
 
-TanStack Start uses SSR build behavior that does not reliably emit `sw.js` from `vite-plugin-pwa` alone in this repository.  
-To keep installability and offline support working, this project uses a split approach:
+`vite-plugin-pwa`'s own `generateSW` output isn't used directly for the service worker itself — this project uses a split approach so the service worker source stays a plain, readable TypeScript file (`src/sw.ts`) instead of `vite-plugin-pwa`'s generated Workbox config:
 
 - `vite-plugin-pwa` for manifest generation
 - a post-build Workbox step for service worker output
 
 ## Build and runtime flow
 
-1. `vite build` generates client/server bundles and `manifest.webmanifest`.
+1. `vite build` generates a flat static `dist/` bundle and `manifest.webmanifest`.
 2. `bun run generate-sw` runs `scripts/generate-sw.ts`.
 3. `scripts/generate-sw.ts` compiles `src/sw.ts` and injects precache assets.
-4. `dist/client/sw.js` is produced for browser registration.
+4. `dist/sw.js` is produced for browser registration.
 
 ## Source of truth
 
 - PWA plugin config: `vite.config.ts`
 - Service worker source: `src/sw.ts`
 - Service worker generator: `scripts/generate-sw.ts`
-- Root document head tags (`manifest`, `theme-color`, `apple-touch-icon`): `src/routes/__root.tsx`
+- Root document head tags (`manifest`, `theme-color`, `apple-touch-icon`): `index.html`
 
 ## Caching strategy
 
@@ -36,7 +35,7 @@ To keep installability and offline support working, this project uses a split ap
 - **Static resources** (`style`, `script`, `worker`): `CacheFirst` (`static-resources`)
 - **Images**: `CacheFirst` (`images-cache`)
 
-This balances freshness for SSR pages with fast repeated loads for static assets.
+This balances freshness for navigations with fast repeated loads for static assets.
 
 ## Required commands
 
@@ -61,4 +60,4 @@ If install button does not appear, inspect Manifest installability diagnostics f
 
 - Keep manifest metadata in `vite.config.ts` aligned with product name/theme.
 - Replace starter icons (`logo192.png`, `logo512.png`) before release.
-- If changing build output behavior, re-check that `dist/client/sw.js` is still created.
+- If changing build output behavior, re-check that `dist/sw.js` is still created.

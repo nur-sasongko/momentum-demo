@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { env } from '#/libs/env'
 
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -6,7 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 let browserClient: SupabaseClient | undefined
 
 export function getSupabaseBrowserClient(): SupabaseClient {
-  browserClient ??= createBrowserClient(
+  browserClient ??= createClient(
     env.VITE_SUPABASE_URL,
     env.VITE_SUPABASE_PUBLISHABLE_KEY,
   )

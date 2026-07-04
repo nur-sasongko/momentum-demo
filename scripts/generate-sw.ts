@@ -4,12 +4,12 @@ import { existsSync, unlinkSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { injectManifest } from 'workbox-build'
 
-const distClient = resolve(import.meta.dirname, '../dist/client')
+const distDir = resolve(import.meta.dirname, '../dist')
 const srcSw = resolve(import.meta.dirname, '../src/sw.ts')
 
 async function generateServiceWorker() {
-  if (!existsSync(distClient)) {
-    console.error('Error: dist/client does not exist. Run build first.')
+  if (!existsSync(distDir)) {
+    console.error('Error: dist does not exist. Run build first.')
     process.exit(1)
   }
 
@@ -27,7 +27,7 @@ async function generateServiceWorker() {
   }
 
   const swJsContent = await transpiled.outputs[0].text()
-  const tempSwPath = resolve(distClient, 'sw-src.js')
+  const tempSwPath = resolve(distDir, 'sw-src.js')
   writeFileSync(tempSwPath, swJsContent)
 
   console.log('Generating service worker with workbox...')
@@ -35,8 +35,8 @@ async function generateServiceWorker() {
   try {
     const { count, size, warnings } = await injectManifest({
       swSrc: tempSwPath,
-      swDest: resolve(distClient, 'sw.js'),
-      globDirectory: distClient,
+      swDest: resolve(distDir, 'sw.js'),
+      globDirectory: distDir,
       globPatterns: ['**/*.{js,css,ico,png,svg,woff2,webmanifest}'],
       globIgnores: ['sw-src.js', 'sw.js'],
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,

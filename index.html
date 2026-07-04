@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Momentum</title>
+    <meta name="theme-color" content="#111111" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <!-- Keep in sync with THEME_INIT_SCRIPT in src/hooks/use-theme.ts -->
+    <script>
+      ;(function () {
+        try {
+          var t = localStorage.getItem('theme') || 'dark'
+          var r = document.documentElement
+          r.classList.remove('light', 'dark', 'auto')
+          if (t === 'auto') {
+            r.classList.add('auto')
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches)
+              r.classList.add('dark')
+          } else if (t === 'dark') {
+            r.classList.add('dark')
+          } else {
+            r.classList.add('light')
+          }
+        } catch (e) {}
+      })()
+    </script>
+  </head>
+  <body class="font-sans antialiased selection:bg-primary/30">
+    <div id="root"></div>
+    <script type="module" src="/src/entry-client.tsx"></script>
+  </body>
+</html>
