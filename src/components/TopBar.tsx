@@ -47,7 +47,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="flex h-(--topbar-height) shrink-0 items-center justify-between border-b border-border px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-(--topbar-height) shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-6">
       <div className="flex items-center gap-2">
         {isMobile && !openMobile && <SidebarTrigger />}
         <p className="text-sm font-medium tracking-tight text-foreground md:text-base">
