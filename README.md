@@ -71,10 +71,3 @@ Full guidance for contributing with Claude Code lives in [`CLAUDE.md`](CLAUDE.md
 ## Specs
 
 Feature work is documented as specs under `docs/specs/`. Use `/spec "description"` to scaffold a new one — see [`docs/architecture/spec-workflow.md`](docs/architecture/spec-workflow.md) for the lifecycle and conventions.
-
-## Learn More
-
-- [TanStack Start](https://tanstack.com/start)
-- [TanStack Router](https://tanstack.com/router)
-- [TanStack Query](https://tanstack.com/query)
-- [Supabase](https://supabase.com/docs)
