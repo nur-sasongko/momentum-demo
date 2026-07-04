@@ -72,3 +72,6 @@ Dark/light/auto theme cycling (light → dark → auto), persisted in `localStor
 - Build command `bun --bun run build` must generate `dist/client/sw.js` via `scripts/generate-sw.ts` (post-build step).
 - If installability regresses, verify `src/routes/__root.tsx` still includes manifest/theme/icon head tags and check browser Application -> Manifest diagnostics.
 
+## Specs
+
+Use `/spec "description"` to scaffold a new spec file from the template. See [`docs/architecture/spec-workflow.md`](docs/architecture/spec-workflow.md) for when to write a spec, the lifecycle, naming convention, and commit conventions.
