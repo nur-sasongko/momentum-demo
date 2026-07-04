@@ -7,6 +7,8 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import { nitro } from 'nitro/vite'
+
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
@@ -49,6 +51,7 @@ const config = defineConfig({
         suppressWarnings: true,
       },
     }),
+    nitro(),
   ],
 })
 

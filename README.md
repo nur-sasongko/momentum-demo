@@ -1,203 +1,80 @@
-Welcome to your new TanStack Start app!
+# Momentum
 
-# Getting Started
+A personal productivity app for tracking habits, finances, and notes, built with TanStack Start (React 19, SSR) and Supabase.
 
-To run this application:
+## Features
+
+- **Habits** — track daily/weekly habits and streaks
+- **Finance** — manage transactions and budgets
+- **Notes** — rich-text notes powered by Tiptap
+- Auth via Supabase, with protected routes and a persistent app shell (sidebar + top bar)
+- Installable as a PWA
+
+## Getting Started
+
+Install dependencies and copy the env template:
 
 ```bash
 bun install
+cp .env.example .env
+```
+
+Fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in `.env` (see `.env.example`).
+
+Run the dev server:
+
+```bash
 bun --bun run dev
 ```
 
-# Building For Production
+The app runs at [http://localhost:3000](http://localhost:3000).
 
-To build this application for production:
+> Use `bun --bun run <script>` for all scripts — the `--bun` flag ensures Bun's runtime is used instead of Node.
 
-```bash
-bun --bun run build
-```
-
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+## Scripts
 
 ```bash
-bun --bun run test
+bun --bun run dev            # dev server at http://localhost:3000
+bun --bun run build          # production build (also generates the service worker)
+bun --bun run test           # run all tests (vitest run)
+bun --bun run test:coverage  # run tests with istanbul coverage report
+bun --bun run lint           # eslint
+bun --bun run format         # prettier --write + eslint --fix
+bun --bun run check          # prettier --check (CI)
 ```
 
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `bun install @tailwindcss/vite tailwindcss -D`
-
-## Linting & Formatting
-
-This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
+Run a single test file:
 
 ```bash
-bun --bun run lint
-bun --bun run format
-bun --bun run check
+bunx vitest run src/path/to/file.test.ts
 ```
 
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+Add a Shadcn component:
 
 ```bash
-bunx --bun shadcn@latest add button
+bunx --bun shadcn@latest add <component>
 ```
 
-## Routing
+## Architecture
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
+Momentum is a **TanStack Start SSR app** — React 19 with server-side rendering. Key pieces:
 
-### Adding A Route
+- **Routing** — file-based routing via `@tanstack/react-router` (`src/routes/`). `/habits`, `/finance`, `/notes` sit under the `_authenticated` layout, which requires a logged-in user and renders the app shell (sidebar/top bar). Public routes like `/login` and `/(marketing)/about` render without that chrome.
+- **Feature-first layout** — each feature is a vertical slice colocated with its route (`-components/`, `-utils/`, `-queries/`, etc). See [`docs/architecture/feature-slices.md`](docs/architecture/feature-slices.md).
+- **Data & state** — TanStack Query for server state (SSR-safe via `setupRouterSsrQueryIntegration`), Zustand for persisted client state (`src/stores/`).
+- **Styling** — Tailwind CSS v4 with CSS variables for theming; Shadcn components (new-york style, zinc base color).
+- **Backend** — Supabase (Postgres + Auth). All Supabase access goes through client factories in `src/libs/supabase/` and the auth adapter in `src/libs/auth/auth-adapter.ts` — never import `@supabase/supabase-js` directly elsewhere. See [`docs/specs/core-supabase-postgres.md`](docs/specs/core-supabase-postgres.md) and [`docs/specs/core-auth-login-logout.md`](docs/specs/core-auth-login-logout.md).
+- **PWA** — see [`docs/architecture/pwa.md`](docs/architecture/pwa.md).
 
-To add a new route to your application just add a new file in the `./src/routes` directory.
+Full guidance for contributing with Claude Code lives in [`CLAUDE.md`](CLAUDE.md).
 
-TanStack will automatically generate the content of the route file for you.
+## Specs
 
-Now that you have two routes you can use a `Link` component to navigate between them.
+Feature work is documented as specs under `docs/specs/`. Use `/spec "description"` to scaffold a new one — see [`docs/architecture/spec-workflow.md`](docs/architecture/spec-workflow.md) for the lifecycle and conventions.
 
-### Adding Links
+## Learn More
 
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from '@tanstack/react-router'
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
+- [TanStack Start](https://tanstack.com/start)
+- [TanStack Router](https://tanstack.com/router)
+- [TanStack Query](https://tanstack.com/query)
+- [Supabase](https://supabase.com/docs)
