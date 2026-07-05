@@ -1,4 +1,4 @@
-import type {Task, TaskList} from '#/stores/tasks-store';
+import type { Task, TaskList } from '#/stores/tasks-store'
 
 interface NotificationShownRecord {
   [taskId: string]: string // ISO date when notification was last shown
@@ -64,19 +64,34 @@ export function shouldFireNotification(
   return true
 }
 
-export function fireNotification(task: Task, listName: string): void {
+export async function fireNotification(
+  task: Task,
+  listName: string,
+): Promise<void> {
   if (!('Notification' in window)) return
+  if (Notification.permission !== 'granted') return
 
-  if (Notification.permission === 'granted') {
-    new Notification('Task Due Soon', {
-      body: `${task.title} (in ${listName})`,
-      icon: '/favicon.ico',
-      tag: `task-${task.id}`, // Prevents duplicate notifications
-      requireInteraction: false,
-    })
-
-    markNotificationShown(task.id)
+  const options: NotificationOptions = {
+    body: `${task.title} (in ${listName})`,
+    icon: '/favicon.ico',
+    tag: `task-${task.id}`, // Prevents duplicate notifications
+    requireInteraction: false,
   }
+
+  // Once a service worker controls the page, some browsers (e.g. Chrome on
+  // Android) disallow `new Notification()` and require going through the
+  // registration instead.
+  const registration =
+    'serviceWorker' in navigator
+      ? await navigator.serviceWorker.getRegistration()
+      : undefined
+  if (registration) {
+    await registration.showNotification('Task Due Soon', options)
+  } else {
+    new Notification('Task Due Soon', options)
+  }
+
+  markNotificationShown(task.id)
 }
 
 export function requestNotificationPermission(): void {
@@ -106,7 +121,7 @@ export function checkAndFireNotifications(
       )
     ) {
       const listName = listMap.get(task.listId) || 'Unknown List'
-      fireNotification(task, listName)
+      void fireNotification(task, listName)
     }
   })
 }

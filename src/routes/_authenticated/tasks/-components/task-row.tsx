@@ -240,7 +240,7 @@ export function TaskRow({ task }: TaskRowProps) {
           variant="ghost"
           size="icon-xs"
           className={cn(
-            'opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100',
+            'opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100',
             task.starred && 'opacity-100',
           )}
           onClick={(e) => {
@@ -259,7 +259,7 @@ export function TaskRow({ task }: TaskRowProps) {
             <Button
               variant="ghost"
               size="icon-xs"
-              className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
+              className="opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-4 w-4" />

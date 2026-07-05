@@ -109,7 +109,7 @@ export function SubtaskRow({ taskId, subtask }: SubtaskRowProps) {
             <Button
               variant="ghost"
               size="icon-sm"
-              className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
+              className="opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 md:focus-visible:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-4 w-4" />

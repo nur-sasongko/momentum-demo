@@ -258,7 +258,7 @@ export function TaskBoard({ tasks, lists, selectedView }: TaskBoardProps) {
       <div
         ref={scrollRef}
         onPointerDown={handlePanPointerDown}
-        className={`flex-1 overflow-auto ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`flex-1 overflow-auto snap-x snap-mandatory md:snap-none ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
       >
         <div className="flex items-start gap-4 p-4 min-w-min">
           {visibleLists.map((list) => {

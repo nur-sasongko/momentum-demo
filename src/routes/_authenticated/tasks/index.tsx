@@ -53,14 +53,14 @@ function TasksPageContent() {
 
   if (tasksQuery.isLoading) {
     return (
-      <div className="flex h-[calc(100dvh-3.5rem)] overflow-hidden">
-        <div className="w-48 border-r border-zinc-200 dark:border-zinc-800 p-4">
+      <div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden md:flex-row">
+        <div className="hidden w-48 shrink-0 border-r border-zinc-200 p-4 dark:border-zinc-800 md:block">
           <Skeleton className="h-8 w-32 mb-4" />
           <Skeleton className="h-8 w-32 mb-2" />
           <Skeleton className="h-8 w-32 mb-2" />
         </div>
         <div className="flex-1 p-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i}>
                 <Skeleton className="h-8 w-24 mb-4" />
@@ -90,7 +90,7 @@ function TasksPageContent() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] overflow-hidden">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden md:flex-row">
       <TaskSidebar lists={lists} />
       <TaskBoard tasks={tasks} lists={lists} selectedView={selectedView} />
     </div>
@@ -101,8 +101,8 @@ export const Route = createFileRoute('/_authenticated/tasks/')({
   component: () => (
     <Suspense
       fallback={
-        <div className="flex h-[calc(100dvh-3.5rem)] overflow-hidden">
-          <div className="w-48 border-r border-zinc-200 dark:border-zinc-800 p-4">
+        <div className="flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden md:flex-row">
+          <div className="hidden w-48 shrink-0 border-r border-zinc-200 p-4 dark:border-zinc-800 md:block">
             <Skeleton className="h-8 w-32 mb-4" />
           </div>
           <div className="flex-1 p-4">
