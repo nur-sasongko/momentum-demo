@@ -1,6 +1,7 @@
 ---
+id: 1
 title: 'Supabase Postgres Connection'
-status: draft
+status: done
 feature: core
 related-features: [habits, finance, notes]
 created: 2026-07-04

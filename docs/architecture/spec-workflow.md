@@ -78,9 +78,9 @@ related-features: [habits, finance]
 ## Creating a new spec
 
 1. Copy `docs/specs/_template.md` to `docs/specs/<feature>-<description>.md`
-2. Fill in the YAML frontmatter (`title`, `status: draft`, `feature`, `created`, `updated` — both set to today in `YYYY-MM-DD`)
+2. Fill in the YAML frontmatter (`id` — next sequential integer, one greater than the current max in `docs/specs/_index.md`, never reused; `title`, `status: draft`, `feature`, `created`, `updated` — both set to today in `YYYY-MM-DD`)
 3. Fill in at minimum: Problem Statement, Goals, Non-Goals, Acceptance Criteria
-4. Add a row to the top of the table in `docs/specs/_index.md`
+4. Add a row to the top of the table in `docs/specs/_index.md`, including the same `id`
 5. Commit with the `docs(spec):` convention
 
 Use the `/spec` Claude Code slash command to automate steps 1–4:

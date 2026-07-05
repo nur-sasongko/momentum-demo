@@ -1,4 +1,5 @@
 ---
+id: 0 # next sequential integer — see docs/specs/_index.md for the current max
 title: ''
 status: draft
 feature: habits

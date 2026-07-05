@@ -1,6 +1,7 @@
 ---
+id: 2
 title: 'Auth: Login & Logout'
-status: in-progress
+status: done
 feature: core
 related-features: [habits, finance, notes]
 created: 2026-07-04

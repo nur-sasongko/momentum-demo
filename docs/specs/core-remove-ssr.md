@@ -1,6 +1,7 @@
 ---
+id: 4
 title: 'Remove SSR'
-status: in-progress
+status: done
 feature: core
 created: 2026-07-04
 updated: 2026-07-04
