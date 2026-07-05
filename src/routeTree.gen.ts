@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
 import { Route as AuthenticatedHabitsIndexRouteImport } from './routes/_authenticated/habits/index'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance/index'
@@ -29,6 +30,11 @@ const LoginIndexRoute = LoginIndexRouteImport.update({
   id: '/login/',
   path: '/login/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedNotesIndexRoute = AuthenticatedNotesIndexRouteImport.update({
   id: '/notes/',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/habits/': typeof AuthenticatedHabitsIndexRoute
   '/notes/': typeof AuthenticatedNotesIndexRoute
+  '/tasks/': typeof AuthenticatedTasksIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/habits': typeof AuthenticatedHabitsIndexRoute
   '/notes': typeof AuthenticatedNotesIndexRoute
+  '/tasks': typeof AuthenticatedTasksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,12 +78,13 @@ export interface FileRoutesById {
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/_authenticated/habits/': typeof AuthenticatedHabitsIndexRoute
   '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
+  '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login/' | '/finance/' | '/habits/' | '/notes/'
+  fullPaths: '/' | '/login/' | '/finance/' | '/habits/' | '/notes/' | '/tasks/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/finance' | '/habits' | '/notes'
+  to: '/' | '/login' | '/finance' | '/habits' | '/notes' | '/tasks'
   id:
     | '__root__'
     | '/'
@@ -84,6 +93,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/'
     | '/_authenticated/habits/'
     | '/_authenticated/notes/'
+    | '/_authenticated/tasks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -115,6 +125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/tasks/': {
+      id: '/_authenticated/tasks/'
+      path: '/tasks'
+      fullPath: '/tasks/'
+      preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/notes/': {
       id: '/_authenticated/notes/'
       path: '/notes'
@@ -143,12 +160,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceIndexRoute: typeof AuthenticatedFinanceIndexRoute
   AuthenticatedHabitsIndexRoute: typeof AuthenticatedHabitsIndexRoute
   AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
+  AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceIndexRoute: AuthenticatedFinanceIndexRoute,
   AuthenticatedHabitsIndexRoute: AuthenticatedHabitsIndexRoute,
   AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,
+  AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

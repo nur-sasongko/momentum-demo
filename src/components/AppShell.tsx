@@ -4,12 +4,12 @@ import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider className="flex-col">
+    <SidebarProvider className="h-svh flex-col overflow-hidden">
       <TopBar />
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1">
         <AppSidebar />
         <SidebarInset>
-          <main className="flex-1 overflow-y-auto">{children}</main>
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</div>
         </SidebarInset>
       </div>
     </SidebarProvider>
