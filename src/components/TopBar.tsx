@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import {
+  Link,
   useNavigate,
   useRouteContext,
   useRouterState,
@@ -9,8 +10,10 @@ import { Check, LogOut, Monitor, Moon, Sun } from 'lucide-react'
 import {
   Breadcrumb,
   BreadcrumbItem,
+  BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
 } from '#/components/ui/breadcrumb'
 import { Button } from '#/components/ui/button'
 import {
@@ -64,21 +67,38 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-(--topbar-height) shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-(--topbar-height) shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-3">
       <div className="flex items-center gap-2">
         {isMobile && !openMobile && <SidebarTrigger />}
         <img src="/icon.svg" alt="" className="size-6 rounded-md" />
-        {pageLabel && (
-          <Breadcrumb>
-            <BreadcrumbList className="flex-nowrap">
-              <BreadcrumbItem>
+        <Breadcrumb>
+          <BreadcrumbList className="flex-nowrap">
+            <BreadcrumbItem>
+              {pageLabel ? (
+                <BreadcrumbLink
+                  asChild
+                  className="text-sm font-medium tracking-tight md:text-base"
+                >
+                  <Link to="/">Momentum</Link>
+                </BreadcrumbLink>
+              ) : (
                 <BreadcrumbPage className="text-sm font-medium tracking-tight md:text-base">
-                  {pageLabel}
+                  Momentum
                 </BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        )}
+              )}
+            </BreadcrumbItem>
+            {pageLabel && (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="text-sm font-medium tracking-tight md:text-base">
+                    {pageLabel}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            )}
+          </BreadcrumbList>
+        </Breadcrumb>
       </div>
 
       <div className="flex items-center gap-1">
