@@ -1,124 +1,93 @@
-import type { Transaction } from '#/stores/finance-store'
-import { getCurrentMonthKey, toMonthKey } from '#/utils/date'
-
-export const EXPENSE_CATEGORIES = [
-  'Food',
-  'Transport',
-  'Shopping',
-  'Bills',
-  'Entertainment',
-  'Health',
-  'Other',
-] as const
-
-export const INCOME_CATEGORIES = [
-  'Salary',
-  'Freelance',
-  'Investment',
-  'Other',
-] as const
-
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number]
-export type IncomeCategory = (typeof INCOME_CATEGORIES)[number]
-export type FinanceCategory = ExpenseCategory | IncomeCategory
-
-export const CATEGORY_COLORS: Record<
+import type {
+  DateRange,
   FinanceCategory,
-  { badge: string; chart: string }
-> = {
-  Food: {
-    badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-    chart: '#f59e0b',
-  },
-  Transport: {
-    badge: 'bg-sky-500/15 text-sky-600 dark:text-sky-400',
-    chart: '#0ea5e9',
-  },
-  Shopping: {
-    badge: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
-    chart: '#8b5cf6',
-  },
-  Bills: {
-    badge: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
-    chart: '#f43f5e',
-  },
-  Entertainment: {
-    badge: 'bg-pink-500/15 text-pink-600 dark:text-pink-400',
-    chart: '#ec4899',
-  },
-  Health: {
-    badge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-    chart: '#10b981',
-  },
-  Salary: {
-    badge: 'bg-green-500/15 text-green-600 dark:text-green-400',
-    chart: '#22c55e',
-  },
-  Freelance: {
-    badge: 'bg-teal-500/15 text-teal-600 dark:text-teal-400',
-    chart: '#14b8a6',
-  },
-  Investment: {
-    badge: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400',
-    chart: '#6366f1',
-  },
-  Other: {
-    badge: 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400',
-    chart: '#71717a',
-  },
+  TransactionType,
+} from '#/stores/finance-store'
+import { formatTransactionDate } from '#/utils/date'
+
+export const DEFAULT_CATEGORY_CONFIGS: Array<{
+  name: string
+  type: TransactionType
+  color: string
+  isSystem: boolean
+}> = [
+  { name: 'Food', type: 'expense', color: '#f59e0b', isSystem: false },
+  { name: 'Transport', type: 'expense', color: '#0ea5e9', isSystem: false },
+  { name: 'Shopping', type: 'expense', color: '#8b5cf6', isSystem: false },
+  { name: 'Bills', type: 'expense', color: '#f43f5e', isSystem: false },
+  { name: 'Entertainment', type: 'expense', color: '#ec4899', isSystem: false },
+  { name: 'Health', type: 'expense', color: '#10b981', isSystem: false },
+  { name: 'Other', type: 'expense', color: '#71717a', isSystem: true },
+  { name: 'Salary', type: 'income', color: '#22c55e', isSystem: false },
+  { name: 'Freelance', type: 'income', color: '#14b8a6', isSystem: false },
+  { name: 'Investment', type: 'income', color: '#6366f1', isSystem: false },
+  { name: 'Other', type: 'income', color: '#71717a', isSystem: true },
+]
+
+// Lightweight row used by aggregate query (charts + stat cards)
+export interface AggregateRow {
+  amount: number
+  type: 'income' | 'expense'
+  date: string
+  category_id: string
 }
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
+const numberFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 })
 
 export function formatCurrency(amount: number): string {
-  return currencyFormatter.format(amount)
+  return numberFormatter.format(amount)
 }
 
-export function getAvailableMonths(transactions: Transaction[]): string[] {
-  const months = new Set<string>([getCurrentMonthKey()])
-  for (const tx of transactions) {
-    months.add(toMonthKey(tx.date))
-  }
-  return Array.from(months).sort((a, b) => b.localeCompare(a))
+export function formatDateRangeLabel(
+  from: string | null,
+  to: string | null,
+): string {
+  if (!from && !to) return 'All time'
+  if (from && !to) return `From ${formatTransactionDate(from)}`
+  if (!from && to) return `Until ${formatTransactionDate(to)}`
+  return `${formatTransactionDate(from!)} – ${formatTransactionDate(to!)}`
 }
 
-export function filterTransactions(
-  transactions: Transaction[],
-  monthKey: string,
-  category: string | null,
-): Transaction[] {
-  return transactions
-    .filter((tx) => toMonthKey(tx.date) === monthKey)
-    .filter((tx) => (category ? tx.category === category : true))
-    .sort((a, b) => b.date.localeCompare(a.date))
+function isInDateRange(
+  date: string,
+  from: string | null,
+  to: string | null,
+): boolean {
+  if (from && date < from) return false
+  if (to && date > to) return false
+  return true
 }
 
-export function getTotalBalance(transactions: Transaction[]): number {
-  return transactions.reduce((sum, tx) => {
-    return tx.type === 'income' ? sum + tx.amount : sum - tx.amount
+export function getCategoriesForType(
+  categories: FinanceCategory[],
+  type: TransactionType,
+): FinanceCategory[] {
+  return categories.filter((c) => c.type === type)
+}
+
+export function getTotalBalance(rows: AggregateRow[]): number {
+  return rows.reduce((sum, row) => {
+    return row.type === 'income' ? sum + row.amount : sum - row.amount
   }, 0)
 }
 
-export function getMonthTotals(
-  transactions: Transaction[],
-  monthKey: string,
+export function getDateRangeTotals(
+  rows: AggregateRow[],
+  dateRange: DateRange,
 ): { income: number; expense: number } {
   let income = 0
   let expense = 0
-
-  for (const tx of transactions) {
-    if (toMonthKey(tx.date) !== monthKey) continue
-    if (tx.type === 'income') {
-      income += tx.amount
+  for (const row of rows) {
+    if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
+    if (row.type === 'income') {
+      income += row.amount
     } else {
-      expense += tx.amount
+      expense += row.amount
     }
   }
-
   return { income, expense }
 }
 
@@ -129,28 +98,27 @@ export interface CategorySpending {
 }
 
 export function getSpendingByCategory(
-  transactions: Transaction[],
-  monthKey: string,
+  rows: AggregateRow[],
+  dateRange: DateRange,
+  categories: FinanceCategory[],
 ): CategorySpending[] {
-  const totals = new Map<string, number>()
+  const categoryMap = new Map(categories.map((c) => [c.id, c]))
+  const totals = new Map<string, { amount: number; fill: string }>()
 
-  for (const tx of transactions) {
-    if (tx.type !== 'expense') continue
-    if (toMonthKey(tx.date) !== monthKey) continue
-    totals.set(tx.category, (totals.get(tx.category) ?? 0) + tx.amount)
+  for (const row of rows) {
+    if (row.type !== 'expense') continue
+    if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
+    const cat = categoryMap.get(row.category_id)
+    const name = cat?.name ?? 'Other'
+    const fill = cat?.color ?? '#71717a'
+    const existing = totals.get(name)
+    totals.set(name, {
+      amount: (existing?.amount ?? 0) + row.amount,
+      fill,
+    })
   }
 
   return Array.from(totals.entries())
-    .map(([category, amount]) => ({
-      category,
-      amount,
-      fill: CATEGORY_COLORS[category as FinanceCategory].chart,
-    }))
+    .map(([category, { amount, fill }]) => ({ category, amount, fill }))
     .sort((a, b) => b.amount - a.amount)
-}
-
-export function getCategoriesForType(
-  type: Transaction['type'],
-): readonly FinanceCategory[] {
-  return type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
 }
