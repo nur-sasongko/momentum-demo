@@ -178,10 +178,22 @@ function AddCategoryForm() {
   )
 }
 
+function sortWithOtherLast(categories: FinanceCategory[]) {
+  return [...categories].sort((a, b) => {
+    if (a.name === 'Other') return 1
+    if (b.name === 'Other') return -1
+    return 0
+  })
+}
+
 export function CategoryManager() {
   const categories = useFinanceStore((s) => s.categories)
-  const expenseCategories = categories.filter((c) => c.type === 'expense')
-  const incomeCategories = categories.filter((c) => c.type === 'income')
+  const expenseCategories = sortWithOtherLast(
+    categories.filter((c) => c.type === 'expense'),
+  )
+  const incomeCategories = sortWithOtherLast(
+    categories.filter((c) => c.type === 'income'),
+  )
 
   return (
     <Dialog>

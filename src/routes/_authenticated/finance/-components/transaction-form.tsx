@@ -7,8 +7,8 @@ import { z } from 'zod'
 
 import { Button } from '#/components/ui/button'
 import { Calendar } from '#/components/ui/calendar'
+import { CurrencyInput } from '#/components/ui/currency-input'
 import { FieldError } from '#/components/ui/field-error'
-import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
   Popover,
@@ -184,13 +184,13 @@ export function TransactionFormSheet() {
 
           <div className="space-y-2">
             <Label htmlFor="tx-amount">Amount</Label>
-            <Input
+            <CurrencyInput
               id="tx-amount"
-              type="number"
-              step="0.01"
-              min="0"
               placeholder="0.00"
-              {...form.register('amount')}
+              value={form.watch('amount')}
+              onValueChange={(value) =>
+                form.setValue('amount', value ?? 0, { shouldValidate: true })
+              }
             />
             {form.formState.errors.amount && (
               <FieldError>{form.formState.errors.amount.message}</FieldError>

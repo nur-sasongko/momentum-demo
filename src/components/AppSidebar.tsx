@@ -6,6 +6,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -41,10 +42,18 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r">
+      {isMobile && (
+        <SidebarHeader>
+          <div className="flex items-center gap-2 px-1">
+            <img src="/icon.svg" alt="" className="size-6 rounded-md" />
+            <span className="text-sm font-medium tracking-tight">Momentum</span>
+          </div>
+        </SidebarHeader>
+      )}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-2">
               {navItems.map((item) => {
                 const Icon = item.icon
 

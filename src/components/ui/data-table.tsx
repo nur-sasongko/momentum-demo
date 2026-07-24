@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronsUpDown,
+  X,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -242,13 +243,27 @@ export function DataTable<TData>({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          placeholder={searchPlaceholder}
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="h-8 max-w-xs text-sm"
-        />
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative w-full sm:max-w-xs">
+          <Input
+            placeholder={searchPlaceholder}
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="h-8 pr-7 text-sm"
+          />
+          {globalFilter && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="absolute top-1/2 right-0.5 size-6 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+              onClick={() => setGlobalFilter('')}
+            >
+              <X className="size-3.5" />
+            </Button>
+          )}
+        </div>
         {toolbar}
       </div>
 

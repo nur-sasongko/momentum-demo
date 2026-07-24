@@ -144,6 +144,7 @@ export interface TransactionQueryParams {
   pageSize: number
   dateFrom: string | null
   dateTo: string | null
+  type: 'income' | 'expense' | null
   categoryId: string | null
 }
 
@@ -175,6 +176,7 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
 
       if (params.dateFrom) q = q.gte('date', params.dateFrom)
       if (params.dateTo) q = q.lte('date', params.dateTo)
+      if (params.type) q = q.eq('type', params.type)
       if (params.categoryId) q = q.eq('category_id', params.categoryId)
 
       const { data, count, error } = await q
