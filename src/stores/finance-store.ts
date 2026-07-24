@@ -32,6 +32,7 @@ export interface DateRange {
 interface FinanceState {
   categories: FinanceCategory[]
   dateRange: DateRange
+  selectedType: TransactionType | null
   selectedCategory: string | null
   isAddTransactionOpen: boolean
   editingTransactionId: string | null
@@ -42,6 +43,7 @@ interface FinanceState {
   removeCategory: (id: string) => void
 
   setDateRange: (range: DateRange) => void
+  setSelectedType: (type: TransactionType | null) => void
   setSelectedCategory: (categoryId: string | null) => void
   setAddTransactionOpen: (open: boolean) => void
   setEditingTransactionId: (id: string | null) => void
@@ -53,6 +55,7 @@ export const useFinanceStore = create<FinanceState>()(
     (set, get) => ({
       categories: [],
       dateRange: { from: null, to: null },
+      selectedType: null,
       selectedCategory: null,
       isAddTransactionOpen: false,
       editingTransactionId: null,
@@ -67,6 +70,7 @@ export const useFinanceStore = create<FinanceState>()(
         })),
 
       setDateRange: (range) => set({ dateRange: range }),
+      setSelectedType: (type) => set({ selectedType: type }),
       setSelectedCategory: (categoryId) =>
         set({ selectedCategory: categoryId }),
       setAddTransactionOpen: (open) =>

@@ -1,3 +1,4 @@
+import { TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -26,7 +27,10 @@ export function FinanceStatCards() {
     <div className="grid gap-4 sm:grid-cols-2">
       <Card className="gap-4 py-5">
         <CardHeader className="px-5 pb-0">
-          <CardDescription>Total balance</CardDescription>
+          <CardDescription className="flex items-center gap-1.5">
+            <Wallet className="size-3.5" />
+            Total balance
+          </CardDescription>
           <CardTitle className="text-2xl tracking-tight">
             {formatCurrency(balance)}
           </CardTitle>
@@ -39,12 +43,13 @@ export function FinanceStatCards() {
             Income vs expense —{' '}
             {formatDateRangeLabel(dateRange.from, dateRange.to)}
           </CardDescription>
-          <CardTitle className="text-2xl tracking-tight">
-            <span className="text-emerald-600 dark:text-emerald-400">
+          <CardTitle className="flex flex-col gap-1 text-2xl tracking-tight">
+            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="size-4 shrink-0" />
               {formatCurrency(income)}
             </span>
-            <span className="mx-2 text-muted-foreground">/</span>
-            <span className="text-rose-600 dark:text-rose-400">
+            <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+              <TrendingDown className="size-4 shrink-0" />
               {formatCurrency(expense)}
             </span>
           </CardTitle>

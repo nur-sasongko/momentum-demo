@@ -3,6 +3,7 @@ import type {
   FinanceCategory,
   TransactionType,
 } from '#/stores/finance-store'
+import { formatNumberWithSeparators } from '#/utils/currency'
 import { formatTransactionDate } from '#/utils/date'
 
 export const DEFAULT_CATEGORY_CONFIGS: Array<{
@@ -32,13 +33,8 @@ export interface AggregateRow {
   category_id: string
 }
 
-const numberFormatter = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-
 export function formatCurrency(amount: number): string {
-  return numberFormatter.format(amount)
+  return formatNumberWithSeparators(amount)
 }
 
 export function formatDateRangeLabel(

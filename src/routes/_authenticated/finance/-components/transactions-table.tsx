@@ -205,20 +205,27 @@ export function TransactionsTable() {
   const [pageSize, setPageSize] = useState(100)
 
   const dateRange = useFinanceStore((s) => s.dateRange)
+  const selectedType = useFinanceStore((s) => s.selectedType)
+  const setSelectedType = useFinanceStore((s) => s.setSelectedType)
   const selectedCategory = useFinanceStore((s) => s.selectedCategory)
   const setSelectedCategory = useFinanceStore((s) => s.setSelectedCategory)
   const categories = useFinanceStore((s) => s.categories)
 
+  const categoryOptions = selectedType
+    ? categories.filter((c) => c.type === selectedType)
+    : categories
+
   // Reset to first page when filters change
   useEffect(() => {
     setPageIndex(0)
-  }, [dateRange.from, dateRange.to, selectedCategory])
+  }, [dateRange.from, dateRange.to, selectedType, selectedCategory])
 
   const { data, isFetching } = useTransactionsQuery({
     page: pageIndex,
     pageSize,
     dateFrom: dateRange.from,
     dateTo: dateRange.to,
+    type: selectedType,
     categoryId: selectedCategory,
   })
 
@@ -241,28 +248,54 @@ export function TransactionsTable() {
   )
 
   const toolbar = (
-    <Select
-      value={selectedCategory ?? 'all'}
-      onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
-    >
-      <SelectTrigger className="h-8 w-[160px] text-sm">
-        <SelectValue placeholder="All categories" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All categories</SelectItem>
-        {categories.map((cat) => (
-          <SelectItem key={cat.id} value={cat.id}>
-            <span className="flex items-center gap-2">
-              <span
-                className="inline-block size-2 rounded-full"
-                style={{ backgroundColor: cat.color }}
-              />
-              {cat.name}
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex w-full gap-2 sm:w-auto">
+      <Select
+        value={selectedType ?? 'all'}
+        onValueChange={(v) => {
+          const nextType = v === 'all' ? null : (v as 'income' | 'expense')
+          setSelectedType(nextType)
+          if (
+            selectedCategory &&
+            nextType &&
+            categories.find((c) => c.id === selectedCategory)?.type !== nextType
+          ) {
+            setSelectedCategory(null)
+          }
+        }}
+      >
+        <SelectTrigger className="h-8 flex-1 text-sm sm:w-[120px] sm:flex-none">
+          <SelectValue placeholder="All types" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All types</SelectItem>
+          <SelectItem value="expense">Expense</SelectItem>
+          <SelectItem value="income">Income</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select
+        value={selectedCategory ?? 'all'}
+        onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
+      >
+        <SelectTrigger className="h-8 flex-1 text-sm sm:w-[160px] sm:flex-none">
+          <SelectValue placeholder="All categories" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All categories</SelectItem>
+          {categoryOptions.map((cat) => (
+            <SelectItem key={cat.id} value={cat.id}>
+              <span className="flex items-center gap-2">
+                <span
+                  className="inline-block size-2 rounded-full"
+                  style={{ backgroundColor: cat.color }}
+                />
+                {cat.name}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   )
 
   return (
