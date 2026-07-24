@@ -1,5 +1,6 @@
 'use client'
 
+import type { TooltipProps } from 'recharts'
 import {
   Bar,
   BarChart,
@@ -18,28 +19,49 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import { formatCurrency, getSpendingByCategory } from '../-utils/finance-utils'
-import { formatMonthLabel } from '#/utils/date'
 import { useFinanceStore } from '#/stores/finance-store'
+import { useFinanceAggregateQuery } from '../-utils/finance-queries'
+import {
+  formatCurrency,
+  formatDateRangeLabel,
+  getSpendingByCategory,
+} from '../-utils/finance-utils'
+
+function CategoryTooltip({
+  active,
+  payload,
+  label,
+}: TooltipProps<number, string>) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-md">
+      <p className="text-sm font-semibold text-popover-foreground">{label}</p>
+      <p className="text-sm text-muted-foreground">
+        {formatCurrency(payload[0].value ?? 0)}
+      </p>
+    </div>
+  )
+}
 
 export function SpendingByCategoryChart() {
-  const transactions = useFinanceStore((s) => s.transactions)
-  const selectedMonth = useFinanceStore((s) => s.selectedMonth)
+  const dateRange = useFinanceStore((s) => s.dateRange)
+  const categories = useFinanceStore((s) => s.categories)
+  const { data: aggregateRows = [] } = useFinanceAggregateQuery()
 
-  const data = getSpendingByCategory(transactions, selectedMonth)
+  const data = getSpendingByCategory(aggregateRows, dateRange, categories)
 
   return (
     <Card className="gap-4 py-5">
       <CardHeader className="px-5 pb-0">
         <CardTitle className="text-base">Spending by category</CardTitle>
         <CardDescription>
-          Expenses in {formatMonthLabel(selectedMonth)}
+          Expenses — {formatDateRangeLabel(dateRange.from, dateRange.to)}
         </CardDescription>
       </CardHeader>
       <CardContent className="px-5">
         {data.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted-foreground">
-            No expenses recorded for this month.
+            No expenses recorded for this period.
           </p>
         ) : (
           <div className="h-64 w-full">
@@ -60,19 +82,15 @@ export function SpendingByCategoryChart() {
                 <YAxis
                   tick={{ fontSize: 12 }}
                   tickFormatter={(value: number) =>
-                    `$${value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value}`
+                    value >= 1000
+                      ? `${(value / 1000).toFixed(1)}k`
+                      : String(value)
                   }
                   className="text-muted-foreground"
                 />
                 <Tooltip
-                  formatter={(value) =>
-                    typeof value === 'number' ? formatCurrency(value) : ''
-                  }
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '0.625rem',
-                  }}
+                  content={<CategoryTooltip />}
+                  cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
                 />
                 <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                   {data.map((entry) => (

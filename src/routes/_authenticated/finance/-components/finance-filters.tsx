@@ -1,81 +1,111 @@
-import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { format, parseISO } from 'date-fns'
+import { CalendarIcon, X, Plus } from 'lucide-react'
+import type { DateRange as DayPickerDateRange } from 'react-day-picker'
 
 import { Button } from '#/components/ui/button'
+import { Calendar } from '#/components/ui/calendar'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '#/components/ui/select'
-import {
-  EXPENSE_CATEGORIES,
-  getAvailableMonths,
-  INCOME_CATEGORIES,
-} from '../-utils/finance-utils'
-import { formatMonthLabel } from '#/utils/date'
-import { cn } from '#/libs/utils'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '#/components/ui/popover'
 import { useFinanceStore } from '#/stores/finance-store'
+import { CategoryManager } from './category-manager'
 
-const ALL_CATEGORIES = [
-  ...new Set([...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES]),
-]
+function toStoreRange(range: DayPickerDateRange) {
+  return {
+    from: range.from ? format(range.from, 'yyyy-MM-dd') : null,
+    to: range.to ? format(range.to, 'yyyy-MM-dd') : null,
+  }
+}
 
 export function FinanceFilters() {
-  const transactions = useFinanceStore((s) => s.transactions)
-  const selectedMonth = useFinanceStore((s) => s.selectedMonth)
-  const selectedCategory = useFinanceStore((s) => s.selectedCategory)
-  const setSelectedMonth = useFinanceStore((s) => s.setSelectedMonth)
-  const setSelectedCategory = useFinanceStore((s) => s.setSelectedCategory)
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState<DayPickerDateRange>({
+    from: undefined,
+    to: undefined,
+  })
+
+  const dateRange = useFinanceStore((s) => s.dateRange)
+  const setDateRange = useFinanceStore((s) => s.setDateRange)
   const setAddTransactionOpen = useFinanceStore((s) => s.setAddTransactionOpen)
 
-  const months = getAvailableMonths(transactions)
+  const hasRange = dateRange.from !== null || dateRange.to !== null
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      // Sync draft from committed store state when opening
+      setDraft({
+        from: dateRange.from ? parseISO(dateRange.from) : undefined,
+        to: dateRange.to ? parseISO(dateRange.to) : undefined,
+      })
+    } else {
+      // Commit draft to store only when the popover closes (user-initiated close)
+      setDateRange(toStoreRange(draft))
+    }
+    setOpen(nextOpen)
+  }
+
+  function handleRangeSelect(range: DayPickerDateRange | undefined) {
+    const next: DayPickerDateRange = range ?? { from: undefined, to: undefined }
+    setDraft(next)
+
+    // Auto-close only when a complete range spanning different days is selected.
+    // Comparing timestamps avoids closing on first-click where react-day-picker
+    // can temporarily set from === to on the same date.
+    if (next.from && next.to && next.from.getTime() !== next.to.getTime()) {
+      setDateRange(toStoreRange(next))
+      setOpen(false)
+    }
+  }
+
+  const rangeLabel = hasRange
+    ? [
+        dateRange.from && format(parseISO(dateRange.from), 'MMM d'),
+        dateRange.to && format(parseISO(dateRange.to), 'MMM d'),
+      ]
+        .filter(Boolean)
+        .join(' – ')
+    : 'All time'
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap items-center gap-3">
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select month" />
-          </SelectTrigger>
-          <SelectContent>
-            {months.map((month) => (
-              <SelectItem key={month} value={month}>
-                {formatMonthLabel(month)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedCategory(null)}
-            className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-              selectedCategory === null
-                ? 'bg-primary text-primary-foreground'
-                : 'border border-border text-muted-foreground hover:text-foreground',
-            )}
-          >
-            All
-          </button>
-          {ALL_CATEGORIES.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setSelectedCategory(category)}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-                selectedCategory === category
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border border-border text-muted-foreground hover:text-foreground',
-              )}
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center gap-2">
+        <Popover open={open} onOpenChange={handleOpenChange}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-2 text-sm font-normal"
             >
-              {category}
-            </button>
-          ))}
-        </div>
+              <CalendarIcon className="size-3.5 shrink-0" />
+              <span>{rangeLabel}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="range"
+              selected={draft}
+              onSelect={handleRangeSelect}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {hasRange && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => setDateRange({ from: null, to: null })}
+          >
+            <X className="size-3" />
+            Clear
+          </Button>
+        )}
+
+        <CategoryManager />
       </div>
 
       <Button

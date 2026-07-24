@@ -5,20 +5,21 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
+import { useFinanceStore } from '#/stores/finance-store'
+import { useFinanceAggregateQuery } from '../-utils/finance-queries'
 import {
   formatCurrency,
-  getMonthTotals,
+  formatDateRangeLabel,
+  getDateRangeTotals,
   getTotalBalance,
 } from '../-utils/finance-utils'
-import { formatMonthLabel } from '#/utils/date'
-import { useFinanceStore } from '#/stores/finance-store'
 
 export function FinanceStatCards() {
-  const transactions = useFinanceStore((s) => s.transactions)
-  const selectedMonth = useFinanceStore((s) => s.selectedMonth)
+  const dateRange = useFinanceStore((s) => s.dateRange)
+  const { data: aggregateRows = [] } = useFinanceAggregateQuery()
 
-  const balance = getTotalBalance(transactions)
-  const { income, expense } = getMonthTotals(transactions, selectedMonth)
+  const balance = getTotalBalance(aggregateRows)
+  const { income, expense } = getDateRangeTotals(aggregateRows, dateRange)
   const net = income - expense
 
   return (
@@ -30,17 +31,13 @@ export function FinanceStatCards() {
             {formatCurrency(balance)}
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-5">
-          <p className="text-xs text-muted-foreground">
-            All-time income minus expenses
-          </p>
-        </CardContent>
       </Card>
 
       <Card className="gap-4 py-5">
         <CardHeader className="px-5 pb-0">
           <CardDescription>
-            Income vs expense — {formatMonthLabel(selectedMonth)}
+            Income vs expense —{' '}
+            {formatDateRangeLabel(dateRange.from, dateRange.to)}
           </CardDescription>
           <CardTitle className="text-2xl tracking-tight">
             <span className="text-emerald-600 dark:text-emerald-400">
@@ -54,7 +51,7 @@ export function FinanceStatCards() {
         </CardHeader>
         <CardContent className="px-5">
           <p className="text-xs text-muted-foreground">
-            Net this month:{' '}
+            Net:{' '}
             <span
               className={
                 net >= 0

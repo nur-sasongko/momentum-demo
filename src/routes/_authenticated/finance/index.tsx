@@ -1,12 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { AddTransactionSheet } from '#/routes/_authenticated/finance/-components/add-transaction-sheet'
 import { FinanceEmptyState } from '#/routes/_authenticated/finance/-components/finance-empty-state'
 import { FinanceFilters } from '#/routes/_authenticated/finance/-components/finance-filters'
 import { FinanceStatCards } from '#/routes/_authenticated/finance/-components/finance-stat-cards'
 import { SpendingByCategoryChart } from '#/routes/_authenticated/finance/-components/spending-by-category-chart'
-import { TransactionList } from '#/routes/_authenticated/finance/-components/transaction-list'
-import { useFinanceStore } from '#/stores/finance-store'
+import { TransactionFormSheet } from '#/routes/_authenticated/finance/-components/transaction-form'
+import { TransactionsTable } from '#/routes/_authenticated/finance/-components/transactions-table'
+import {
+  useFinanceAggregateQuery,
+  useFinanceCategoriesQuery,
+} from './-utils/finance-queries'
 
 export const Route = createFileRoute('/_authenticated/finance/')({
   head: () => ({
@@ -16,24 +19,31 @@ export const Route = createFileRoute('/_authenticated/finance/')({
 })
 
 function FinancePage() {
-  const transactions = useFinanceStore((s) => s.transactions)
+  const { isLoading: catsLoading } = useFinanceCategoriesQuery()
+  const { data: aggregateRows = [], isLoading: aggLoading } =
+    useFinanceAggregateQuery()
 
-  if (transactions.length === 0) {
+  const isLoading = catsLoading || aggLoading
+
+  if (isLoading) {
     return (
-      <div className="route-fade-in space-y-6 p-4 md:p-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Finance Tracker
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Track income, expenses, and spending by category.
-          </p>
+      <div className="route-fade-in p-4 md:p-6">
+        <div className="space-y-6">
+          <div>
+            <div className="h-7 w-40 animate-pulse rounded-md bg-muted" />
+            <div className="mt-1.5 h-4 w-72 animate-pulse rounded-md bg-muted" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+          </div>
+          <div className="h-72 animate-pulse rounded-xl bg-muted" />
         </div>
-        <FinanceEmptyState />
-        <AddTransactionSheet />
       </div>
     )
   }
+
+  const hasTransactions = aggregateRows.length > 0
 
   return (
     <div className="route-fade-in space-y-6 p-4 md:p-6">
@@ -48,9 +58,17 @@ function FinancePage() {
 
       <FinanceFilters />
       <FinanceStatCards />
-      <SpendingByCategoryChart />
-      <TransactionList />
-      <AddTransactionSheet />
+
+      {hasTransactions ? (
+        <>
+          <SpendingByCategoryChart />
+          <TransactionsTable />
+        </>
+      ) : (
+        <FinanceEmptyState />
+      )}
+
+      <TransactionFormSheet />
     </div>
   )
 }
