@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { CalendarIcon, X, Plus } from 'lucide-react'
+import { CalendarIcon, X } from 'lucide-react'
 import type { DateRange as DayPickerDateRange } from 'react-day-picker'
 
 import { Button } from '#/components/ui/button'
@@ -11,7 +11,6 @@ import {
   PopoverTrigger,
 } from '#/components/ui/popover'
 import { useFinanceStore } from '#/stores/finance-store'
-import { CategoryManager } from './category-manager'
 
 function toStoreRange(range: DayPickerDateRange) {
   return {
@@ -29,7 +28,6 @@ export function FinanceFilters() {
 
   const dateRange = useFinanceStore((s) => s.dateRange)
   const setDateRange = useFinanceStore((s) => s.setDateRange)
-  const setAddTransactionOpen = useFinanceStore((s) => s.setAddTransactionOpen)
 
   const hasRange = dateRange.from !== null || dateRange.to !== null
 
@@ -70,51 +68,35 @@ export function FinanceFilters() {
     : 'All time'
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap items-center gap-2">
-        <Popover open={open} onOpenChange={handleOpenChange}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 gap-2 text-sm font-normal"
-            >
-              <CalendarIcon className="size-3.5 shrink-0" />
-              <span>{rangeLabel}</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              selected={draft}
-              onSelect={handleRangeSelect}
-              numberOfMonths={2}
-            />
-          </PopoverContent>
-        </Popover>
-
-        {hasRange && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => setDateRange({ from: null, to: null })}
-          >
-            <X className="size-3" />
-            Clear
+    <div className="flex flex-wrap items-center gap-2">
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <CalendarIcon className="size-4 sm:size-3.5" />
+            <span>{rangeLabel}</span>
           </Button>
-        )}
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            selected={draft}
+            onSelect={handleRangeSelect}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
 
-        <CategoryManager />
-      </div>
-
-      <Button
-        className="gap-2 shrink-0"
-        onClick={() => setAddTransactionOpen(true)}
-      >
-        <Plus className="size-4" />
-        Add Transaction
-      </Button>
+      {hasRange && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1 text-xs text-muted-foreground hover:text-foreground"
+          onClick={() => setDateRange({ from: null, to: null })}
+        >
+          <X className="size-3" />
+          Clear
+        </Button>
+      )}
     </div>
   )
 }

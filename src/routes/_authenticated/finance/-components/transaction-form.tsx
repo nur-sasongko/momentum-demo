@@ -42,7 +42,7 @@ import { getCategoriesForType } from '../-utils/finance-utils'
 
 const transactionSchema = z.object({
   type: z.enum(['income', 'expense']),
-  amount: z.coerce.number().positive('Amount must be greater than 0'),
+  amount: z.number().positive('Amount must be greater than 0'),
   categoryId: z.string().min(1, 'Category is required'),
   date: z.string().min(1, 'Date is required'),
   note: z.string().max(200).optional(),
@@ -104,7 +104,9 @@ export function TransactionFormSheet() {
   }, [editingTx, defaultExpenseCategoryId, form])
 
   const selectedType = form.watch('type')
-  const availableCategories = getCategoriesForType(categories, selectedType)
+  const availableCategories = [
+    ...getCategoriesForType(categories, selectedType),
+  ].sort((a, b) => Number(a.isSystem) - Number(b.isSystem))
 
   useEffect(() => {
     const currentId = form.getValues('categoryId')

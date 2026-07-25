@@ -67,10 +67,12 @@ export function TopBar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-(--topbar-height) shrink-0 items-center justify-between border-b border-border bg-background px-4 md:px-3">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-4 sm:h-(--topbar-height) md:px-3">
       <div className="flex items-center gap-2">
-        {isMobile && !openMobile && <SidebarTrigger />}
-        <img src="/icon.svg" alt="" className="size-6 rounded-md" />
+        {isMobile && !openMobile && (
+          <SidebarTrigger className="size-9 sm:size-7" />
+        )}
+        <img src="/icon.svg" alt="" className="size-7 rounded-md sm:size-6" />
         <Breadcrumb>
           <BreadcrumbList className="flex-nowrap">
             <BreadcrumbItem>
@@ -107,10 +109,10 @@ export function TopBar() {
             <Button
               variant="ghost"
               size="icon"
-              className="size-7 rounded-full p-0"
+              className="size-9 rounded-full p-0 sm:size-7"
               aria-label="Profile menu"
             >
-              <span className="flex size-7 items-center justify-center rounded-full bg-primary/20 text-xs font-medium text-primary">
+              <span className="flex size-9 items-center justify-center rounded-full bg-primary/20 text-sm font-medium text-primary sm:size-7 sm:text-xs">
                 {initials}
               </span>
             </Button>

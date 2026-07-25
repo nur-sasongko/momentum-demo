@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type TransactionType = 'income' | 'expense'
+export type FinanceView = 'chart' | 'transactions'
 
 export interface FinanceCategory {
   id: string
@@ -38,6 +39,7 @@ interface FinanceState {
   editingTransactionId: string | null
   editingTransaction: Transaction | null
   isBalanceHidden: boolean
+  activeView: FinanceView
 
   setCategories: (categories: FinanceCategory[]) => void
   addCategory: (cat: FinanceCategory) => void
@@ -54,6 +56,7 @@ interface FinanceState {
   setEditingTransactionId: (id: string | null) => void
   setEditingTransaction: (tx: Transaction | null) => void
   setBalanceHidden: (hidden: boolean) => void
+  setActiveView: (view: FinanceView) => void
 }
 
 export const useFinanceStore = create<FinanceState>()(
@@ -67,6 +70,7 @@ export const useFinanceStore = create<FinanceState>()(
       editingTransactionId: null,
       editingTransaction: null,
       isBalanceHidden: false,
+      activeView: 'chart',
 
       setCategories: (categories) => set({ categories }),
       addCategory: (cat) =>
@@ -101,11 +105,15 @@ export const useFinanceStore = create<FinanceState>()(
           isAddTransactionOpen: tx !== null,
         }),
       setBalanceHidden: (hidden) => set({ isBalanceHidden: hidden }),
+      setActiveView: (view) => set({ activeView: view }),
     }),
     {
       name: 'myspace-finance',
-      version: 4,
-      partialize: (state) => ({ isBalanceHidden: state.isBalanceHidden }),
+      version: 5,
+      partialize: (state) => ({
+        isBalanceHidden: state.isBalanceHidden,
+        activeView: state.activeView,
+      }),
     },
   ),
 )

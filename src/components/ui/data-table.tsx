@@ -319,7 +319,7 @@ export function DataTable<TData>({
             placeholder={searchPlaceholder}
             value={searchInputValue}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="h-8 pr-7 text-sm"
+            className="h-10 pr-7 text-sm sm:h-8"
           />
           {searchInputValue && (
             <Button
@@ -349,7 +349,7 @@ export function DataTable<TData>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        'h-9 text-xs font-medium',
+                        'h-11 text-sm font-medium sm:h-9 sm:text-xs',
                         canSort &&
                           'cursor-pointer select-none hover:text-foreground',
                       )}
@@ -369,11 +369,11 @@ export function DataTable<TData>({
                         {canSort && (
                           <span className="text-muted-foreground">
                             {sorted === 'asc' ? (
-                              <ChevronUp className="size-3" />
+                              <ChevronUp className="size-4 sm:size-3" />
                             ) : sorted === 'desc' ? (
-                              <ChevronDown className="size-3" />
+                              <ChevronDown className="size-4 sm:size-3" />
                             ) : (
-                              <ChevronsUpDown className="size-3" />
+                              <ChevronsUpDown className="size-4 sm:size-3" />
                             )}
                           </span>
                         )}

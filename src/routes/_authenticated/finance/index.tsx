@@ -1,11 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { PieChart, Table } from 'lucide-react'
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import { FinanceEmptyState } from '#/routes/_authenticated/finance/-components/finance-empty-state'
 import { FinanceFilters } from '#/routes/_authenticated/finance/-components/finance-filters'
 import { FinanceStatCards } from '#/routes/_authenticated/finance/-components/finance-stat-cards'
 import { SpendingByCategoryChart } from '#/routes/_authenticated/finance/-components/spending-by-category-chart'
 import { TransactionFormSheet } from '#/routes/_authenticated/finance/-components/transaction-form'
 import { TransactionsTable } from '#/routes/_authenticated/finance/-components/transactions-table'
+import { useFinanceStore } from '#/stores/finance-store'
+import type { FinanceView } from '#/stores/finance-store'
 import {
   useFinanceAggregateQuery,
   useFinanceCategoriesQuery,
@@ -22,6 +26,8 @@ function FinancePage() {
   const { isLoading: catsLoading } = useFinanceCategoriesQuery()
   const { data: aggregateRows = [], isLoading: aggLoading } =
     useFinanceAggregateQuery()
+  const activeView = useFinanceStore((s) => s.activeView)
+  const setActiveView = useFinanceStore((s) => s.setActiveView)
 
   const isLoading = catsLoading || aggLoading
 
@@ -60,10 +66,28 @@ function FinancePage() {
       <FinanceStatCards />
 
       {hasTransactions ? (
-        <>
-          <SpendingByCategoryChart />
-          <TransactionsTable />
-        </>
+        <Tabs
+          value={activeView}
+          onValueChange={(v) => setActiveView(v as FinanceView)}
+          className="space-y-4"
+        >
+          <TabsList>
+            <TabsTrigger value="chart">
+              <PieChart />
+              Chart
+            </TabsTrigger>
+            <TabsTrigger value="table">
+              <Table />
+              Table
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="chart">
+            <SpendingByCategoryChart />
+          </TabsContent>
+          <TabsContent value="table">
+            <TransactionsTable />
+          </TabsContent>
+        </Tabs>
       ) : (
         <FinanceEmptyState />
       )}

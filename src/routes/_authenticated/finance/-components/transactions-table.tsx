@@ -1,5 +1,5 @@
 import { createColumnHelper } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Badge } from '#/components/ui/badge'
@@ -17,6 +17,7 @@ import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 import { formatTransactionDate } from '#/utils/date'
+import { CategoryManager } from './category-manager'
 import {
   useDeleteTransactionMutation,
   useTransactionsQuery,
@@ -213,6 +214,7 @@ export function TransactionsTable() {
   const selectedCategory = useFinanceStore((s) => s.selectedCategory)
   const setSelectedCategory = useFinanceStore((s) => s.setSelectedCategory)
   const categories = useFinanceStore((s) => s.categories)
+  const setAddTransactionOpen = useFinanceStore((s) => s.setAddTransactionOpen)
 
   const categoryOptions = selectedType
     ? categories.filter((c) => c.type === selectedType)
@@ -258,59 +260,74 @@ export function TransactionsTable() {
   )
 
   const toolbar = (
-    <div className="flex w-full gap-2 sm:w-auto">
-      <Select
-        value={selectedType ?? 'all'}
-        onValueChange={(v) => {
-          const nextType = v === 'all' ? null : (v as 'income' | 'expense')
-          setSelectedType(nextType)
-          if (
-            selectedCategory &&
-            nextType &&
-            categories.find((c) => c.id === selectedCategory)?.type !== nextType
-          ) {
-            setSelectedCategory(null)
-          }
-        }}
-      >
-        <SelectTrigger
-          size="sm"
-          className="flex-1 text-sm sm:w-[120px] sm:flex-none"
+    <div className="flex w-full flex-1 flex-wrap items-center gap-2 sm:justify-between">
+      <div className="flex w-full gap-2 sm:w-auto">
+        <Select
+          value={selectedType ?? 'all'}
+          onValueChange={(v) => {
+            const nextType = v === 'all' ? null : (v as 'income' | 'expense')
+            setSelectedType(nextType)
+            if (
+              selectedCategory &&
+              nextType &&
+              categories.find((c) => c.id === selectedCategory)?.type !==
+                nextType
+            ) {
+              setSelectedCategory(null)
+            }
+          }}
         >
-          <SelectValue placeholder="All types" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All types</SelectItem>
-          <SelectItem value="expense">Expense</SelectItem>
-          <SelectItem value="income">Income</SelectItem>
-        </SelectContent>
-      </Select>
+          <SelectTrigger
+            size="sm"
+            className="flex-1 text-sm sm:w-30 sm:flex-none"
+          >
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="expense">Expense</SelectItem>
+            <SelectItem value="income">Income</SelectItem>
+          </SelectContent>
+        </Select>
 
-      <Select
-        value={selectedCategory ?? 'all'}
-        onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
-      >
-        <SelectTrigger
-          size="sm"
-          className="flex-1 text-sm sm:w-[160px] sm:flex-none"
+        <Select
+          value={selectedCategory ?? 'all'}
+          onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
         >
-          <SelectValue placeholder="All categories" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All categories</SelectItem>
-          {categoryOptions.map((cat) => (
-            <SelectItem key={cat.id} value={cat.id}>
-              <span className="flex items-center gap-2">
-                <span
-                  className="inline-block size-2 rounded-full"
-                  style={{ backgroundColor: cat.color }}
-                />
-                {cat.name}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <SelectTrigger
+            size="sm"
+            className="flex-1 text-sm sm:w-40 sm:flex-none"
+          >
+            <SelectValue placeholder="All categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All categories</SelectItem>
+            {categoryOptions.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                <span className="flex items-center gap-2">
+                  <span
+                    className="inline-block size-2 rounded-full"
+                    style={{ backgroundColor: cat.color }}
+                  />
+                  {cat.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex w-full gap-2 sm:ml-auto sm:w-auto">
+        <CategoryManager />
+        <Button
+          size="sm"
+          className="flex-1 gap-1.5 sm:flex-none"
+          onClick={() => setAddTransactionOpen(true)}
+        >
+          <Plus className="size-4 sm:size-3.5" />
+          Add Transaction
+        </Button>
+      </div>
     </div>
   )
 
