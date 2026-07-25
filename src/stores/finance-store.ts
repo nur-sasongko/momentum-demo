@@ -37,9 +37,14 @@ interface FinanceState {
   isAddTransactionOpen: boolean
   editingTransactionId: string | null
   editingTransaction: Transaction | null
+  isBalanceHidden: boolean
 
   setCategories: (categories: FinanceCategory[]) => void
   addCategory: (cat: FinanceCategory) => void
+  updateCategory: (
+    id: string,
+    patch: Partial<Pick<FinanceCategory, 'name' | 'type' | 'color'>>,
+  ) => void
   removeCategory: (id: string) => void
 
   setDateRange: (range: DateRange) => void
@@ -48,6 +53,7 @@ interface FinanceState {
   setAddTransactionOpen: (open: boolean) => void
   setEditingTransactionId: (id: string | null) => void
   setEditingTransaction: (tx: Transaction | null) => void
+  setBalanceHidden: (hidden: boolean) => void
 }
 
 export const useFinanceStore = create<FinanceState>()(
@@ -60,10 +66,17 @@ export const useFinanceStore = create<FinanceState>()(
       isAddTransactionOpen: false,
       editingTransactionId: null,
       editingTransaction: null,
+      isBalanceHidden: false,
 
       setCategories: (categories) => set({ categories }),
       addCategory: (cat) =>
         set((state) => ({ categories: [...state.categories, cat] })),
+      updateCategory: (id, patch) =>
+        set((state) => ({
+          categories: state.categories.map((c) =>
+            c.id === id ? { ...c, ...patch } : c,
+          ),
+        })),
       removeCategory: (id) =>
         set((state) => ({
           categories: state.categories.filter((c) => c.id !== id),
@@ -87,11 +100,12 @@ export const useFinanceStore = create<FinanceState>()(
           editingTransactionId: tx?.id ?? null,
           isAddTransactionOpen: tx !== null,
         }),
+      setBalanceHidden: (hidden) => set({ isBalanceHidden: hidden }),
     }),
     {
       name: 'myspace-finance',
-      version: 3,
-      partialize: () => ({}),
+      version: 4,
+      partialize: (state) => ({ isBalanceHidden: state.isBalanceHidden }),
     },
   ),
 )
