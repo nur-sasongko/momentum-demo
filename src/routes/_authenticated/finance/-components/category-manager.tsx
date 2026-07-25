@@ -297,7 +297,11 @@ export function CategoryManager() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 text-xs">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-sm sm:flex-none"
+        >
           Manage categories
         </Button>
       </SheetTrigger>
