@@ -5,14 +5,6 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { Button } from '#/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '#/components/ui/dialog'
 import { FieldError } from '#/components/ui/field-error'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
@@ -24,6 +16,16 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 import { Separator } from '#/components/ui/separator'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '#/components/ui/sheet'
+import { useIsMobile } from '#/hooks/use-mobile'
+import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 import {
   useCreateCategoryMutation,
@@ -103,24 +105,21 @@ function CategoryRow({ cat }: { cat: FinanceCategory }) {
         onSubmit={onSubmit}
         className="space-y-2 rounded-lg border border-input bg-muted/30 px-2 py-2"
       >
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2">
           <Input
             autoFocus
             className="h-8 min-w-0 flex-1 text-sm"
             {...form.register('name')}
           />
 
-          <div className="flex gap-2 sm:contents">
+          <div className="flex gap-2">
             <Select
               value={form.watch('type')}
               onValueChange={(v) =>
                 form.setValue('type', v as 'income' | 'expense')
               }
             >
-              <SelectTrigger
-                size="sm"
-                className="flex-1 text-sm sm:w-[100px] sm:flex-none"
-              >
+              <SelectTrigger size="sm" className="flex-1 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -135,7 +134,7 @@ function CategoryRow({ cat }: { cat: FinanceCategory }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:contents">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="ghost"
@@ -240,7 +239,7 @@ function AddCategoryForm() {
                 form.setValue('type', v as 'income' | 'expense')
               }
             >
-              <SelectTrigger size="sm" className="w-full text-sm sm:w-[110px]">
+              <SelectTrigger size="sm" className="w-full text-sm sm:w-27.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -286,6 +285,7 @@ function sortWithOtherLast(categories: FinanceCategory[]) {
 }
 
 export function CategoryManager() {
+  const isMobile = useIsMobile()
   const categories = useFinanceStore((s) => s.categories)
   const expenseCategories = sortWithOtherLast(
     categories.filter((c) => c.type === 'expense'),
@@ -295,21 +295,28 @@ export function CategoryManager() {
   )
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
+    <Sheet>
+      <SheetTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 text-xs">
           Manage categories
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Manage categories</DialogTitle>
-          <DialogDescription>
+      </SheetTrigger>
+      <SheetContent
+        side={isMobile ? 'bottom' : 'right'}
+        className={cn(
+          isMobile
+            ? 'max-h-[85dvh] overflow-y-auto rounded-t-xl'
+            : 'overflow-y-auto sm:max-w-md',
+        )}
+      >
+        <SheetHeader>
+          <SheetTitle>Manage categories</SheetTitle>
+          <SheetDescription>
             Add or remove categories. System categories cannot be deleted.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 px-4 pb-4">
           <div>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Expense categories
@@ -343,7 +350,7 @@ export function CategoryManager() {
             <AddCategoryForm />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
