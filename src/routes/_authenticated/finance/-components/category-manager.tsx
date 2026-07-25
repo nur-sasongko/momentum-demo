@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus, Trash2 } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -28,6 +28,7 @@ import { useFinanceStore } from '#/stores/finance-store'
 import {
   useCreateCategoryMutation,
   useDeleteCategoryMutation,
+  useUpdateCategoryMutation,
 } from '../-utils/finance-queries'
 
 import type { FinanceCategory } from '#/stores/finance-store'
@@ -42,7 +43,24 @@ type CategoryFormValues = z.infer<typeof categorySchema>
 
 function CategoryRow({ cat }: { cat: FinanceCategory }) {
   const deleteMutation = useDeleteCategoryMutation()
+  const updateMutation = useUpdateCategoryMutation()
   const [confirming, setConfirming] = useState(false)
+  const [editing, setEditing] = useState(false)
+
+  const form = useForm<CategoryFormValues>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: { name: cat.name, type: cat.type, color: cat.color },
+  })
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    await updateMutation.mutateAsync({ id: cat.id, ...values })
+    setEditing(false)
+  })
+
+  const cancelEdit = () => {
+    form.reset({ name: cat.name, type: cat.type, color: cat.color })
+    setEditing(false)
+  }
 
   if (confirming) {
     return (
@@ -79,6 +97,74 @@ function CategoryRow({ cat }: { cat: FinanceCategory }) {
     )
   }
 
+  if (editing) {
+    return (
+      <form
+        onSubmit={onSubmit}
+        className="space-y-2 rounded-lg border border-input bg-muted/30 px-2 py-2"
+      >
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            autoFocus
+            className="h-8 min-w-0 flex-1 text-sm"
+            {...form.register('name')}
+          />
+
+          <div className="flex gap-2 sm:contents">
+            <Select
+              value={form.watch('type')}
+              onValueChange={(v) =>
+                form.setValue('type', v as 'income' | 'expense')
+              }
+            >
+              <SelectTrigger
+                size="sm"
+                className="flex-1 text-sm sm:w-[100px] sm:flex-none"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+              </SelectContent>
+            </Select>
+            <input
+              type="color"
+              className="h-8 w-10 shrink-0 cursor-pointer rounded-md border border-input bg-background p-0.5"
+              {...form.register('color')}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:contents">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={cancelEdit}
+            >
+              <X className="size-3.5" />
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs"
+              disabled={updateMutation.isPending}
+            >
+              <Check className="size-3.5" />
+              Save
+            </Button>
+          </div>
+        </div>
+        {form.formState.errors.name && (
+          <FieldError>{form.formState.errors.name.message}</FieldError>
+        )}
+      </form>
+    )
+  }
+
   return (
     <div className="flex items-center gap-2 px-1 py-1.5">
       <span
@@ -89,15 +175,26 @@ function CategoryRow({ cat }: { cat: FinanceCategory }) {
       {cat.isSystem ? (
         <span className="text-xs text-muted-foreground">system</span>
       ) : (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-muted-foreground hover:text-destructive"
-          aria-label={`Delete ${cat.name}`}
-          onClick={() => setConfirming(true)}
-        >
-          <Trash2 className="size-3.5" />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
+            aria-label={`Edit ${cat.name}`}
+            onClick={() => setEditing(true)}
+          >
+            <Pencil className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-destructive"
+            aria-label={`Delete ${cat.name}`}
+            onClick={() => setConfirming(true)}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        </>
       )}
     </div>
   )
@@ -118,7 +215,7 @@ function AddCategoryForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3 pt-2">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <div className="flex-1 space-y-1">
           <Label htmlFor="cat-name" className="text-xs">
             Name
@@ -134,41 +231,43 @@ function AddCategoryForm() {
           )}
         </div>
 
-        <div className="space-y-1">
-          <Label className="text-xs">Type</Label>
-          <Select
-            value={form.watch('type')}
-            onValueChange={(v) =>
-              form.setValue('type', v as 'income' | 'expense')
-            }
-          >
-            <SelectTrigger className="h-8 w-[110px] text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="expense">Expense</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="flex gap-2 sm:contents">
+          <div className="flex-1 space-y-1 sm:flex-none">
+            <Label className="text-xs">Type</Label>
+            <Select
+              value={form.watch('type')}
+              onValueChange={(v) =>
+                form.setValue('type', v as 'income' | 'expense')
+              }
+            >
+              <SelectTrigger size="sm" className="w-full text-sm sm:w-[110px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="space-y-1">
-          <Label htmlFor="cat-color" className="text-xs">
-            Color
-          </Label>
-          <input
-            id="cat-color"
-            type="color"
-            className="h-8 w-10 cursor-pointer rounded-md border border-input bg-background p-0.5"
-            {...form.register('color')}
-          />
+          <div className="space-y-1">
+            <Label htmlFor="cat-color" className="text-xs">
+              Color
+            </Label>
+            <input
+              id="cat-color"
+              type="color"
+              className="h-8 w-10 cursor-pointer rounded-md border border-input bg-background p-0.5"
+              {...form.register('color')}
+            />
+          </div>
         </div>
       </div>
 
       <Button
         type="submit"
         size="sm"
-        className="gap-1.5"
+        className="w-full gap-1.5 sm:w-auto"
         disabled={createMutation.isPending}
       >
         <Plus className="size-3.5" />

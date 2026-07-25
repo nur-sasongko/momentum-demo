@@ -98,7 +98,7 @@ function PaginationBar({
           value={String(pageSize)}
           onValueChange={(v) => onPageSizeChange(Number(v))}
         >
-          <SelectTrigger className="h-8 w-20 text-sm">
+          <SelectTrigger size="sm" className="w-20 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

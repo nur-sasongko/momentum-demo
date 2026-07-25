@@ -354,6 +354,44 @@ export function useCreateCategoryMutation() {
   })
 }
 
+export function useUpdateCategoryMutation() {
+  const queryClient = useQueryClient()
+  const updateCategory = useFinanceStore((s) => s.updateCategory)
+
+  return useMutation({
+    mutationFn: async (input: {
+      id: string
+      name: string
+      type: 'income' | 'expense'
+      color: string
+    }) => {
+      const supabase = getSupabaseBrowserClient()
+      const { data, error } = await supabase
+        .from('finance_categories')
+        .update({ name: input.name, type: input.type, color: input.color })
+        .eq('id', input.id)
+        .select()
+        .single()
+
+      if (error) throw error
+      return transformCategory(data as Record<string, unknown>)
+    },
+    onSuccess: (updated) => {
+      updateCategory(updated.id, updated)
+      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.categories })
+      invalidateAll(queryClient)
+      toast.success('Category updated.')
+    },
+    onError: (error: { code?: string }) => {
+      if (error.code === '23505') {
+        toast.error('A category with that name already exists.')
+      } else {
+        toast.error('Failed to update category.')
+      }
+    },
+  })
+}
+
 export function useDeleteCategoryMutation() {
   const queryClient = useQueryClient()
   const removeCategory = useFinanceStore((s) => s.removeCategory)

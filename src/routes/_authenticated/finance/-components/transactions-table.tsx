@@ -263,7 +263,10 @@ export function TransactionsTable() {
           }
         }}
       >
-        <SelectTrigger className="h-8 flex-1 text-sm sm:w-[120px] sm:flex-none">
+        <SelectTrigger
+          size="sm"
+          className="flex-1 text-sm sm:w-[120px] sm:flex-none"
+        >
           <SelectValue placeholder="All types" />
         </SelectTrigger>
         <SelectContent>
@@ -277,7 +280,10 @@ export function TransactionsTable() {
         value={selectedCategory ?? 'all'}
         onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
       >
-        <SelectTrigger className="h-8 flex-1 text-sm sm:w-[160px] sm:flex-none">
+        <SelectTrigger
+          size="sm"
+          className="flex-1 text-sm sm:w-[160px] sm:flex-none"
+        >
           <SelectValue placeholder="All categories" />
         </SelectTrigger>
         <SelectContent>
