@@ -14,7 +14,7 @@ import {
   ChevronsUpDown,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { cn } from '#/libs/utils'
 import { Button } from './button'
@@ -56,7 +56,7 @@ export interface ServerPaginationProps {
 }
 
 interface DataTableProps<TData> {
-  columns: ColumnDef<TData>[]
+  columns: ColumnDef<TData, any>[]
   data: TData[]
   searchPlaceholder?: string
   toolbar?: React.ReactNode
@@ -64,79 +64,130 @@ interface DataTableProps<TData> {
   defaultPageSize?: number
   pageSizeOptions?: number[]
   serverPagination?: ServerPaginationProps
+  /** Alternate row background for readability on dense tables. */
+  striped?: boolean
+  /** Controlled search — pass together with `onSearchChange` to filter server-side
+   * instead of via the table's built-in client-side global filter. */
+  searchValue?: string
+  onSearchChange?: (value: string) => void
+}
+
+function PageJumpInput({
+  pageIndex,
+  pageCount,
+  onPageIndexChange,
+}: {
+  pageIndex: number
+  pageCount: number
+  onPageIndexChange: (index: number) => void
+}) {
+  const [value, setValue] = useState(String(pageIndex + 1))
+
+  useEffect(() => {
+    setValue(String(pageIndex + 1))
+  }, [pageIndex])
+
+  const commit = () => {
+    const parsed = Number(value)
+    const clamped = Math.min(Math.max(Math.trunc(parsed), 1), pageCount)
+    if (Number.isInteger(parsed) && parsed === clamped) {
+      if (clamped - 1 !== pageIndex) onPageIndexChange(clamped - 1)
+    } else {
+      setValue(String(pageIndex + 1))
+    }
+  }
+
+  return (
+    <Input
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') e.currentTarget.blur()
+      }}
+      inputMode="numeric"
+      aria-label="Page"
+      className="h-8 w-10 px-1 text-center text-sm"
+    />
+  )
 }
 
 function PaginationBar({
   pageIndex,
   pageSize,
   total,
+  pageCount,
   pageSizeOptions,
   canPrevious,
   canNext,
   onPrevious,
   onNext,
+  onPageIndexChange,
   onPageSizeChange,
 }: {
   pageIndex: number
   pageSize: number
   total: number
+  pageCount: number
   pageSizeOptions: number[]
   canPrevious: boolean
   canNext: boolean
   onPrevious: () => void
   onNext: () => void
+  onPageIndexChange: (index: number) => void
   onPageSizeChange: (size: number) => void
 }) {
-  const from = total === 0 ? 0 : pageIndex * pageSize + 1
-  const to = Math.min((pageIndex + 1) * pageSize, total)
-
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground">Rows per page</span>
-        <Select
-          value={String(pageSize)}
-          onValueChange={(v) => onPageSizeChange(Number(v))}
-        >
-          <SelectTrigger size="sm" className="w-20 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {pageSizeOptions.map((size) => (
-              <SelectItem key={size} value={String(size)}>
-                {size}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <span className="text-muted-foreground">
-        {total === 0 ? 'No results' : `${from}–${to} of ${total}`}
-      </span>
-
-      <div className="flex items-center gap-1">
+    <div className="flex items-center gap-4 overflow-x-auto text-sm">
+      <div className="flex shrink-0 items-center gap-2">
         <Button
           variant="outline"
-          size="sm"
-          className="h-8 gap-1"
+          size="icon-sm"
           disabled={!canPrevious}
           onClick={onPrevious}
+          aria-label="Previous page"
         >
           <ChevronLeft className="size-3.5" />
-          Previous
         </Button>
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          Page
+          <PageJumpInput
+            pageIndex={pageIndex}
+            pageCount={Math.max(1, pageCount)}
+            onPageIndexChange={onPageIndexChange}
+          />
+          of {Math.max(1, pageCount)}
+        </span>
         <Button
           variant="outline"
-          size="sm"
-          className="h-8 gap-1"
+          size="icon-sm"
           disabled={!canNext}
           onClick={onNext}
+          aria-label="Next page"
         >
-          Next
           <ChevronRight className="size-3.5" />
         </Button>
       </div>
+
+      <Select
+        value={String(pageSize)}
+        onValueChange={(v) => onPageSizeChange(Number(v))}
+      >
+        <SelectTrigger size="sm" className="w-auto shrink-0 text-sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {pageSizeOptions.map((size) => (
+            <SelectItem key={size} value={String(size)}>
+              {size} rows
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <span className="shrink-0 whitespace-nowrap text-muted-foreground">
+        {total} {total === 1 ? 'record' : 'records'}
+      </span>
     </div>
   )
 }
@@ -150,17 +201,20 @@ function ClientPaginationBar<TData>({
 }) {
   const { pageIndex, pageSize } = table.getState().pagination
   const total = table.getFilteredRowModel().rows.length
+  const pageCount = table.getPageCount()
 
   return (
     <PaginationBar
       pageIndex={pageIndex}
       pageSize={pageSize}
       total={total}
+      pageCount={pageCount}
       pageSizeOptions={pageSizeOptions}
       canPrevious={table.getCanPreviousPage()}
       canNext={table.getCanNextPage()}
       onPrevious={() => table.previousPage()}
       onNext={() => table.nextPage()}
+      onPageIndexChange={(index) => table.setPageIndex(index)}
       onPageSizeChange={(size) => {
         table.setPageSize(size)
         table.setPageIndex(0)
@@ -183,11 +237,13 @@ function ServerPaginationBar({
       pageIndex={pageIndex}
       pageSize={pageSize}
       total={total}
+      pageCount={pageCount}
       pageSizeOptions={pageSizeOptions}
       canPrevious={pageIndex > 0}
       canNext={pageIndex < pageCount - 1}
       onPrevious={() => onPageIndexChange(pageIndex - 1)}
       onNext={() => onPageIndexChange(pageIndex + 1)}
+      onPageIndexChange={onPageIndexChange}
       onPageSizeChange={onPageSizeChange}
     />
   )
@@ -202,8 +258,13 @@ export function DataTable<TData>({
   defaultPageSize,
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   serverPagination,
+  searchValue,
+  onSearchChange,
+  striped = false,
 }: DataTableProps<TData>) {
-  const [globalFilter, setGlobalFilter] = useState('')
+  const isSearchControlled =
+    searchValue !== undefined && onSearchChange !== undefined
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [pagination, setPagination] = useState<PaginationState>({
@@ -214,21 +275,30 @@ export function DataTable<TData>({
   const isClientPaginated = defaultPageSize !== undefined && !serverPagination
   const isServerPaginated = !!serverPagination
 
+  const searchInputValue = isSearchControlled
+    ? searchValue
+    : internalGlobalFilter
+  const handleSearchChange = isSearchControlled
+    ? onSearchChange
+    : setInternalGlobalFilter
+
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
       columnFilters,
-      globalFilter,
+      ...(!isSearchControlled && { globalFilter: internalGlobalFilter }),
       ...(isClientPaginated && { pagination }),
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: (value) => {
-      setGlobalFilter(value)
-      if (isClientPaginated) setPagination((p) => ({ ...p, pageIndex: 0 }))
-    },
+    ...(!isSearchControlled && {
+      onGlobalFilterChange: (value: string) => {
+        setInternalGlobalFilter(value)
+        if (isClientPaginated) setPagination((p) => ({ ...p, pageIndex: 0 }))
+      },
+    }),
     ...(isClientPaginated && { onPaginationChange: setPagination }),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -247,18 +317,18 @@ export function DataTable<TData>({
         <div className="relative w-full sm:max-w-xs">
           <Input
             placeholder={searchPlaceholder}
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
+            value={searchInputValue}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="h-8 pr-7 text-sm"
           />
-          {globalFilter && (
+          {searchInputValue && (
             <Button
               type="button"
               variant="ghost"
               size="icon-sm"
               className="absolute top-1/2 right-0.5 size-6 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label="Clear search"
-              onClick={() => setGlobalFilter('')}
+              onClick={() => handleSearchChange('')}
             >
               <X className="size-3.5" />
             </Button>
@@ -316,10 +386,11 @@ export function DataTable<TData>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row, index) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  className={cn(striped && index % 2 === 1 && 'bg-muted/40')}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="py-2.5 text-sm">

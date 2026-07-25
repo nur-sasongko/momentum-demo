@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 import { formatTransactionDate } from '#/utils/date'
@@ -203,6 +204,8 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100, 200]
 export function TransactionsTable() {
   const [pageIndex, setPageIndex] = useState(0)
   const [pageSize, setPageSize] = useState(100)
+  const [searchInput, setSearchInput] = useState('')
+  const debouncedSearch = useDebouncedValue(searchInput, 300)
 
   const dateRange = useFinanceStore((s) => s.dateRange)
   const selectedType = useFinanceStore((s) => s.selectedType)
@@ -218,7 +221,13 @@ export function TransactionsTable() {
   // Reset to first page when filters change
   useEffect(() => {
     setPageIndex(0)
-  }, [dateRange.from, dateRange.to, selectedType, selectedCategory])
+  }, [
+    dateRange.from,
+    dateRange.to,
+    selectedType,
+    selectedCategory,
+    debouncedSearch,
+  ])
 
   const { data, isFetching } = useTransactionsQuery({
     page: pageIndex,
@@ -227,6 +236,7 @@ export function TransactionsTable() {
     dateTo: dateRange.to,
     type: selectedType,
     categoryId: selectedCategory,
+    search: debouncedSearch || null,
   })
 
   const transactions = data?.data ?? []
@@ -318,6 +328,8 @@ export function TransactionsTable() {
         columns={columns}
         data={transactions}
         searchPlaceholder="Search notes…"
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
         toolbar={toolbar}
         emptyMessage={
           total === 0
@@ -336,6 +348,7 @@ export function TransactionsTable() {
             setPageIndex(0)
           },
         }}
+        striped
       />
     </div>
   )

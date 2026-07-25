@@ -4,6 +4,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import { useRouteContext } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import { getSupabaseBrowserClient } from '#/libs/supabase/client'
@@ -63,16 +64,13 @@ function transformTransaction(
 
 export function useFinanceCategoriesQuery() {
   const setCategories = useFinanceStore((s) => s.setCategories)
+  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
 
   return useQuery({
     queryKey: FINANCE_KEYS.categories,
     queryFn: async () => {
+      if (!user) throw new Error('Not authenticated')
       const supabase = getSupabaseBrowserClient()
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('Not authenticated')
 
       const { data: initialRows, error: catError } = await supabase
         .from('finance_categories')
@@ -118,11 +116,6 @@ export function useFinanceAggregateQuery() {
     queryKey: FINANCE_KEYS.aggregate,
     queryFn: async (): Promise<AggregateRow[]> => {
       const supabase = getSupabaseBrowserClient()
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('Not authenticated')
 
       const { data, error } = await supabase
         .from('finance_transactions')
@@ -146,6 +139,7 @@ export interface TransactionQueryParams {
   dateTo: string | null
   type: 'income' | 'expense' | null
   categoryId: string | null
+  search: string | null
 }
 
 export interface TransactionPage {
@@ -158,11 +152,6 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
     queryKey: FINANCE_KEYS.transactions(params),
     queryFn: async (): Promise<TransactionPage> => {
       const supabase = getSupabaseBrowserClient()
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('Not authenticated')
 
       const from = params.page * params.pageSize
       const to = from + params.pageSize - 1
@@ -178,6 +167,7 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
       if (params.dateTo) q = q.lte('date', params.dateTo)
       if (params.type) q = q.eq('type', params.type)
       if (params.categoryId) q = q.eq('category_id', params.categoryId)
+      if (params.search) q = q.ilike('note', `%${params.search}%`)
 
       const { data, count, error } = await q
       if (error) throw error
@@ -205,6 +195,7 @@ function invalidateAll(queryClient: ReturnType<typeof useQueryClient>) {
 
 export function useCreateTransactionMutation() {
   const queryClient = useQueryClient()
+  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
 
   return useMutation({
     mutationFn: async (input: {
@@ -214,12 +205,8 @@ export function useCreateTransactionMutation() {
       note: string
       categoryId: string
     }) => {
+      if (!user) throw new Error('Not authenticated')
       const supabase = getSupabaseBrowserClient()
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('Not authenticated')
 
       const { data, error } = await supabase
         .from('finance_transactions')
@@ -312,6 +299,7 @@ export function useDeleteTransactionMutation() {
 export function useCreateCategoryMutation() {
   const queryClient = useQueryClient()
   const addCategory = useFinanceStore((s) => s.addCategory)
+  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
 
   return useMutation({
     mutationFn: async (input: {
@@ -319,12 +307,8 @@ export function useCreateCategoryMutation() {
       type: 'income' | 'expense'
       color: string
     }) => {
+      if (!user) throw new Error('Not authenticated')
       const supabase = getSupabaseBrowserClient()
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-      if (userError || !user) throw new Error('Not authenticated')
 
       const { data, error } = await supabase
         .from('finance_categories')
