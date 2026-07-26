@@ -307,11 +307,7 @@ export function CategoryManager() {
       </SheetTrigger>
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
-        className={cn(
-          isMobile
-            ? 'max-h-[85dvh] overflow-y-auto rounded-t-xl'
-            : 'overflow-y-auto sm:max-w-md',
-        )}
+        className={cn(isMobile ? 'h-[85dvh] rounded-t-xl' : 'sm:max-w-md')}
       >
         <SheetHeader>
           <SheetTitle>Manage categories</SheetTitle>
@@ -320,7 +316,7 @@ export function CategoryManager() {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-4 px-4 pb-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
           <div>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Expense categories
