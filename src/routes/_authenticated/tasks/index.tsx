@@ -7,7 +7,11 @@ import {
   requestNotificationPermission,
 } from './-utils/notification-service'
 import { Skeleton } from '#/components/ui/skeleton'
+import { useIsMobile } from '#/hooks/use-mobile'
+import { cn } from '#/libs/utils'
 import { TaskSidebar } from './-components/task-sidebar'
+import { TaskMobileTabs } from './-components/task-mobile-tabs'
+import { TaskAddFab } from './-components/task-add-fab'
 import { TaskBoard } from './-components/task-board'
 
 function TasksPageContent() {
@@ -16,6 +20,7 @@ function TasksPageContent() {
   const lists = useTasksStore((s) => s.lists)
   const selectedView = useTasksStore((s) => s.selectedView)
   const notificationSettings = useTasksStore((s) => s.notificationSettings)
+  const isMobile = useIsMobile()
 
   // Request notification permission on mount
   useEffect(() => {
@@ -90,9 +95,19 @@ function TasksPageContent() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] overflow-hidden">
-      <TaskSidebar lists={lists} />
+    <div
+      className={cn(
+        'h-[calc(100dvh-3.5rem)] overflow-hidden',
+        isMobile ? 'flex flex-col' : 'flex',
+      )}
+    >
+      {isMobile ? (
+        <TaskMobileTabs lists={lists} />
+      ) : (
+        <TaskSidebar lists={lists} />
+      )}
       <TaskBoard tasks={tasks} lists={lists} selectedView={selectedView} />
+      {isMobile && <TaskAddFab lists={lists} />}
     </div>
   )
 }

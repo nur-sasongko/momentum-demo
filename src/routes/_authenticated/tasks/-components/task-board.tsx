@@ -26,6 +26,7 @@ import {
   getListsForView,
 } from '../-utils/tasks-utils'
 import { TaskColumn } from './task-column'
+import { StarredCard } from './starred-card'
 import { useUpdateTaskMutation } from '../-utils/tasks-queries'
 
 const dropAnimation: DropAnimation = {
@@ -106,7 +107,8 @@ export function TaskBoard({ tasks, lists, selectedView }: TaskBoardProps) {
     }
   }, [isPanning])
 
-  const visibleLists = getListsForView(lists, selectedView)
+  const isStarredView = selectedView === 'starred'
+  const visibleLists = isStarredView ? [] : getListsForView(lists, selectedView)
   const displayTasks = draftTasks ?? tasks
   const visibleTasks = filterByView(displayTasks, selectedView)
 
@@ -230,7 +232,7 @@ export function TaskBoard({ tasks, lists, selectedView }: TaskBoardProps) {
     })
   }
 
-  if (visibleLists.length === 0) {
+  if (!isStarredView && visibleLists.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
@@ -261,18 +263,22 @@ export function TaskBoard({ tasks, lists, selectedView }: TaskBoardProps) {
         className={`flex-1 overflow-auto ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
       >
         <div className="flex items-start gap-4 p-4 min-w-min">
-          {visibleLists.map((list) => {
-            const listTasks = visibleTasks.filter((t) => t.listId === list.id)
-            return (
-              <TaskColumn
-                key={list.id}
-                list={list}
-                lists={lists}
-                tasks={listTasks}
-                activeId={activeId}
-              />
-            )
-          })}
+          {isStarredView ? (
+            <StarredCard tasks={visibleTasks} lists={lists} />
+          ) : (
+            visibleLists.map((list) => {
+              const listTasks = visibleTasks.filter((t) => t.listId === list.id)
+              return (
+                <TaskColumn
+                  key={list.id}
+                  list={list}
+                  lists={lists}
+                  tasks={listTasks}
+                  activeId={activeId}
+                />
+              )
+            })
+          )}
         </div>
       </div>
 

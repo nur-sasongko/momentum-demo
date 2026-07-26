@@ -1,5 +1,5 @@
 import { addDays, format, startOfDay } from 'date-fns'
-import type { Task, TaskList } from '#/stores/tasks-store'
+import type { Task, TaskList, TaskView } from '#/stores/tasks-store'
 
 export function groupTasksByList(
   tasks: Task[],
@@ -63,8 +63,12 @@ export function getListsForView(
     | { listId: string }
     | { starred: true; listId: string },
 ): TaskList[] {
-  if (view === 'all' || view === 'starred') {
+  if (view === 'all') {
     return lists.sort((a, b) => a.order - b.order)
+  }
+
+  if (view === 'starred') {
+    return []
   }
 
   if ('listId' in view) {
@@ -72,6 +76,30 @@ export function getListsForView(
   }
 
   return []
+}
+
+export function getViewKey(view: TaskView): string {
+  if (view === 'all') return 'all'
+  if (view === 'starred') return 'starred'
+  return `list-${view.listId}`
+}
+
+export function isListView(view: TaskView, listId: string): boolean {
+  return (
+    typeof view === 'object' &&
+    'listId' in view &&
+    !('starred' in view) &&
+    view.listId === listId
+  )
+}
+
+export function getDefaultListId(
+  view: TaskView,
+  lists: TaskList[],
+): string | undefined {
+  return typeof view === 'object' && 'listId' in view
+    ? view.listId
+    : lists[0]?.id
 }
 
 export function getNextOrder(tasks: Task[], listId?: string): number {
