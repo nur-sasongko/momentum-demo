@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Check, Pencil, Plus, Settings, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -298,18 +298,16 @@ export function CategoryManager() {
         <Button
           variant="outline"
           size="sm"
-          className="flex-1 text-sm sm:flex-none"
+          className="gap-1.5 text-sm"
+          aria-label="Manage categories"
         >
-          Manage categories
+          <Settings className="size-4 sm:size-3.5" />
+          <span className="hidden sm:inline">Manage categories</span>
         </Button>
       </SheetTrigger>
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
-        className={cn(
-          isMobile
-            ? 'max-h-[85dvh] overflow-y-auto rounded-t-xl'
-            : 'overflow-y-auto sm:max-w-md',
-        )}
+        className={cn(isMobile ? 'h-[85dvh] rounded-t-xl' : 'sm:max-w-md')}
       >
         <SheetHeader>
           <SheetTitle>Manage categories</SheetTitle>
@@ -318,7 +316,7 @@ export function CategoryManager() {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-4 px-4 pb-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
           <div>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Expense categories

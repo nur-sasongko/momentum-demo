@@ -33,7 +33,7 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
   return (
     <div
       ref={setNodeRef}
-      className="flex w-[85vw] shrink-0 snap-center flex-col overflow-hidden rounded-lg border-2 border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 sm:w-80 md:snap-align-none"
+      className="flex flex-col w-full md:w-80 bg-white dark:bg-zinc-900 rounded-lg border-2 border-zinc-200 dark:border-zinc-800 overflow-hidden"
     >
       {/* Header */}
       <div

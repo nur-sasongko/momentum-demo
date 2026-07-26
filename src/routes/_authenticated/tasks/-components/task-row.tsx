@@ -14,10 +14,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
+import { Badge } from '#/components/ui/badge'
 import { Input } from '#/components/ui/input'
 import { Textarea } from '#/components/ui/textarea'
 import { cn } from '#/libs/utils'
-import type { Task } from '#/stores/tasks-store'
+import type { Task, TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
 import {
   useCreateSubtaskMutation,
@@ -36,9 +37,11 @@ import { SubtaskRow } from './subtask-row'
 
 interface TaskRowProps {
   task: Task
+  disableDrag?: boolean
+  list?: TaskList
 }
 
-export function TaskRow({ task }: TaskRowProps) {
+export function TaskRow({ task, disableDrag, list }: TaskRowProps) {
   const [expanded, setExpanded] = useState(false)
   const [notes, setNotes] = useState(task.notes || '')
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
@@ -55,6 +58,7 @@ export function TaskRow({ task }: TaskRowProps) {
   } = useSortable({
     id: task.id,
     data: { listId: task.listId },
+    disabled: disableDrag,
   })
 
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -225,6 +229,20 @@ export function TaskRow({ task }: TaskRowProps) {
             {task.title}
           </span>
         )}
+        {list && (
+          <Badge
+            variant="outline"
+            className="gap-1 text-[10px] whitespace-nowrap"
+          >
+            {list.color && (
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: list.color }}
+              />
+            )}
+            {list.name}
+          </Badge>
+        )}
         {task.deadline && (
           <span
             className={cn(
@@ -269,13 +287,13 @@ export function TaskRow({ task }: TaskRowProps) {
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>Move to list</DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
-                {lists.map((list) => (
+                {lists.map((targetList) => (
                   <DropdownMenuItem
-                    key={list.id}
-                    disabled={list.id === task.listId}
-                    onClick={() => handleMoveToList(list.id)}
+                    key={targetList.id}
+                    disabled={targetList.id === task.listId}
+                    onClick={() => handleMoveToList(targetList.id)}
                   >
-                    {list.name}
+                    {targetList.name}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuSubContent>

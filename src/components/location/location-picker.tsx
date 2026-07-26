@@ -17,9 +17,9 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { env } from '#/libs/env'
-import { parseGeocoderResult, parsePlace } from '../-utils/location-utils'
+import { parseGeocoderResult, parsePlace } from '#/utils/location'
 
-import type { TransactionLocation } from '#/stores/finance-store'
+import type { GeoLocation } from '#/types/location'
 
 const DEFAULT_CENTER = { lat: 0, lng: 0 }
 const DEFAULT_ZOOM = 2
@@ -55,6 +55,10 @@ function MapPanner({
   return null
 }
 
+function getColorScheme(): 'light' | 'dark' {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
 function PlaceSearchInput({
   onPlaceSelected,
 }: {
@@ -69,7 +73,19 @@ function PlaceSearchInput({
     const autocomplete = new placesLibrary.PlaceAutocompleteElement({
       placeholder: 'Search for a place…',
     })
+    // The element auto-detects light/dark from the OS's prefers-color-scheme,
+    // not from our app's theme class, so it must be set explicitly and kept
+    // in sync with theme changes (including "auto" mode's system listener).
+    autocomplete.style.colorScheme = getColorScheme()
     containerRef.current.appendChild(autocomplete)
+
+    const themeObserver = new MutationObserver(() => {
+      autocomplete.style.colorScheme = getColorScheme()
+    })
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
 
     const handleSelect = (event: Event) => {
       const { placePrediction } =
@@ -82,6 +98,7 @@ function PlaceSearchInput({
     autocomplete.addEventListener('gmp-select', handleSelect)
 
     return () => {
+      themeObserver.disconnect()
       autocomplete.removeEventListener('gmp-select', handleSelect)
       autocomplete.remove()
     }
@@ -101,7 +118,7 @@ function LocationMap({
   panSignal: number
   existingPlaceName: string
   onPositionChange: (position: google.maps.LatLngLiteral) => void
-  onLocationResolved: (location: TransactionLocation) => void
+  onLocationResolved: (location: GeoLocation) => void
 }) {
   const geocodingLibrary = useMapsLibrary('geocoding')
   const geocoderRef = useRef<google.maps.Geocoder | null>(null)
@@ -172,7 +189,7 @@ function LocationMap({
 interface LocationPickerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (location: TransactionLocation) => void
+  onConfirm: (location: GeoLocation) => void
 }
 
 export function LocationPickerDialog({
@@ -183,7 +200,7 @@ export function LocationPickerDialog({
   const [position, setPosition] = useState<google.maps.LatLngLiteral | null>(
     null,
   )
-  const [location, setLocation] = useState<TransactionLocation | null>(null)
+  const [location, setLocation] = useState<GeoLocation | null>(null)
   const [panSignal, setPanSignal] = useState(0)
 
   const handleOpenChange = (next: boolean) => {

@@ -1,33 +1,18 @@
 import { createColumnHelper } from '@tanstack/react-table'
-import { MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { LocationCell } from '#/components/location/location-cell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { DataTable } from '#/components/ui/data-table'
 import { EditableCell } from '#/components/ui/editable-cell'
-import { Input } from '#/components/ui/input'
-import { Label } from '#/components/ui/label'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '#/components/ui/popover'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '#/components/ui/select'
-import { Textarea } from '#/components/ui/textarea'
 import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 import { formatTransactionDate } from '#/utils/date'
 import { CategoryManager } from './category-manager'
-import { LocationMapEmbed } from './location-map-embed'
-import { LocationPickerDialog } from './location-picker'
+import { TransactionFilters } from './transaction-filters'
 import {
   useDeleteTransactionMutation,
   useTransactionsQuery,
@@ -61,161 +46,6 @@ function toUpdateInput(tx: Transaction): UpdateInput {
     categoryId: tx.categoryId,
     location: tx.location,
   }
-}
-
-function locationsEqual(
-  a: TransactionLocation | null,
-  b: TransactionLocation | null,
-): boolean {
-  if (a === b) return true
-  if (!a || !b) return false
-  return (
-    a.placeName === b.placeName &&
-    a.address === b.address &&
-    a.city === b.city &&
-    a.country === b.country &&
-    a.mapsUrl === b.mapsUrl
-  )
-}
-
-function LocationCell({
-  location,
-  onSave,
-}: {
-  location: TransactionLocation | null
-  onSave: (location: TransactionLocation | null) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [draft, setDraft] = useState(location)
-  const debouncedDraft = useDebouncedValue(draft, 500)
-
-  const commitDraft = (next: TransactionLocation) => {
-    setDraft(next)
-    if (!locationsEqual(next, location)) onSave(next)
-  }
-
-  const label = location?.placeName || location?.city
-
-  if (!location) {
-    return (
-      <>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-auto justify-start gap-1.5 px-1 py-0.5 text-muted-foreground hover:text-foreground"
-          onClick={() => setPickerOpen(true)}
-        >
-          <MapPin className="size-3.5" />
-          Add location
-        </Button>
-        <LocationPickerDialog
-          open={pickerOpen}
-          onOpenChange={setPickerOpen}
-          onConfirm={(next) => {
-            setDraft(next)
-            onSave(next)
-          }}
-        />
-      </>
-    )
-  }
-
-  return (
-    <>
-      <Popover
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next)
-          if (next) setDraft(location)
-        }}
-      >
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="group/editable inline-flex max-w-40 items-center gap-1 rounded px-1 py-0.5 text-left transition-colors hover:bg-muted/60"
-          >
-            <MapPin className="size-3 shrink-0 text-muted-foreground" />
-            <span className="truncate text-foreground">{label}</span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-72 space-y-3" align="start">
-          {draft && (
-            <div className="space-y-2">
-              {debouncedDraft && (
-                <LocationMapEmbed location={debouncedDraft} className="h-40" />
-              )}
-              <div className="grid grid-cols-1 gap-2">
-                <div className="space-y-1">
-                  <Label htmlFor="tx-row-location-place-name">Place name</Label>
-                  <Input
-                    id="tx-row-location-place-name"
-                    placeholder="Place name"
-                    value={draft.placeName}
-                    onChange={(e) =>
-                      setDraft({ ...draft, placeName: e.target.value })
-                    }
-                    onBlur={() => commitDraft(draft)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="tx-row-location-address">Address</Label>
-                  <Textarea
-                    id="tx-row-location-address"
-                    placeholder="Address"
-                    rows={2}
-                    value={draft.address}
-                    onChange={(e) =>
-                      setDraft({ ...draft, address: e.target.value })
-                    }
-                    onBlur={() => commitDraft(draft)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="tx-row-location-city">City</Label>
-                  <Input
-                    id="tx-row-location-city"
-                    placeholder="City"
-                    value={draft.city}
-                    onChange={(e) =>
-                      setDraft({ ...draft, city: e.target.value })
-                    }
-                    onBlur={() => commitDraft(draft)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="tx-row-location-country">Country</Label>
-                  <Input
-                    id="tx-row-location-country"
-                    placeholder="Country"
-                    value={draft.country}
-                    onChange={(e) =>
-                      setDraft({ ...draft, country: e.target.value })
-                    }
-                    onBlur={() => commitDraft(draft)}
-                  />
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-muted-foreground hover:text-destructive"
-                onClick={() => {
-                  setDraft(null)
-                  onSave(null)
-                }}
-              >
-                <Trash2 className="size-3.5" />
-                Remove location
-              </Button>
-            </div>
-          )}
-        </PopoverContent>
-      </Popover>
-    </>
-  )
 }
 
 function RowActions({ row }: { row: Transaction }) {
@@ -400,15 +230,9 @@ export function TransactionsTable() {
 
   const dateRange = useFinanceStore((s) => s.dateRange)
   const selectedType = useFinanceStore((s) => s.selectedType)
-  const setSelectedType = useFinanceStore((s) => s.setSelectedType)
   const selectedCategory = useFinanceStore((s) => s.selectedCategory)
-  const setSelectedCategory = useFinanceStore((s) => s.setSelectedCategory)
   const categories = useFinanceStore((s) => s.categories)
   const setAddTransactionOpen = useFinanceStore((s) => s.setAddTransactionOpen)
-
-  const categoryOptions = selectedType
-    ? categories.filter((c) => c.type === selectedType)
-    : categories
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -450,74 +274,18 @@ export function TransactionsTable() {
   )
 
   const toolbar = (
-    <div className="flex w-full flex-1 flex-wrap items-center gap-2 sm:justify-between">
-      <div className="flex w-full gap-2 sm:w-auto">
-        <Select
-          value={selectedType ?? 'all'}
-          onValueChange={(v) => {
-            const nextType = v === 'all' ? null : (v as 'income' | 'expense')
-            setSelectedType(nextType)
-            if (
-              selectedCategory &&
-              nextType &&
-              categories.find((c) => c.id === selectedCategory)?.type !==
-                nextType
-            ) {
-              setSelectedCategory(null)
-            }
-          }}
-        >
-          <SelectTrigger
-            size="sm"
-            className="flex-1 text-sm sm:w-30 sm:flex-none"
-          >
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            <SelectItem value="expense">Expense</SelectItem>
-            <SelectItem value="income">Income</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={selectedCategory ?? 'all'}
-          onValueChange={(v) => setSelectedCategory(v === 'all' ? null : v)}
-        >
-          <SelectTrigger
-            size="sm"
-            className="flex-1 text-sm sm:w-40 sm:flex-none"
-          >
-            <SelectValue placeholder="All categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {categoryOptions.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                <span className="flex items-center gap-2">
-                  <span
-                    className="inline-block size-2 rounded-full"
-                    style={{ backgroundColor: cat.color }}
-                  />
-                  {cat.name}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex w-full gap-2 sm:ml-auto sm:w-auto">
-        <CategoryManager />
-        <Button
-          size="sm"
-          className="flex-1 gap-1.5 sm:flex-none"
-          onClick={() => setAddTransactionOpen(true)}
-        >
-          <Plus className="size-4 sm:size-3.5" />
-          Add Transaction
-        </Button>
-      </div>
+    <div className="flex w-full flex-1 items-center gap-2">
+      <TransactionFilters />
+      <CategoryManager />
+      <Button
+        size="sm"
+        className="ml-auto gap-1.5"
+        aria-label="Add transaction"
+        onClick={() => setAddTransactionOpen(true)}
+      >
+        <Plus className="size-4 sm:size-3.5" />
+        <span className="hidden sm:inline">Add Transaction</span>
+      </Button>
     </div>
   )
 

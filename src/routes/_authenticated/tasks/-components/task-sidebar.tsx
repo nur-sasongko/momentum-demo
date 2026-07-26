@@ -12,6 +12,7 @@ import type { TaskView, TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
 import { NewListDialog } from './new-list-dialog'
 import { AddTaskDialog } from './add-task-dialog'
+import { getDefaultListId, isListView } from '../-utils/tasks-utils'
 
 interface TaskSidebarProps {
   lists: TaskList[]
@@ -33,11 +34,7 @@ function TaskSidebarNav({
 
   const isAllSelected = selectedView === 'all'
   const isStarredSelected = selectedView === 'starred'
-  const isListSelected = (listId: string) =>
-    typeof selectedView === 'object' &&
-    'listId' in selectedView &&
-    !('starred' in selectedView) &&
-    selectedView.listId === listId
+  const isListSelected = (listId: string) => isListView(selectedView, listId)
 
   const handleSelectView = (view: TaskView) => {
     setSelectedView(view)

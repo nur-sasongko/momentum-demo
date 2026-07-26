@@ -1,15 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format, parseISO } from 'date-fns'
-import { CalendarIcon, MapPin, Trash2 } from 'lucide-react'
+import { CalendarIcon, MapPin } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { LocationFields } from '#/components/location/location-fields'
+import { LocationPickerDialog } from '#/components/location/location-picker'
 import { Button } from '#/components/ui/button'
 import { Calendar } from '#/components/ui/calendar'
 import { CurrencyInput } from '#/components/ui/currency-input'
 import { FieldError } from '#/components/ui/field-error'
-import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
   Popover,
@@ -32,12 +33,9 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet'
 import { Textarea } from '#/components/ui/textarea'
-import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { useIsMobile } from '#/hooks/use-mobile'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
-import { LocationMapEmbed } from './location-map-embed'
-import { LocationPickerDialog } from './location-picker'
 import {
   useCreateTransactionMutation,
   useUpdateTransactionMutation,
@@ -99,7 +97,6 @@ export function TransactionFormSheet() {
   })
 
   const location = form.watch('location')
-  const debouncedLocation = useDebouncedValue(location, 500)
 
   useEffect(() => {
     if (editingTx) {
@@ -311,88 +308,18 @@ export function TransactionFormSheet() {
             <div className="space-y-2">
               <Label>Location</Label>
               {location ? (
-                <div className="space-y-2 rounded-lg border p-3">
-                  {debouncedLocation && (
-                    <LocationMapEmbed
-                      location={debouncedLocation}
-                      className="h-48"
-                    />
-                  )}
-                  <div className="grid grid-cols-1 gap-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="tx-location-place-name">Place name</Label>
-                      <Input
-                        id="tx-location-place-name"
-                        placeholder="Place name"
-                        value={location.placeName}
-                        onChange={(e) =>
-                          form.setValue(
-                            'location',
-                            { ...location, placeName: e.target.value },
-                            { shouldDirty: true },
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="tx-location-address">Address</Label>
-                      <Textarea
-                        id="tx-location-address"
-                        placeholder="Address"
-                        rows={2}
-                        value={location.address}
-                        onChange={(e) =>
-                          form.setValue(
-                            'location',
-                            { ...location, address: e.target.value },
-                            { shouldDirty: true },
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="tx-location-city">City</Label>
-                      <Input
-                        id="tx-location-city"
-                        placeholder="City"
-                        value={location.city}
-                        onChange={(e) =>
-                          form.setValue(
-                            'location',
-                            { ...location, city: e.target.value },
-                            { shouldDirty: true },
-                          )
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="tx-location-country">Country</Label>
-                      <Input
-                        id="tx-location-country"
-                        placeholder="Country"
-                        value={location.country}
-                        onChange={(e) =>
-                          form.setValue(
-                            'location',
-                            { ...location, country: e.target.value },
-                            { shouldDirty: true },
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start text-muted-foreground hover:text-destructive"
-                    onClick={() =>
+                <div className="rounded-lg border p-3">
+                  <LocationFields
+                    idPrefix="tx-location"
+                    location={location}
+                    mapClassName="h-48"
+                    onChange={(next) =>
+                      form.setValue('location', next, { shouldDirty: true })
+                    }
+                    onRemove={() =>
                       form.setValue('location', null, { shouldDirty: true })
                     }
-                  >
-                    <Trash2 className="size-3.5" />
-                    Remove location
-                  </Button>
+                  />
                 </div>
               ) : (
                 <Button
