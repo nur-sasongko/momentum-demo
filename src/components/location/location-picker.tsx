@@ -55,6 +55,10 @@ function MapPanner({
   return null
 }
 
+function getColorScheme(): 'light' | 'dark' {
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
 function PlaceSearchInput({
   onPlaceSelected,
 }: {
@@ -69,7 +73,19 @@ function PlaceSearchInput({
     const autocomplete = new placesLibrary.PlaceAutocompleteElement({
       placeholder: 'Search for a place…',
     })
+    // The element auto-detects light/dark from the OS's prefers-color-scheme,
+    // not from our app's theme class, so it must be set explicitly and kept
+    // in sync with theme changes (including "auto" mode's system listener).
+    autocomplete.style.colorScheme = getColorScheme()
     containerRef.current.appendChild(autocomplete)
+
+    const themeObserver = new MutationObserver(() => {
+      autocomplete.style.colorScheme = getColorScheme()
+    })
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
 
     const handleSelect = (event: Event) => {
       const { placePrediction } =
@@ -82,6 +98,7 @@ function PlaceSearchInput({
     autocomplete.addEventListener('gmp-select', handleSelect)
 
     return () => {
+      themeObserver.disconnect()
       autocomplete.removeEventListener('gmp-select', handleSelect)
       autocomplete.remove()
     }
