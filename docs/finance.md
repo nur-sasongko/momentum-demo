@@ -44,6 +44,7 @@ The page composes:
 - `category: FinanceCategory`
 - `date: string` (`YYYY-MM-DD`)
 - `note: string`
+- `location: TransactionLocation | null` — optional place attached to the transaction (see [Location Tracking](#location-tracking))
 
 `SEED_TRANSACTIONS` provides starter data across the current and previous month.
 
@@ -119,6 +120,18 @@ Form fields: type, amount, category, date, note. Validated with `react-hook-form
 - Category chips (`All` + all income/expense categories)
 - **Add Transaction** button
 
+## Location Tracking
+
+See [`docs/specs/finance-location-tracking.md`](./specs/finance-location-tracking.md) for the full spec. Summary:
+
+- Each transaction can optionally carry a `TransactionLocation` (`placeName`, `address`, `city`, `country`, `mapsUrl`), denormalized directly onto `finance_transactions` as five nullable columns (`location_place_name`, `location_address`, `location_city`, `location_country`, `location_maps_url`) — no separate lookup table, since a place is a one-off fact per transaction rather than a reusable/managed entity like a category.
+- `src/routes/_authenticated/finance/-components/location-picker.tsx` — a dialog with an embedded Google Map (`@vis.gl/react-google-maps`) and Places Autocomplete search. Selecting a place auto-fills the location fields; the fields remain editable afterward in `transaction-form.tsx`.
+- `src/routes/_authenticated/finance/-utils/location-utils.ts` — `parseGooglePlaceResult()` extracts place name/address/city/country/maps URL from a Google Places result.
+- `src/routes/_authenticated/finance/-utils/finance-utils.ts` — `getSpendingByCity()`, `getSpendingByCountry()`, and `hasLocationData()`.
+- `src/routes/_authenticated/finance/-components/spending-by-location-chart.tsx` — a bar chart with a City/Country toggle, rendered in `index.tsx` only when `hasLocationData()` is true for the current aggregate rows (progressive disclosure — invisible to users who never attach a location).
+- `src/routes/_authenticated/finance/-components/location-map-embed.tsx` — `LocationMapEmbed` renders a read-only, interactive map (Maps Embed API `place` mode, plain `<iframe>`) wherever a saved location is displayed (`transaction-form.tsx`, `transactions-table.tsx`'s `LocationCell`). Built from the location's text fields (`placeName`/`address`/`city`/`country`), not `mapsUrl` — no lat/lng or place_id is stored, so the embed resolves the place via a text query instead.
+- Requires `VITE_GOOGLE_MAPS_API_KEY` (Maps JavaScript API + Places API + Maps Embed API enabled), validated in `src/libs/env.ts`.
+
 ## Navigation Integration
 
 Finance is enabled in `src/components/AppSidebar.tsx`:
@@ -129,8 +142,9 @@ Finance is enabled in `src/components/AppSidebar.tsx`:
 
 ## Dependencies
 
-- `recharts` for the category spending bar chart
-- Shadcn `select`, `sheet`, `card`, `badge` for UI primitives
+- `recharts` for the category and location spending bar charts
+- `@vis.gl/react-google-maps` for the interactive location picker (Maps JavaScript API + Places Autocomplete)
+- Shadcn `select`, `sheet`, `dialog`, `card`, `badge`, `input` for UI primitives
 
 ## Extending This Module
 

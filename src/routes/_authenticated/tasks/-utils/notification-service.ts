@@ -1,4 +1,4 @@
-import type {Task, TaskList} from '#/stores/tasks-store';
+import type { Task, TaskList } from '#/stores/tasks-store'
 
 interface NotificationShownRecord {
   [taskId: string]: string // ISO date when notification was last shown

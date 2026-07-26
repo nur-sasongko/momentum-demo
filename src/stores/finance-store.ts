@@ -13,6 +13,14 @@ export interface FinanceCategory {
   createdAt: string
 }
 
+export interface TransactionLocation {
+  placeName: string
+  address: string
+  city: string
+  country: string
+  mapsUrl: string
+}
+
 export interface Transaction {
   id: string
   type: TransactionType
@@ -21,6 +29,7 @@ export interface Transaction {
   note: string
   categoryId: string
   category?: FinanceCategory
+  location: TransactionLocation | null
   createdAt: string
   updatedAt: string
 }

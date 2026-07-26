@@ -1,5 +1,5 @@
 import { addDays, format, startOfDay } from 'date-fns'
-import type {Task, TaskList} from '#/stores/tasks-store';
+import type { Task, TaskList } from '#/stores/tasks-store'
 
 export function groupTasksByList(
   tasks: Task[],
