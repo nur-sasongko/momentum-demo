@@ -12,7 +12,11 @@ import { useFinanceStore } from '#/stores/finance-store'
 import { DEFAULT_CATEGORY_CONFIGS } from './finance-utils'
 
 import type { AggregateRow } from './finance-utils'
-import type { FinanceCategory, Transaction } from '#/stores/finance-store'
+import type {
+  FinanceCategory,
+  Transaction,
+  TransactionLocation,
+} from '#/stores/finance-store'
 
 // ---------------------------------------------------------------------------
 // Query key factory
@@ -40,6 +44,26 @@ function transformCategory(row: Record<string, unknown>): FinanceCategory {
   }
 }
 
+function transformTransactionLocation(
+  row: Record<string, unknown>,
+): Transaction['location'] {
+  const placeName = row.location_place_name as string | null
+  const address = row.location_address as string | null
+  const city = row.location_city as string | null
+  const country = row.location_country as string | null
+  const mapsUrl = row.location_maps_url as string | null
+
+  if (!placeName && !address && !city && !country && !mapsUrl) return null
+
+  return {
+    placeName: placeName ?? '',
+    address: address ?? '',
+    city: city ?? '',
+    country: country ?? '',
+    mapsUrl: mapsUrl ?? '',
+  }
+}
+
 function transformTransaction(
   row: Record<string, unknown>,
   categories: FinanceCategory[],
@@ -53,6 +77,7 @@ function transformTransaction(
     note: (row.note as string | null) ?? '',
     categoryId: row.category_id as string,
     category,
+    location: transformTransactionLocation(row),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   }
@@ -119,7 +144,9 @@ export function useFinanceAggregateQuery() {
 
       const { data, error } = await supabase
         .from('finance_transactions')
-        .select('amount, type, date, category_id')
+        .select(
+          'amount, type, date, category_id, location_city, location_country',
+        )
 
       if (error) throw error
       return data
@@ -188,6 +215,16 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
 // Mutations — invalidate both aggregate + transactions on every change
 // ---------------------------------------------------------------------------
 
+function locationToColumns(location: TransactionLocation | null | undefined) {
+  return {
+    location_place_name: location?.placeName || null,
+    location_address: location?.address || null,
+    location_city: location?.city || null,
+    location_country: location?.country || null,
+    location_maps_url: location?.mapsUrl || null,
+  }
+}
+
 function invalidateAll(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.aggregate })
   queryClient.invalidateQueries({ queryKey: ['finance', 'transactions'] })
@@ -204,6 +241,7 @@ export function useCreateTransactionMutation() {
       date: string
       note: string
       categoryId: string
+      location?: TransactionLocation | null
     }) => {
       if (!user) throw new Error('Not authenticated')
       const supabase = getSupabaseBrowserClient()
@@ -218,6 +256,7 @@ export function useCreateTransactionMutation() {
             amount: input.amount,
             date: input.date,
             note: input.note || null,
+            ...locationToColumns(input.location),
           },
         ])
         .select()
@@ -250,6 +289,7 @@ export function useUpdateTransactionMutation() {
         date: string
         note: string
         categoryId: string
+        location?: TransactionLocation | null
       }
     }) => {
       const supabase = getSupabaseBrowserClient()
@@ -261,6 +301,7 @@ export function useUpdateTransactionMutation() {
           amount: input.amount,
           date: input.date,
           note: input.note || null,
+          ...locationToColumns(input.location),
         })
         .eq('id', id)
 

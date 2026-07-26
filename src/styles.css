@@ -147,6 +147,40 @@ body {
   animation: route-fade-in 280ms ease-out both;
 }
 
+/* google.maps.places.PlaceAutocompleteElement styling — a closed-shadow-DOM
+   custom element, so its internals can only be reached via ::part(). */
+gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+}
+
+gmp-place-autocomplete::part(input) {
+  height: 2.75rem;
+  width: 100%;
+  min-width: 0;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input);
+  background-color: transparent;
+  padding: 0.25rem 0.75rem;
+  font-size: 1rem;
+  color: var(--foreground);
+}
+
+@media (min-width: 640px) {
+  gmp-place-autocomplete::part(input) {
+    height: 2.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+.dark gmp-place-autocomplete::part(input) {
+  background-color: color-mix(in srgb, var(--input) 30%, transparent);
+}
+
+gmp-place-autocomplete::part(prediction-list) {
+  z-index: 9999;
+}
+
 @keyframes route-fade-in {
   from {
     opacity: 0;

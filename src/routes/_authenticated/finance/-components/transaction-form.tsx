@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format, parseISO } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, MapPin, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -9,6 +9,7 @@ import { Button } from '#/components/ui/button'
 import { Calendar } from '#/components/ui/calendar'
 import { CurrencyInput } from '#/components/ui/currency-input'
 import { FieldError } from '#/components/ui/field-error'
+import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
   Popover,
@@ -31,14 +32,25 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet'
 import { Textarea } from '#/components/ui/textarea'
+import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { useIsMobile } from '#/hooks/use-mobile'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
+import { LocationMapEmbed } from './location-map-embed'
+import { LocationPickerDialog } from './location-picker'
 import {
   useCreateTransactionMutation,
   useUpdateTransactionMutation,
 } from '../-utils/finance-queries'
 import { getCategoriesForType } from '../-utils/finance-utils'
+
+const transactionLocationSchema = z.object({
+  placeName: z.string(),
+  address: z.string(),
+  city: z.string(),
+  country: z.string(),
+  mapsUrl: z.string(),
+})
 
 const transactionSchema = z.object({
   type: z.enum(['income', 'expense']),
@@ -46,6 +58,7 @@ const transactionSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   date: z.string().min(1, 'Date is required'),
   note: z.string().max(200).optional(),
+  location: transactionLocationSchema.nullable(),
 })
 
 type TransactionFormValues = z.infer<typeof transactionSchema>
@@ -56,6 +69,7 @@ function todayDateKey(): string {
 
 export function TransactionFormSheet() {
   const [datePickerOpen, setDatePickerOpen] = useState(false)
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false)
   const isMobile = useIsMobile()
   const isOpen = useFinanceStore((s) => s.isAddTransactionOpen)
   const setAddTransactionOpen = useFinanceStore((s) => s.setAddTransactionOpen)
@@ -80,8 +94,12 @@ export function TransactionFormSheet() {
       categoryId: defaultExpenseCategoryId,
       date: todayDateKey(),
       note: '',
+      location: null,
     },
   })
+
+  const location = form.watch('location')
+  const debouncedLocation = useDebouncedValue(location, 500)
 
   useEffect(() => {
     if (editingTx) {
@@ -91,6 +109,7 @@ export function TransactionFormSheet() {
         categoryId: editingTx.categoryId,
         date: editingTx.date,
         note: editingTx.note,
+        location: editingTx.location,
       })
     } else {
       form.reset({
@@ -99,6 +118,7 @@ export function TransactionFormSheet() {
         categoryId: defaultExpenseCategoryId,
         date: todayDateKey(),
         note: '',
+        location: null,
       })
     }
   }, [editingTx, defaultExpenseCategoryId, form])
@@ -129,6 +149,7 @@ export function TransactionFormSheet() {
       categoryId: values.categoryId,
       date: values.date,
       note: values.note ?? '',
+      location: values.location,
     }
 
     if (editingId) {
@@ -140,16 +161,13 @@ export function TransactionFormSheet() {
   })
 
   const isPending = createMutation.isPending || updateMutation.isPending
+  const isDirty = form.formState.isDirty
 
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
-        className={cn(
-          isMobile
-            ? 'max-h-[90dvh] overflow-y-auto rounded-t-xl'
-            : 'sm:max-w-md',
-        )}
+        className={cn(isMobile ? 'h-[90dvh] rounded-t-xl' : 'sm:max-w-md')}
       >
         <SheetHeader>
           <SheetTitle>
@@ -160,132 +178,241 @@ export function TransactionFormSheet() {
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-5 px-4">
-          <div className="space-y-2">
-            <Label>Type</Label>
-            <div className="flex gap-2">
-              {(['expense', 'income'] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => form.setValue('type', type)}
-                  className={cn(
-                    'flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors',
-                    selectedType === type
-                      ? type === 'income'
-                        ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                        : 'border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-400'
-                      : 'border-border text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tx-amount">Amount</Label>
-            <CurrencyInput
-              id="tx-amount"
-              placeholder="0.00"
-              value={form.watch('amount')}
-              onValueChange={(value) =>
-                form.setValue('amount', value ?? 0, { shouldValidate: true })
-              }
-            />
-            {form.formState.errors.amount && (
-              <FieldError>{form.formState.errors.amount.message}</FieldError>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label>Category</Label>
-            <Select
-              value={form.watch('categoryId')}
-              onValueChange={(value) => form.setValue('categoryId', value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="inline-block size-2.5 rounded-full"
-                        style={{ backgroundColor: cat.color }}
-                      />
-                      {cat.name}
-                    </span>
-                  </SelectItem>
+        <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-1">
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <div className="flex gap-2">
+                {(['expense', 'income'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() =>
+                      form.setValue('type', type, { shouldDirty: true })
+                    }
+                    className={cn(
+                      'flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors',
+                      selectedType === type
+                        ? type === 'income'
+                          ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                          : 'border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-400'
+                        : 'border-border text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {type}
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
-            {form.formState.errors.categoryId && (
-              <FieldError>
-                {form.formState.errors.categoryId.message}
-              </FieldError>
-            )}
-          </div>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label>Date</Label>
-            <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-              <PopoverTrigger asChild>
+            <div className="space-y-2">
+              <Label htmlFor="tx-amount">Amount</Label>
+              <CurrencyInput
+                id="tx-amount"
+                placeholder="0.00"
+                value={form.watch('amount')}
+                onValueChange={(value) =>
+                  form.setValue('amount', value ?? 0, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+              />
+              {form.formState.errors.amount && (
+                <FieldError>{form.formState.errors.amount.message}</FieldError>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select
+                value={form.watch('categoryId')}
+                onValueChange={(value) =>
+                  form.setValue('categoryId', value, { shouldDirty: true })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block size-2.5 rounded-full"
+                          style={{ backgroundColor: cat.color }}
+                        />
+                        {cat.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.categoryId && (
+                <FieldError>
+                  {form.formState.errors.categoryId.message}
+                </FieldError>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !form.watch('date') && 'text-muted-foreground',
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 size-4" />
+                    {form.watch('date')
+                      ? format(parseISO(form.watch('date')), 'PPP')
+                      : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={
+                      form.watch('date')
+                        ? parseISO(form.watch('date'))
+                        : undefined
+                    }
+                    onSelect={(date) => {
+                      if (date) {
+                        form.setValue('date', format(date, 'yyyy-MM-dd'), {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                        setDatePickerOpen(false)
+                      }
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+              {form.formState.errors.date && (
+                <FieldError>{form.formState.errors.date.message}</FieldError>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tx-note">Note</Label>
+              <Textarea
+                id="tx-note"
+                placeholder="Optional description"
+                rows={3}
+                {...form.register('note')}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Location</Label>
+              {location ? (
+                <div className="space-y-2 rounded-lg border p-3">
+                  {debouncedLocation && (
+                    <LocationMapEmbed
+                      location={debouncedLocation}
+                      className="h-48"
+                    />
+                  )}
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="tx-location-place-name">Place name</Label>
+                      <Input
+                        id="tx-location-place-name"
+                        placeholder="Place name"
+                        value={location.placeName}
+                        onChange={(e) =>
+                          form.setValue(
+                            'location',
+                            { ...location, placeName: e.target.value },
+                            { shouldDirty: true },
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="tx-location-address">Address</Label>
+                      <Textarea
+                        id="tx-location-address"
+                        placeholder="Address"
+                        rows={2}
+                        value={location.address}
+                        onChange={(e) =>
+                          form.setValue(
+                            'location',
+                            { ...location, address: e.target.value },
+                            { shouldDirty: true },
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="tx-location-city">City</Label>
+                      <Input
+                        id="tx-location-city"
+                        placeholder="City"
+                        value={location.city}
+                        onChange={(e) =>
+                          form.setValue(
+                            'location',
+                            { ...location, city: e.target.value },
+                            { shouldDirty: true },
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="tx-location-country">Country</Label>
+                      <Input
+                        id="tx-location-country"
+                        placeholder="Country"
+                        value={location.country}
+                        onChange={(e) =>
+                          form.setValue(
+                            'location',
+                            { ...location, country: e.target.value },
+                            { shouldDirty: true },
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-muted-foreground hover:text-destructive"
+                    onClick={() =>
+                      form.setValue('location', null, { shouldDirty: true })
+                    }
+                  >
+                    <Trash2 className="size-3.5" />
+                    Remove location
+                  </Button>
+                </div>
+              ) : (
                 <Button
                   type="button"
                   variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !form.watch('date') && 'text-muted-foreground',
-                  )}
+                  className="w-full justify-start text-muted-foreground"
+                  onClick={() => setLocationPickerOpen(true)}
                 >
-                  <CalendarIcon className="mr-2 size-4" />
-                  {form.watch('date')
-                    ? format(parseISO(form.watch('date')), 'PPP')
-                    : 'Pick a date'}
+                  <MapPin className="mr-2 size-4" />
+                  Add location
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={
-                    form.watch('date')
-                      ? parseISO(form.watch('date'))
-                      : undefined
-                  }
-                  onSelect={(date) => {
-                    if (date) {
-                      form.setValue('date', format(date, 'yyyy-MM-dd'), {
-                        shouldValidate: true,
-                      })
-                      setDatePickerOpen(false)
-                    }
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
-            {form.formState.errors.date && (
-              <FieldError>{form.formState.errors.date.message}</FieldError>
-            )}
+              )}
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tx-note">Note</Label>
-            <Textarea
-              id="tx-note"
-              placeholder="Optional description"
-              rows={3}
-              {...form.register('note')}
-            />
-          </div>
-
-          <SheetFooter className="px-0">
+          <SheetFooter className="border-t">
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || !isDirty}>
               {isPending
                 ? 'Saving…'
                 : editingId
@@ -295,6 +422,14 @@ export function TransactionFormSheet() {
           </SheetFooter>
         </form>
       </SheetContent>
+
+      <LocationPickerDialog
+        open={locationPickerOpen}
+        onOpenChange={setLocationPickerOpen}
+        onConfirm={(next) =>
+          form.setValue('location', next, { shouldDirty: true })
+        }
+      />
     </Sheet>
   )
 }

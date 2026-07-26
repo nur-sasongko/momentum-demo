@@ -6,6 +6,7 @@ import { FinanceEmptyState } from '#/routes/_authenticated/finance/-components/f
 import { FinanceFilters } from '#/routes/_authenticated/finance/-components/finance-filters'
 import { FinanceStatCards } from '#/routes/_authenticated/finance/-components/finance-stat-cards'
 import { SpendingByCategoryChart } from '#/routes/_authenticated/finance/-components/spending-by-category-chart'
+import { SpendingByLocationChart } from '#/routes/_authenticated/finance/-components/spending-by-location-chart'
 import { TransactionFormSheet } from '#/routes/_authenticated/finance/-components/transaction-form'
 import { TransactionsTable } from '#/routes/_authenticated/finance/-components/transactions-table'
 import { useFinanceStore } from '#/stores/finance-store'
@@ -14,6 +15,7 @@ import {
   useFinanceAggregateQuery,
   useFinanceCategoriesQuery,
 } from './-utils/finance-queries'
+import { hasLocationData } from './-utils/finance-utils'
 
 export const Route = createFileRoute('/_authenticated/finance/')({
   head: () => ({
@@ -81,8 +83,9 @@ function FinancePage() {
               Table
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="chart">
+          <TabsContent value="chart" className="space-y-4">
             <SpendingByCategoryChart />
+            {hasLocationData(aggregateRows) && <SpendingByLocationChart />}
           </TabsContent>
           <TabsContent value="table">
             <TransactionsTable />

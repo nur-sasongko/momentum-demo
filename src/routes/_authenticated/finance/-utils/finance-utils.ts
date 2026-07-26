@@ -31,6 +31,8 @@ export interface AggregateRow {
   type: 'income' | 'expense'
   date: string
   category_id: string
+  location_city: string | null
+  location_country: string | null
 }
 
 export function formatCurrency(amount: number): string {
@@ -117,4 +119,63 @@ export function getSpendingByCategory(
   return Array.from(totals.entries())
     .map(([category, { amount, fill }]) => ({ category, amount, fill }))
     .sort((a, b) => b.amount - a.amount)
+}
+
+const LOCATION_CHART_COLORS = [
+  '#0ea5e9',
+  '#f59e0b',
+  '#8b5cf6',
+  '#f43f5e',
+  '#10b981',
+  '#ec4899',
+  '#6366f1',
+  '#14b8a6',
+]
+
+export interface LocationSpending {
+  location: string
+  amount: number
+  fill: string
+}
+
+function getSpendingByLocationField(
+  rows: AggregateRow[],
+  dateRange: DateRange,
+  field: 'location_city' | 'location_country',
+): LocationSpending[] {
+  const totals = new Map<string, number>()
+
+  for (const row of rows) {
+    if (row.type !== 'expense') continue
+    if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
+    const value = row[field]
+    if (!value) continue
+    totals.set(value, (totals.get(value) ?? 0) + row.amount)
+  }
+
+  return Array.from(totals.entries())
+    .map(([location, amount], index) => ({
+      location,
+      amount,
+      fill: LOCATION_CHART_COLORS[index % LOCATION_CHART_COLORS.length],
+    }))
+    .sort((a, b) => b.amount - a.amount)
+}
+
+export function getSpendingByCity(
+  rows: AggregateRow[],
+  dateRange: DateRange,
+): LocationSpending[] {
+  return getSpendingByLocationField(rows, dateRange, 'location_city')
+}
+
+export function getSpendingByCountry(
+  rows: AggregateRow[],
+  dateRange: DateRange,
+): LocationSpending[] {
+  return getSpendingByLocationField(rows, dateRange, 'location_country')
+}
+
+export function hasLocationData(rows: AggregateRow[]): boolean {
+  return rows.some((row) => row.location_city || row.location_country)
 }

@@ -4,6 +4,7 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                              | Feature | Status      | Created    |
 | --- | ----------------------------------------------------------------- | ------- | ----------- | ---------- |
+| 6   | [Location-Based Expense Tracking](./finance-location-tracking.md) | finance | in-progress | 2026-07-26 |
 | 5   | [Finance Supabase Integration](./finance-supabase-integration.md) | finance | in-progress | 2026-07-24 |
 | 1   | [Supabase Postgres Connection](./core-supabase-postgres.md)       | core    | done        | 2026-07-04 |
 | 2   | [Auth: Login & Logout](./core-auth-login-logout.md)               | core    | done        | 2026-07-04 |
