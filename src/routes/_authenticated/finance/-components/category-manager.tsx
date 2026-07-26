@@ -214,59 +214,57 @@ function AddCategoryForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-3 pt-2">
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="space-y-1">
+        <Label htmlFor="cat-name" className="text-xs">
+          Name
+        </Label>
+        <Input
+          id="cat-name"
+          placeholder="e.g. Travel"
+          className="h-8 text-sm"
+          {...form.register('name')}
+        />
+        {form.formState.errors.name && (
+          <FieldError>{form.formState.errors.name.message}</FieldError>
+        )}
+      </div>
+
+      <div className="flex gap-2">
         <div className="flex-1 space-y-1">
-          <Label htmlFor="cat-name" className="text-xs">
-            Name
-          </Label>
-          <Input
-            id="cat-name"
-            placeholder="e.g. Travel"
-            className="h-8 text-sm"
-            {...form.register('name')}
-          />
-          {form.formState.errors.name && (
-            <FieldError>{form.formState.errors.name.message}</FieldError>
-          )}
+          <Label className="text-xs">Type</Label>
+          <Select
+            value={form.watch('type')}
+            onValueChange={(v) =>
+              form.setValue('type', v as 'income' | 'expense')
+            }
+          >
+            <SelectTrigger size="sm" className="w-full text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="income">Income</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="flex gap-2 sm:contents">
-          <div className="flex-1 space-y-1 sm:flex-none">
-            <Label className="text-xs">Type</Label>
-            <Select
-              value={form.watch('type')}
-              onValueChange={(v) =>
-                form.setValue('type', v as 'income' | 'expense')
-              }
-            >
-              <SelectTrigger size="sm" className="w-full text-sm sm:w-27.5">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="expense">Expense</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="cat-color" className="text-xs">
-              Color
-            </Label>
-            <input
-              id="cat-color"
-              type="color"
-              className="h-8 w-10 cursor-pointer rounded-md border border-input bg-background p-0.5"
-              {...form.register('color')}
-            />
-          </div>
+        <div className="space-y-1">
+          <Label htmlFor="cat-color" className="text-xs">
+            Color
+          </Label>
+          <input
+            id="cat-color"
+            type="color"
+            className="h-8 w-10 cursor-pointer rounded-md border border-input bg-background p-0.5"
+            {...form.register('color')}
+          />
         </div>
       </div>
 
       <Button
         type="submit"
         size="sm"
-        className="w-full gap-1.5 sm:w-auto"
+        className="w-full gap-1.5"
         disabled={createMutation.isPending}
       >
         <Plus className="size-3.5" />
