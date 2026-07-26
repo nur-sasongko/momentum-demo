@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseGeocoderResult, parsePlace } from '../location-utils'
+import { parseGeocoderResult, parsePlace } from '../location'
 
 function addressComponent(
   longName: string,

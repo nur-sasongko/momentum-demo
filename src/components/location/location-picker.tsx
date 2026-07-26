@@ -17,9 +17,9 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { env } from '#/libs/env'
-import { parseGeocoderResult, parsePlace } from '../-utils/location-utils'
+import { parseGeocoderResult, parsePlace } from '#/utils/location'
 
-import type { TransactionLocation } from '#/stores/finance-store'
+import type { GeoLocation } from '#/types/location'
 
 const DEFAULT_CENTER = { lat: 0, lng: 0 }
 const DEFAULT_ZOOM = 2
@@ -101,7 +101,7 @@ function LocationMap({
   panSignal: number
   existingPlaceName: string
   onPositionChange: (position: google.maps.LatLngLiteral) => void
-  onLocationResolved: (location: TransactionLocation) => void
+  onLocationResolved: (location: GeoLocation) => void
 }) {
   const geocodingLibrary = useMapsLibrary('geocoding')
   const geocoderRef = useRef<google.maps.Geocoder | null>(null)
@@ -172,7 +172,7 @@ function LocationMap({
 interface LocationPickerDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (location: TransactionLocation) => void
+  onConfirm: (location: GeoLocation) => void
 }
 
 export function LocationPickerDialog({
@@ -183,7 +183,7 @@ export function LocationPickerDialog({
   const [position, setPosition] = useState<google.maps.LatLngLiteral | null>(
     null,
   )
-  const [location, setLocation] = useState<TransactionLocation | null>(null)
+  const [location, setLocation] = useState<GeoLocation | null>(null)
   const [panSignal, setPanSignal] = useState(0)
 
   const handleOpenChange = (next: boolean) => {

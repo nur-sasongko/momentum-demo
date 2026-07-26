@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+import type { GeoLocation } from '#/types/location'
+
+export type TransactionLocation = GeoLocation
+
 export type TransactionType = 'income' | 'expense'
 export type FinanceView = 'chart' | 'transactions'
 
@@ -11,14 +15,6 @@ export interface FinanceCategory {
   color: string
   isSystem: boolean
   createdAt: string
-}
-
-export interface TransactionLocation {
-  placeName: string
-  address: string
-  city: string
-  country: string
-  mapsUrl: string
 }
 
 export interface Transaction {

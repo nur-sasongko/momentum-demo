@@ -1,13 +1,10 @@
 import { env } from '#/libs/env'
 import { cn } from '#/libs/utils'
 
-import type { TransactionLocation } from '#/stores/finance-store'
+import type { GeoLocation } from '#/types/location'
 
 function buildLocationQuery(
-  location: Pick<
-    TransactionLocation,
-    'placeName' | 'address' | 'city' | 'country'
-  >,
+  location: Pick<GeoLocation, 'placeName' | 'address' | 'city' | 'country'>,
 ): string {
   if (location.address) {
     return location.placeName
@@ -23,7 +20,7 @@ export function LocationMapEmbed({
   location,
   className,
 }: {
-  location: TransactionLocation
+  location: GeoLocation
   className?: string
 }) {
   const query = buildLocationQuery(location)

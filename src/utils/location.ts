@@ -1,4 +1,4 @@
-import type { TransactionLocation } from '#/stores/finance-store'
+import type { GeoLocation } from '#/types/location'
 
 function findAddressComponent(
   components: google.maps.GeocoderAddressComponent[] | undefined,
@@ -22,9 +22,7 @@ function findPlaceAddressComponent(
   return ''
 }
 
-export function parsePlace(
-  place: google.maps.places.Place,
-): TransactionLocation {
+export function parsePlace(place: google.maps.places.Place): GeoLocation {
   const components = place.addressComponents ?? undefined
 
   return {
@@ -52,7 +50,7 @@ export function parsePlace(
 export function parseGeocoderResult(
   result: google.maps.GeocoderResult,
   existingPlaceName = '',
-): TransactionLocation {
+): GeoLocation {
   const components = result.address_components
 
   return {
