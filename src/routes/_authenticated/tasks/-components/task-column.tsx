@@ -3,6 +3,7 @@ import {
   ChevronDown,
   EllipsisVertical,
   PartyPopper,
+  Pencil,
   Plus,
   Trash2,
 } from 'lucide-react'
@@ -21,6 +22,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { useToast } from '#/hooks/use-toast'
@@ -36,6 +38,7 @@ import {
 } from '../-utils/tasks-utils'
 import { TaskRow } from './task-row'
 import { AddTaskSheet } from './add-task-sheet'
+import { NewListSheet } from './new-list-sheet'
 
 interface TaskColumnProps {
   list: TaskList
@@ -48,6 +51,7 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [addTaskOpen, setAddTaskOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const { toast } = useToast()
   const { setNodeRef } = useDroppable({
     id: `list-${list.id}`,
@@ -101,28 +105,35 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
             {list.name}
           </h3>
         </div>
-        {canDelete && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                aria-label={`List options for ${list.name}`}
-              >
-                <EllipsisVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setConfirmOpen(true)}
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete list
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`List options for ${list.name}`}
+            >
+              <EllipsisVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4" />
+              Edit list
+            </DropdownMenuItem>
+            {canDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete list
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Content */}
@@ -213,6 +224,12 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
         onOpenChange={setAddTaskOpen}
         lists={lists}
         defaultListId={list.id}
+      />
+
+      <NewListSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        editListId={list.id}
       />
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
