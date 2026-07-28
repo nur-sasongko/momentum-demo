@@ -10,7 +10,7 @@ import {
   getCompletedCount,
 } from '../-utils/tasks-utils'
 import { TaskRow } from './task-row'
-import { AddTaskDialog } from './add-task-dialog'
+import { AddTaskSheet } from './add-task-sheet'
 
 interface TaskColumnProps {
   list: TaskList
@@ -133,7 +133,7 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
       </div>
 
       {/* Add Task Dialog */}
-      <AddTaskDialog
+      <AddTaskSheet
         open={addTaskOpen}
         onOpenChange={setAddTaskOpen}
         lists={lists}

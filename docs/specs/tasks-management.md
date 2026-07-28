@@ -214,7 +214,7 @@ create policy "Users can view/edit subtasks of their own tasks" on public.subtas
 - Left panel (`task-sidebar.tsx`, plain divs/Buttons — not the shadcn `Sidebar` primitive, which is reserved for the global `AppSidebar`): "All Tasks", "Starred", then user Lists in `order`; a "+ New list" action opens `new-list-dialog.tsx`.
 - Right panel (`task-board.tsx`): renders one `task-column.tsx` per visible List (all Lists for `all`/`starred` views, one for a focused List view). Each column: header (name, task count), scrollable card stack, footer showing "`N` completed" that expands in place to reveal collapsed cards.
 - Cards (`task-card.tsx`): title, star toggle, deadline badge (if set), subtask progress badge (if any subtasks, clickable to open inline popover for quick toggles), opens `task-detail-sheet.tsx` on click for full edit (title, notes, list, deadline calendar popover, subtask CRUD, delete). Popover for subtask toggles: `task-subtask-quick-toggle.tsx`.
-- A single "Add Task" button lives at the top of the left panel (`task-sidebar.tsx`, above "All Tasks"), opening `add-task-dialog.tsx` (a `Dialog`, not a `Sheet`) with title, notes, deadline, and a List select (defaults to the focused List when a single List is selected, otherwise the first List) — this is the only entry point for creating a task; there is no per-column "Add task" affordance.
+- A single "Add Task" button lives at the top of the left panel (`task-sidebar.tsx`, above "All Tasks"), opening `add-task-sheet.tsx` (a responsive `Sheet`: bottom on mobile, right on desktop) with title, notes, deadline, and a List select (defaults to the focused List when a single List is selected, otherwise the first List) — this is the only entry point for creating a task; there is no per-column "Add task" affordance.
 - Drag-and-drop via `@dnd-kit/core` + `@dnd-kit/sortable`: sortable within a column (updates `order`), droppable across columns (updates `listId` + `order`).
 - Reuse existing shadcn primitives: `card`, `sheet`, `dialog`, `dropdown-menu`, `badge`, `select`, `input`, `textarea`, `label`, `tooltip`, `skeleton`, `sonner`. Add new primitives via `bunx --bun shadcn@latest add checkbox popover calendar`.
 
@@ -271,7 +271,7 @@ create policy "Users can view/edit subtasks of their own tasks" on public.subtas
 9. `src/routes/tasks/-components/task-card.tsx` — card content + drag handle.
 10. `src/routes/tasks/-components/task-subtask-quick-toggle.tsx` — popover/dropdown for inline subtask checkbox toggles; invoked when user clicks the subtask progress badge.
 11. `src/routes/tasks/-components/task-detail-sheet.tsx` — edit sheet for an existing task (title, notes, list, deadline popover, full subtask CRUD, star, delete).
-    11a. `src/routes/tasks/-components/add-task-dialog.tsx` — create-task dialog (title, notes, deadline, List select), opened from the single "Add Task" button at the top of the left panel.
+    11a. `src/routes/tasks/-components/add-task-sheet.tsx` — create-task sheet (title, notes, deadline, List select), opened from the single "Add Task" button at the top of the left panel.
 12. Register a "Tasks" nav entry in `src/components/AppSidebar.tsx`.
 13. Add dependencies: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`, `react-day-picker`; add shadcn components `checkbox`, `popover`, `calendar`, `input` (for hex color).
 14. **Notifications system** — new files:

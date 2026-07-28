@@ -4,7 +4,7 @@ import { Button } from '#/components/ui/button'
 import type { TaskView, TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
 import { NewListDialog } from './new-list-dialog'
-import { AddTaskDialog } from './add-task-dialog'
+import { AddTaskSheet } from './add-task-sheet'
 import { getDefaultListId, isListView } from '../-utils/tasks-utils'
 
 interface TaskSidebarProps {
@@ -107,7 +107,7 @@ export function TaskSidebar({ lists }: TaskSidebarProps) {
       <NewListDialog open={newListOpen} onOpenChange={setNewListOpen} />
 
       {/* Add Task Dialog */}
-      <AddTaskDialog
+      <AddTaskSheet
         open={addTaskOpen}
         onOpenChange={setAddTaskOpen}
         lists={lists}
