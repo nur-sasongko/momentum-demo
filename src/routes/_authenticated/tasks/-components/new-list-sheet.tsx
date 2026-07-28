@@ -18,7 +18,8 @@ import {
   useCreateListMutation,
   useUpdateListMutation,
 } from '../-utils/tasks-queries'
-import { isValidHexColor } from '../-utils/tasks-utils'
+
+const NEUTRAL_DEFAULT_COLOR = '#71717a'
 
 interface NewListSheetProps {
   open: boolean
@@ -53,13 +54,6 @@ export function NewListSheet({
     onOpenChange(newOpen)
   }
 
-  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    if (value === '' || isValidHexColor(value)) {
-      setColor(value)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -67,14 +61,6 @@ export function NewListSheet({
       toast({
         variant: 'destructive',
         description: 'List name is required',
-      })
-      return
-    }
-
-    if (color && !isValidHexColor(color)) {
-      toast({
-        variant: 'destructive',
-        description: 'Invalid hex color format (e.g. #FF5733)',
       })
       return
     }
@@ -153,26 +139,26 @@ export function NewListSheet({
             <div className="space-y-2">
               <Label htmlFor="list-color">Color (Optional)</Label>
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   id="list-color"
-                  type="text"
-                  placeholder="#FF5733"
-                  value={color}
-                  onChange={handleColorChange}
+                  type="color"
+                  className="h-8 w-10 shrink-0 cursor-pointer rounded-md border border-input bg-background p-0.5"
+                  value={color || NEUTRAL_DEFAULT_COLOR}
+                  onChange={(e) => setColor(e.target.value)}
                   disabled={isLoading}
-                  maxLength={7}
-                  className="font-mono"
                 />
-                {color && isValidHexColor(color) && (
-                  <div
-                    className="h-8 w-8 rounded border border-zinc-300 dark:border-zinc-700"
-                    style={{ backgroundColor: color }}
-                  />
+                {color && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setColor('')}
+                    disabled={isLoading}
+                  >
+                    Clear
+                  </Button>
                 )}
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Enter a hex color code like #FF5733
-              </p>
             </div>
           </div>
 
