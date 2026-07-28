@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger } from '#/components/ui/tabs'
 import type { TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
 import { getViewKey } from '../-utils/tasks-utils'
-import { NewListDialog } from './new-list-dialog'
+import { NewListSheet } from './new-list-sheet'
 
 const NEW_LIST_VALUE = '__new_list__'
 
@@ -38,38 +38,48 @@ export function TaskMobileTabs({ lists }: TaskMobileTabsProps) {
   }
 
   return (
-    <div className="border-b border-zinc-200 dark:border-zinc-800 overflow-x-auto">
-      <Tabs value={getViewKey(selectedView)} onValueChange={handleValueChange}>
-        <TabsList variant="line" className="w-full flex-nowrap px-2">
-          <TabsTrigger value="starred" className="flex-none">
-            <Star
-              className="w-4 h-4"
-              fill={selectedView === 'starred' ? 'currentColor' : 'none'}
-            />
-          </TabsTrigger>
-          {lists.map((list) => (
-            <TabsTrigger
-              key={list.id}
-              value={`list-${list.id}`}
-              className="flex-none gap-1.5"
-            >
-              {list.color && (
-                <span
-                  className="w-2 h-2 rounded-full shrink-0"
-                  style={{ backgroundColor: list.color }}
-                />
-              )}
-              <span className="truncate max-w-24">{list.name}</span>
+    <div className="shrink-0 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Tabs
+          value={getViewKey(selectedView)}
+          onValueChange={handleValueChange}
+          className="w-max min-w-full"
+        >
+          <TabsList
+            variant="line"
+            className="h-auto w-max min-w-full flex-nowrap justify-start gap-1 px-3"
+          >
+            <TabsTrigger value="starred" className="flex-none shrink-0">
+              <Star
+                className="size-4"
+                fill={selectedView === 'starred' ? 'currentColor' : 'none'}
+              />
+              <span className="sr-only">Starred</span>
             </TabsTrigger>
-          ))}
-          <TabsTrigger value={NEW_LIST_VALUE} className="flex-none">
-            <Plus className="w-4 h-4" />
-            New list
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+            {lists.map((list) => (
+              <TabsTrigger
+                key={list.id}
+                value={`list-${list.id}`}
+                className="flex-none shrink-0 gap-1.5"
+              >
+                {list.color && (
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: list.color }}
+                  />
+                )}
+                <span className="max-w-24 truncate">{list.name}</span>
+              </TabsTrigger>
+            ))}
+            <TabsTrigger value={NEW_LIST_VALUE} className="flex-none shrink-0">
+              <Plus className="size-4" />
+              <span className="sr-only">New list</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <NewListDialog open={newListOpen} onOpenChange={setNewListOpen} />
+      <NewListSheet open={newListOpen} onOpenChange={setNewListOpen} />
     </div>
   )
 }

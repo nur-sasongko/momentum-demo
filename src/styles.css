@@ -179,6 +179,19 @@ gmp-place-autocomplete::part(input) {
 
 gmp-place-autocomplete::part(prediction-list) {
   z-index: 9999;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+gmp-place-autocomplete::part(prediction-item) {
+  white-space: normal;
+}
+
+gmp-place-autocomplete::part(prediction-item-main-text),
+gmp-place-autocomplete::part(prediction-item-secondary-text) {
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 @keyframes route-fade-in {

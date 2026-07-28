@@ -1,16 +1,41 @@
 import { useState } from 'react'
-import { ChevronDown, PartyPopper, Plus } from 'lucide-react'
+import {
+  ChevronDown,
+  EllipsisVertical,
+  PartyPopper,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Button } from '#/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
+import { useToast } from '#/hooks/use-toast'
 import type { Task, TaskList } from '#/stores/tasks-store'
+import { useTasksStore } from '#/stores/tasks-store'
+import { useDeleteListMutation } from '../-utils/tasks-queries'
 import {
   getIncompleteTasks,
   getCompletedTasks,
   getCompletedCount,
+  getDeleteFallbackList,
+  isListView,
 } from '../-utils/tasks-utils'
 import { TaskRow } from './task-row'
-import { AddTaskDialog } from './add-task-dialog'
+import { AddTaskSheet } from './add-task-sheet'
 
 interface TaskColumnProps {
   list: TaskList
@@ -22,13 +47,41 @@ interface TaskColumnProps {
 export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [addTaskOpen, setAddTaskOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const { toast } = useToast()
   const { setNodeRef } = useDroppable({
     id: `list-${list.id}`,
   })
 
+  const selectedView = useTasksStore((s) => s.selectedView)
+  const setSelectedView = useTasksStore((s) => s.setSelectedView)
+  const deleteListMutation = useDeleteListMutation()
+
   const incompleteTasks = getIncompleteTasks(tasks)
   const completedTasks = getCompletedTasks(tasks)
   const completedCount = getCompletedCount(tasks)
+  const isInbox = list.name === 'Inbox'
+  const isLastList = lists.length <= 1
+  const canDelete = !isInbox && !isLastList
+  const fallbackList = getDeleteFallbackList(lists, list.id)
+  const isDeleting = deleteListMutation.isPending
+
+  const handleDelete = async () => {
+    try {
+      await deleteListMutation.mutateAsync(list.id)
+      if (isListView(selectedView, list.id)) {
+        setSelectedView('all')
+      }
+      toast({ description: 'List deleted' })
+      setConfirmOpen(false)
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        description:
+          error instanceof Error ? error.message : 'Failed to delete list',
+      })
+    }
+  }
 
   return (
     <div
@@ -48,6 +101,28 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
             {list.name}
           </h3>
         </div>
+        {canDelete && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                aria-label={`List options for ${list.name}`}
+              >
+                <EllipsisVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete list
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
       {/* Content */}
@@ -133,12 +208,40 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
       </div>
 
       {/* Add Task Dialog */}
-      <AddTaskDialog
+      <AddTaskSheet
         open={addTaskOpen}
         onOpenChange={setAddTaskOpen}
         lists={lists}
         defaultListId={list.id}
       />
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Delete list?</DialogTitle>
+            <DialogDescription>
+              &ldquo;{list.name}&rdquo; will be deleted. Tasks in this list will
+              move to &ldquo;{fallbackList?.name ?? 'another list'}&rdquo;.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting…' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

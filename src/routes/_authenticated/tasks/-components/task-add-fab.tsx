@@ -4,7 +4,7 @@ import { Button } from '#/components/ui/button'
 import type { TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
 import { getDefaultListId } from '../-utils/tasks-utils'
-import { AddTaskDialog } from './add-task-dialog'
+import { AddTaskSheet } from './add-task-sheet'
 
 interface TaskAddFabProps {
   lists: TaskList[]
@@ -27,7 +27,7 @@ export function TaskAddFab({ lists }: TaskAddFabProps) {
         <Plus className="w-6 h-6" />
       </Button>
 
-      <AddTaskDialog
+      <AddTaskSheet
         open={addTaskOpen}
         onOpenChange={setAddTaskOpen}
         lists={lists}

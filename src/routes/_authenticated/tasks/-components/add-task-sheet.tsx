@@ -1,12 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Button } from '#/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { Textarea } from '#/components/ui/textarea'
@@ -17,26 +10,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '#/components/ui/sheet'
+import { useIsMobile } from '#/hooks/use-mobile'
+import { useToast } from '#/hooks/use-toast'
+import { cn } from '#/libs/utils'
 import type { TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
 import { useCreateTaskMutation } from '../-utils/tasks-queries'
 import { getNextOrder } from '../-utils/tasks-utils'
-import { useToast } from '#/hooks/use-toast'
 
-interface AddTaskDialogProps {
+interface AddTaskSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   lists: TaskList[]
   defaultListId?: string
 }
 
-export function AddTaskDialog({
+export function AddTaskSheet({
   open,
   onOpenChange,
   lists,
   defaultListId,
-}: AddTaskDialogProps) {
+}: AddTaskSheetProps) {
   const { toast } = useToast()
+  const isMobile = useIsMobile()
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
   const [listId, setListId] = useState(defaultListId || lists[0]?.id || '')
@@ -103,72 +107,77 @@ export function AddTaskDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Task</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent
+        side={isMobile ? 'bottom' : 'right'}
+        className={cn(isMobile ? 'h-[90dvh] rounded-t-xl' : 'sm:max-w-md')}
+      >
+        <SheetHeader>
+          <SheetTitle>Add Task</SheetTitle>
+          <SheetDescription>
             Create a new task and choose which list it belongs to
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="task-title">Title</Label>
-            <Input
-              id="task-title"
-              placeholder="Task title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={isLoading}
-              autoFocus
-            />
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-1">
+            <div className="space-y-2">
+              <Label htmlFor="task-title">Title</Label>
+              <Input
+                id="task-title"
+                placeholder="Task title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={isLoading}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="task-notes">Notes</Label>
+              <Textarea
+                id="task-notes"
+                placeholder="Add details..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={isLoading}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="task-list">List</Label>
+              <Select
+                value={listId}
+                onValueChange={setListId}
+                disabled={isLoading}
+              >
+                <SelectTrigger id="task-list">
+                  <SelectValue placeholder="Select a list" />
+                </SelectTrigger>
+                <SelectContent>
+                  {lists.map((list) => (
+                    <SelectItem key={list.id} value={list.id}>
+                      {list.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="task-deadline">Deadline (Optional)</Label>
+              <Input
+                id="task-deadline"
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="task-notes">Notes</Label>
-            <Textarea
-              id="task-notes"
-              placeholder="Add details..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isLoading}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="task-list">List</Label>
-            <Select
-              value={listId}
-              onValueChange={setListId}
-              disabled={isLoading}
-            >
-              <SelectTrigger id="task-list">
-                <SelectValue placeholder="Select a list" />
-              </SelectTrigger>
-              <SelectContent>
-                {lists.map((list) => (
-                  <SelectItem key={list.id} value={list.id}>
-                    {list.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="task-deadline">Deadline (Optional)</Label>
-            <Input
-              id="task-deadline"
-              type="date"
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-4">
+          <SheetFooter className="border-t">
             <Button
               type="button"
               variant="outline"
@@ -180,9 +189,9 @@ export function AddTaskDialog({
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Creating...' : 'Create'}
             </Button>
-          </div>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

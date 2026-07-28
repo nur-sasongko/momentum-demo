@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSupabaseBrowserClient } from '#/libs/supabase/client'
 import { useTasksStore } from '#/stores/tasks-store'
 import type { Task, TaskList, Subtask } from '#/stores/tasks-store'
+import { getDeleteFallbackList } from './tasks-utils'
 
 const TASKS_QUERY_KEY = ['tasks']
 
@@ -205,6 +206,7 @@ export function useDeleteTaskMutation() {
 export function useCreateListMutation() {
   const queryClient = useQueryClient()
   const addList = useTasksStore((s) => s.addList)
+  const replaceListId = useTasksStore((s) => s.replaceListId)
 
   return useMutation({
     mutationFn: async (list: Omit<TaskList, 'id' | 'createdAt'>) => {
@@ -232,10 +234,14 @@ export function useCreateListMutation() {
 
       if (error) throw error
 
-      return {
-        ...data,
+      const created: TaskList = {
+        id: data.id,
+        name: data.name,
+        color: data.color ?? undefined,
+        order: data.order,
         createdAt: data.created_at,
-      } as TaskList
+      }
+      return created
     },
     onMutate: async (newList) => {
       const id = crypto.randomUUID()
@@ -251,7 +257,10 @@ export function useCreateListMutation() {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
     },
-    onSuccess: () => {
+    onSuccess: (created, _variables, context) => {
+      if (context.optimisticId !== created.id) {
+        replaceListId(context.optimisticId, created)
+      }
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
     },
   })
@@ -302,33 +311,80 @@ export function useDeleteListMutation() {
     mutationFn: async (id: string) => {
       const supabase = getSupabaseBrowserClient()
 
-      // Get the inbox list (default list) - assuming it exists
-      const { data: inboxList, error: inboxError } = await supabase
+      const { data: targetList, error: targetError } = await supabase
         .from('task_lists')
-        .select('id')
-        .eq('name', 'Inbox')
-        .single()
+        .select('id, name')
+        .eq('id', id)
+        .maybeSingle()
 
-      if (inboxError) throw new Error('Inbox list not found')
+      if (targetError) {
+        throw new Error(targetError.message || 'Failed to delete list')
+      }
 
-      // Reassign all tasks from the deleted list to inbox
+      // Already gone from DB — treat as success
+      if (!targetList) return
+
+      if (targetList.name === 'Inbox') {
+        throw new Error('The Inbox list cannot be deleted')
+      }
+
+      const { data: allLists, error: listsError } = await supabase
+        .from('task_lists')
+        .select('id, name, order')
+        .order('order', { ascending: true })
+
+      if (listsError) {
+        throw new Error(listsError.message || 'Failed to load lists')
+      }
+
+      const lists: TaskList[] = allLists.map((row) => ({
+        id: row.id,
+        name: row.name,
+        order: row.order,
+        createdAt: '',
+      }))
+
+      if (lists.length <= 1) {
+        throw new Error('Cannot delete the last remaining list')
+      }
+
+      const fallback = getDeleteFallbackList(lists, id)
+      if (!fallback) {
+        throw new Error('Cannot delete the last remaining list')
+      }
+
       const { error: updateError } = await supabase
         .from('tasks')
-        .update({ list_id: inboxList.id })
+        .update({ list_id: fallback.id })
         .eq('list_id', id)
 
-      if (updateError) throw updateError
+      if (updateError) {
+        throw new Error(updateError.message || 'Failed to reassign tasks')
+      }
 
-      // Delete the list
       const { error: deleteError } = await supabase
         .from('task_lists')
         .delete()
         .eq('id', id)
 
-      if (deleteError) throw deleteError
+      if (deleteError) {
+        throw new Error(deleteError.message || 'Failed to delete list')
+      }
     },
     onMutate: async (id) => {
-      deleteList(id)
+      const lists = useTasksStore.getState().lists
+      const target = lists.find((l) => l.id === id)
+      if (target?.name === 'Inbox') {
+        throw new Error('The Inbox list cannot be deleted')
+      }
+      if (lists.length <= 1) {
+        throw new Error('Cannot delete the last remaining list')
+      }
+      const fallback = getDeleteFallbackList(lists, id)
+      if (!fallback) {
+        throw new Error('Cannot delete the last remaining list')
+      }
+      deleteList(id, fallback.id)
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
