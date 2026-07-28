@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { ChevronDown, Ellipsis, PartyPopper, Plus, Trash2 } from 'lucide-react'
+import {
+  ChevronDown,
+  EllipsisVertical,
+  PartyPopper,
+  Plus,
+  Trash2,
+} from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Button } from '#/components/ui/button'
@@ -103,7 +109,7 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
                 size="icon-xs"
                 aria-label={`List options for ${list.name}`}
               >
-                <Ellipsis className="h-4 w-4" />
+                <EllipsisVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
