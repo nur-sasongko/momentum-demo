@@ -124,10 +124,6 @@ export function formatSubtaskCount(task: Task): string {
   return `${completed}/${task.subtasks.length}`
 }
 
-export function isValidHexColor(color: string): boolean {
-  return /^#[0-9A-F]{6}$/i.test(color)
-}
-
 export function createDefaultInboxList(): TaskList {
   return {
     id: 'inbox',
