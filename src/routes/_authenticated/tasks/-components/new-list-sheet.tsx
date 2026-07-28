@@ -1,41 +1,44 @@
 import { useEffect, useState } from 'react'
 import { Button } from '#/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '#/components/ui/sheet'
+import { useIsMobile } from '#/hooks/use-mobile'
+import { useToast } from '#/hooks/use-toast'
+import { cn } from '#/libs/utils'
+import { useTasksStore } from '#/stores/tasks-store'
 import {
   useCreateListMutation,
   useUpdateListMutation,
 } from '../-utils/tasks-queries'
-import { useTasksStore } from '#/stores/tasks-store'
-import { isValidHexColor, getNextOrder } from '../-utils/tasks-utils'
-import { useToast } from '#/hooks/use-toast'
+import { isValidHexColor } from '../-utils/tasks-utils'
 
-interface NewListDialogProps {
+interface NewListSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   editListId?: string
 }
 
-export function NewListDialog({
+export function NewListSheet({
   open,
   onOpenChange,
   editListId,
-}: NewListDialogProps) {
+}: NewListSheetProps) {
   const { toast } = useToast()
+  const isMobile = useIsMobile()
   const [name, setName] = useState('')
   const [color, setColor] = useState('')
   const createListMutation = useCreateListMutation()
   const updateListMutation = useUpdateListMutation()
 
   const lists = useTasksStore((s) => s.lists)
-  const tasks = useTasksStore((s) => s.tasks)
 
   const editList = editListId ? lists.find((l) => l.id === editListId) : null
 
@@ -89,7 +92,6 @@ export function NewListDialog({
           description: 'List updated',
         })
       } else {
-        const nextOrder = getNextOrder([], undefined)
         await createListMutation.mutateAsync({
           name: name.trim(),
           color: color || undefined,
@@ -109,7 +111,6 @@ export function NewListDialog({
     }
   }
 
-  // Initialize form when opening in edit mode
   useEffect(() => {
     if (isEditing && open) {
       setName(editList.name)
@@ -121,58 +122,61 @@ export function NewListDialog({
   }, [open, isEditing, editList])
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit List' : 'Create New List'}
-          </DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent
+        side={isMobile ? 'bottom' : 'right'}
+        className={cn(isMobile ? 'h-[90dvh] rounded-t-xl' : 'sm:max-w-md')}
+      >
+        <SheetHeader>
+          <SheetTitle>{isEditing ? 'Edit List' : 'Create New List'}</SheetTitle>
+          <SheetDescription>
             {isEditing
               ? 'Update your list details'
               : 'Add a new task list to organize your tasks'}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="list-name">List Name</Label>
-            <Input
-              id="list-name"
-              placeholder="e.g. Work, Personal, Do Later"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={isLoading}
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="list-color">Color (Optional)</Label>
-            <div className="flex gap-2 items-center">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-1">
+            <div className="space-y-2">
+              <Label htmlFor="list-name">List Name</Label>
               <Input
-                id="list-color"
-                type="text"
-                placeholder="#FF5733"
-                value={color}
-                onChange={handleColorChange}
+                id="list-name"
+                placeholder="e.g. Work, Personal, Do Later"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 disabled={isLoading}
-                maxLength={7}
-                className="font-mono"
+                autoFocus
               />
-              {color && isValidHexColor(color) && (
-                <div
-                  className="w-8 h-8 rounded border border-zinc-300 dark:border-zinc-700"
-                  style={{ backgroundColor: color }}
-                />
-              )}
             </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Enter a hex color code like #FF5733
-            </p>
+
+            <div className="space-y-2">
+              <Label htmlFor="list-color">Color (Optional)</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="list-color"
+                  type="text"
+                  placeholder="#FF5733"
+                  value={color}
+                  onChange={handleColorChange}
+                  disabled={isLoading}
+                  maxLength={7}
+                  className="font-mono"
+                />
+                {color && isValidHexColor(color) && (
+                  <div
+                    className="h-8 w-8 rounded border border-zinc-300 dark:border-zinc-700"
+                    style={{ backgroundColor: color }}
+                  />
+                )}
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Enter a hex color code like #FF5733
+              </p>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
+          <SheetFooter className="border-t">
             <Button
               type="button"
               variant="outline"
@@ -184,9 +188,9 @@ export function NewListDialog({
             <Button type="submit" disabled={isLoading}>
               {isLoading ? 'Saving...' : isEditing ? 'Update' : 'Create'}
             </Button>
-          </div>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

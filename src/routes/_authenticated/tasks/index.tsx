@@ -107,7 +107,7 @@ function TasksPageContent() {
         <TaskSidebar lists={lists} />
       )}
       <TaskBoard tasks={tasks} lists={lists} selectedView={selectedView} />
-      {isMobile && <TaskAddFab lists={lists} />}
+      <TaskAddFab lists={lists} />
     </div>
   )
 }

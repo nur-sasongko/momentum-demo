@@ -137,6 +137,17 @@ export function createDefaultInboxList(): TaskList {
   }
 }
 
+/** Prefer Inbox, otherwise the earliest other list by order. */
+export function getDeleteFallbackList(
+  lists: TaskList[],
+  excludeId: string,
+): TaskList | undefined {
+  const others = lists
+    .filter((l) => l.id !== excludeId)
+    .sort((a, b) => a.order - b.order)
+  return others.find((l) => l.name === 'Inbox') ?? others[0]
+}
+
 export function hasExplicitTime(deadlineIso?: string): boolean {
   if (!deadlineIso) return false
   const d = new Date(deadlineIso)

@@ -40,6 +40,7 @@ const pageLabels: Record<string, string> = {
   '/notes': 'Second Brain',
   '/finance': 'Finance',
   '/habits': 'Habits',
+  '/tasks': 'Tasks',
 }
 
 function getPageLabel(pathname: string) {

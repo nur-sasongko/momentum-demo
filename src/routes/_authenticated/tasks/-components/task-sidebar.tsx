@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import type { TaskView, TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
-import { NewListDialog } from './new-list-dialog'
-import { AddTaskSheet } from './add-task-sheet'
-import { getDefaultListId, isListView } from '../-utils/tasks-utils'
+import { NewListSheet } from './new-list-sheet'
+import { isListView } from '../-utils/tasks-utils'
 
 interface TaskSidebarProps {
   lists: TaskList[]
@@ -13,11 +11,8 @@ interface TaskSidebarProps {
 
 export function TaskSidebar({ lists }: TaskSidebarProps) {
   const [newListOpen, setNewListOpen] = useState(false)
-  const [addTaskOpen, setAddTaskOpen] = useState(false)
   const selectedView = useTasksStore((s) => s.selectedView)
   const setSelectedView = useTasksStore((s) => s.setSelectedView)
-
-  const defaultListId = getDefaultListId(selectedView, lists)
 
   const isAllSelected = selectedView === 'all'
   const isStarredSelected = selectedView === 'starred'
@@ -39,16 +34,6 @@ export function TaskSidebar({ lists }: TaskSidebarProps) {
       {/* Views */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-2">
-          {/* Add Task */}
-          <Button
-            className="w-full justify-start text-sm"
-            onClick={() => setAddTaskOpen(true)}
-            disabled={lists.length === 0}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Add Task
-          </Button>
-
           {/* All Tasks */}
           <Button
             variant={isAllSelected ? 'default' : 'ghost'}
@@ -103,16 +88,7 @@ export function TaskSidebar({ lists }: TaskSidebarProps) {
         </div>
       </div>
 
-      {/* New List Dialog */}
-      <NewListDialog open={newListOpen} onOpenChange={setNewListOpen} />
-
-      {/* Add Task Dialog */}
-      <AddTaskSheet
-        open={addTaskOpen}
-        onOpenChange={setAddTaskOpen}
-        lists={lists}
-        defaultListId={defaultListId}
-      />
+      <NewListSheet open={newListOpen} onOpenChange={setNewListOpen} />
     </div>
   )
 }

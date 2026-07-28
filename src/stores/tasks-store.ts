@@ -65,7 +65,8 @@ export interface TasksState {
   toggleSubtask: (taskId: string, subtaskId: string) => void
   addList: (list: TaskList) => void
   updateList: (id: string, updates: Partial<TaskList>) => void
-  deleteList: (id: string) => void
+  replaceListId: (oldId: string, list: TaskList) => void
+  deleteList: (id: string, fallbackListId?: string) => void
   reorderLists: (id: string, newOrder: number) => void
   setSelectedView: (view: TaskView) => void
   updateNotificationSettings: (
@@ -187,13 +188,40 @@ export const useTasksStore = create<TasksState>()(
             l.id === id ? { ...l, ...updates } : l,
           ),
         })),
-      deleteList: (id) =>
-        set((state) => ({
-          lists: state.lists.filter((l) => l.id !== id),
-          tasks: state.tasks.map((t) =>
-            t.listId === id ? { ...t, listId: 'inbox' } : t,
-          ),
-        })),
+      replaceListId: (oldId, list) =>
+        set((state) => {
+          const remapView = (view: TaskView): TaskView => {
+            if (typeof view === 'object' && 'listId' in view) {
+              if (view.listId !== oldId) return view
+              if ('starred' in view) {
+                return { starred: true, listId: list.id }
+              }
+              return { listId: list.id }
+            }
+            return view
+          }
+          return {
+            lists: state.lists.map((l) => (l.id === oldId ? list : l)),
+            tasks: state.tasks.map((t) =>
+              t.listId === oldId ? { ...t, listId: list.id } : t,
+            ),
+            selectedView: remapView(state.selectedView),
+          }
+        }),
+      deleteList: (id, fallbackListId) =>
+        set((state) => {
+          const inboxId =
+            fallbackListId ??
+            state.lists.find((l) => l.name === 'Inbox' && l.id !== id)?.id ??
+            state.lists.find((l) => l.id !== id)?.id ??
+            id
+          return {
+            lists: state.lists.filter((l) => l.id !== id),
+            tasks: state.tasks.map((t) =>
+              t.listId === id ? { ...t, listId: inboxId } : t,
+            ),
+          }
+        }),
       reorderLists: (id, newOrder) =>
         set((state) => ({
           lists: state.lists.map((l) =>
