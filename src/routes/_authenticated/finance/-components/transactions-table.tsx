@@ -3,14 +3,18 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { LocationCell } from '#/components/location/location-cell'
+import { MarkdownEditorCell } from '#/components/markdown/markdown-editor-cell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import { CurrencyInput } from '#/components/ui/currency-input'
 import { DataTable } from '#/components/ui/data-table'
+import { DateTimePicker } from '#/components/ui/datetime-picker'
 import { EditableCell } from '#/components/ui/editable-cell'
 import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
-import { formatTransactionDate } from '#/utils/date'
+import { parseFormattedNumber } from '#/utils/currency'
+import { formatDateTimeLabel } from '#/utils/date'
 import { CategoryManager } from './category-manager'
 import { TransactionFilters } from './transaction-filters'
 import {
@@ -87,16 +91,18 @@ function buildColumns(
       cell: (info) => {
         const row = info.row.original
         return (
-          <EditableCell
+          <DateTimePicker
             value={row.date}
-            type="date"
-            display={
-              <span className="whitespace-nowrap text-muted-foreground">
-                {formatTransactionDate(row.date)}
-              </span>
+            onChange={(isoDate) =>
+              onUpdate(row.id, { ...toUpdateInput(row), date: isoDate })
             }
-            onSave={(newDate) =>
-              onUpdate(row.id, { ...toUpdateInput(row), date: newDate })
+            trigger={
+              <button
+                type="button"
+                className="rounded px-1 py-0.5 text-left whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted/60"
+              >
+                {formatDateTimeLabel(row.date)}
+              </button>
             }
           />
         )
@@ -143,16 +149,8 @@ function buildColumns(
       cell: (info) => {
         const row = info.row.original
         return (
-          <EditableCell
+          <MarkdownEditorCell
             value={row.note}
-            placeholder="Add a note…"
-            display={
-              row.note ? (
-                <span>{row.note}</span>
-              ) : (
-                <span className="text-muted-foreground">—</span>
-              )
-            }
             onSave={(newNote) =>
               onUpdate(row.id, { ...toUpdateInput(row), note: newNote })
             }
@@ -187,7 +185,6 @@ function buildColumns(
         return (
           <EditableCell
             value={String(row.amount)}
-            type="number"
             display={
               <span
                 className={cn(
@@ -201,9 +198,34 @@ function buildColumns(
                 {formatCurrency(row.amount)}
               </span>
             }
+            renderInput={({
+              value,
+              onChange,
+              onCommit,
+              onCancel,
+              className,
+            }) => (
+              <CurrencyInput
+                autoFocus
+                className={className}
+                value={value === '' ? undefined : Number(value)}
+                onValueChange={(next) =>
+                  onChange(next === undefined ? '' : String(next))
+                }
+                onFocus={(e) => e.target.select()}
+                onBlur={onCommit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    onCommit()
+                  }
+                  if (e.key === 'Escape') onCancel()
+                }}
+              />
+            )}
             onSave={(raw) => {
-              const parsed = parseFloat(raw)
-              if (!isNaN(parsed) && parsed > 0)
+              const parsed = parseFormattedNumber(raw)
+              if (parsed !== undefined && parsed > 0)
                 onUpdate(row.id, { ...toUpdateInput(row), amount: parsed })
             }}
           />

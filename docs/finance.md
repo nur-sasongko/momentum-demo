@@ -42,8 +42,8 @@ The page composes:
 - `type: 'income' | 'expense'`
 - `amount: number`
 - `category: FinanceCategory`
-- `date: string` (`YYYY-MM-DD`)
-- `note: string`
+- `date: string` — ISO datetime string; time-of-day is optional (local midnight means no explicit time was set, displayed as a bare date via `formatDateTimeLabel` in `#/utils/date`). See [`docs/specs/finance-transaction-datetime-and-markdown-note.md`](./specs/finance-transaction-datetime-and-markdown-note.md).
+- `note: string` — markdown-capable (up to 5000 chars), edited via a live WYSIWYG editor (`MarkdownEditor`, `#/components/markdown/markdown-editor`) in the Add/Edit form. The transactions table's Note column renders the same markdown as a compact preview and opens the same editor in a popover for editing (`MarkdownEditorCell`, `#/components/markdown/markdown-editor-cell`).
 - `location: TransactionLocation | null` — optional place attached to the transaction (see [Location Tracking](#location-tracking))
 
 `SEED_TRANSACTIONS` provides starter data across the current and previous month.

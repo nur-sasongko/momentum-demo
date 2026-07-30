@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { DiscardChangesDialog } from '#/components/discard-changes-dialog'
 import { Button } from '#/components/ui/button'
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
 import { FieldError } from '#/components/ui/field-error'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import { useUnsavedChangesGuard } from '#/hooks/use-unsaved-changes-guard'
 import {
   HABIT_COLORS,
   HABIT_COLOR_CLASSES,
@@ -55,8 +57,27 @@ export function NewHabitModal() {
     })
   })
 
+  const closeModal = () => {
+    setNewHabitOpen(false)
+    form.reset({
+      name: '',
+      icon: HABIT_EMOJIS[0],
+      color: 'violet',
+    })
+  }
+
+  const { confirmOpen, setConfirmOpen, requestClose } = useUnsavedChangesGuard(
+    form.formState.isDirty,
+    closeModal,
+  )
+
   return (
-    <Dialog open={isOpen} onOpenChange={setNewHabitOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(next) => {
+        if (!next) requestClose()
+      }}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New habit</DialogTitle>
@@ -118,17 +139,20 @@ export function NewHabitModal() {
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setNewHabitOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={requestClose}>
               Cancel
             </Button>
             <Button type="submit">Create habit</Button>
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <DiscardChangesDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onDiscard={closeModal}
+        description="You have unsaved changes to this habit. Closing now will discard them."
+      />
     </Dialog>
   )
 }

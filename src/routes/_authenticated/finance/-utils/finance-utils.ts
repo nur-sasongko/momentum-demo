@@ -4,7 +4,14 @@ import type {
   TransactionType,
 } from '#/stores/finance-store'
 import { formatNumberWithSeparators } from '#/utils/currency'
-import { formatTransactionDate } from '#/utils/date'
+import {
+  endOfDayIso,
+  formatTransactionDate,
+  getDaysInRange,
+  toDayKey,
+} from '#/utils/date'
+
+import type { DateKey } from '#/utils/date'
 
 export const DEFAULT_CATEGORY_CONFIGS: Array<{
   name: string
@@ -55,7 +62,7 @@ function isInDateRange(
   to: string | null,
 ): boolean {
   if (from && date < from) return false
-  if (to && date > to) return false
+  if (to && date > endOfDayIso(to)) return false
   return true
 }
 
@@ -119,6 +126,75 @@ export function getSpendingByCategory(
   return Array.from(totals.entries())
     .map(([category, { amount, fill }]) => ({ category, amount, fill }))
     .sort((a, b) => b.amount - a.amount)
+}
+
+export interface DailyCategorySeries {
+  key: string
+  name: string
+  color: string
+}
+
+export interface DailySpendingPoint {
+  date: DateKey
+  dateLabel: string
+  total: number
+  [seriesKey: string]: string | number
+}
+
+export function getDailySpendingByCategory(
+  rows: AggregateRow[],
+  dateRange: DateRange,
+  categories: FinanceCategory[],
+): { data: DailySpendingPoint[]; series: DailyCategorySeries[] } {
+  if (!dateRange.from || !dateRange.to) return { data: [], series: [] }
+
+  const categoryMap = new Map(categories.map((c) => [c.id, c]))
+  const dayTotals = new Map<DateKey, Map<string, number>>()
+  const categoryTotals = new Map<string, { fill: string; amount: number }>()
+
+  for (const row of rows) {
+    if (row.type !== 'expense') continue
+    if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
+
+    const cat = categoryMap.get(row.category_id)
+    const name = cat?.name ?? 'Other'
+    const fill = cat?.color ?? '#71717a'
+    const day = toDayKey(row.date)
+
+    const dayMap = dayTotals.get(day) ?? new Map<string, number>()
+    dayMap.set(name, (dayMap.get(name) ?? 0) + row.amount)
+    dayTotals.set(day, dayMap)
+
+    const existing = categoryTotals.get(name)
+    categoryTotals.set(name, {
+      fill,
+      amount: (existing?.amount ?? 0) + row.amount,
+    })
+  }
+
+  const series: DailyCategorySeries[] = Array.from(categoryTotals.entries())
+    .sort((a, b) => b[1].amount - a[1].amount)
+    .map(([name, { fill }]) => ({ key: name, name, color: fill }))
+
+  const data: DailySpendingPoint[] = getDaysInRange(
+    dateRange.from,
+    dateRange.to,
+  ).map((day) => {
+    const dayMap = dayTotals.get(day)
+    const point: DailySpendingPoint = {
+      date: day,
+      dateLabel: formatTransactionDate(day),
+      total: 0,
+    }
+    for (const s of series) {
+      const amount = dayMap?.get(s.key) ?? 0
+      point[s.key] = amount
+      point.total += amount
+    }
+    return point
+  })
+
+  return { data, series }
 }
 
 const LOCATION_CHART_COLORS = [

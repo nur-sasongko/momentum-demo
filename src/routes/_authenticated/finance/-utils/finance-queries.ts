@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 
 import { getSupabaseBrowserClient } from '#/libs/supabase/client'
 import { useFinanceStore } from '#/stores/finance-store'
+import { endOfDayIso } from '#/utils/date'
 import { DEFAULT_CATEGORY_CONFIGS } from './finance-utils'
 
 import type { AggregateRow } from './finance-utils'
@@ -191,7 +192,7 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
         .range(from, to)
 
       if (params.dateFrom) q = q.gte('date', params.dateFrom)
-      if (params.dateTo) q = q.lte('date', params.dateTo)
+      if (params.dateTo) q = q.lte('date', endOfDayIso(params.dateTo))
       if (params.type) q = q.eq('type', params.type)
       if (params.categoryId) q = q.eq('category_id', params.categoryId)
       if (params.search) q = q.ilike('note', `%${params.search}%`)

@@ -82,6 +82,7 @@ export function FinanceFilters() {
             selected={draft}
             onSelect={handleRangeSelect}
             numberOfMonths={2}
+            max={31}
           />
         </PopoverContent>
       </Popover>
