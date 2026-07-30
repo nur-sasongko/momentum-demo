@@ -7,7 +7,15 @@
  * @module utils/date
  */
 
-import { format, parse, parseISO, startOfDay, subDays } from 'date-fns'
+import {
+  addDays,
+  endOfDay,
+  format,
+  parse,
+  parseISO,
+  startOfDay,
+  subDays,
+} from 'date-fns'
 
 /** Local date key in `YYYY-MM-DD` format. */
 export type DateKey = string
@@ -138,4 +146,90 @@ export function formatMonthLabel(monthKey: MonthKey): string {
  */
 export function formatTransactionDate(date: DateKey): string {
   return format(parseISO(date), 'MMM d')
+}
+
+/**
+ * Whether an ISO date string carries an explicit time-of-day.
+ *
+ * Local midnight is treated as "no time set" — the sentinel used across the
+ * app for dates that were entered without a specific time.
+ *
+ * @param isoDate - ISO date/datetime string.
+ * @returns `true` if the time component is not local midnight.
+ *
+ * @example
+ * hasExplicitTime("2026-07-29T00:00:00.000Z") // depends on local offset
+ * hasExplicitTime("2026-07-29T14:30:00.000Z") // true
+ */
+export function hasExplicitTime(isoDate?: string): boolean {
+  if (!isoDate) return false
+  const d = new Date(isoDate)
+  return d.getHours() !== 0 || d.getMinutes() !== 0
+}
+
+/**
+ * Formats an ISO date/datetime string for display, omitting the time when
+ * none was explicitly set.
+ *
+ * @param isoDate - ISO date/datetime string.
+ * @returns Label such as `"Jul 29"` or `"Jul 29, 2:30 PM"`.
+ *
+ * @example
+ * formatDateTimeLabel("2026-07-29T00:00:00.000Z") // "Jul 29" (if local midnight)
+ * formatDateTimeLabel("2026-07-29T14:30:00.000Z") // "Jul 29, 2:30 PM"
+ */
+export function formatDateTimeLabel(isoDate: string): string {
+  const date = new Date(isoDate)
+  return hasExplicitTime(isoDate)
+    ? format(date, 'MMM d, h:mm a')
+    : format(date, 'MMM d')
+}
+
+/**
+ * Returns the end of the local day for a date key, for use as an inclusive
+ * upper bound when comparing against timestamps that may carry time-of-day.
+ *
+ * @param date - Date key in `YYYY-MM-DD` format.
+ * @returns ISO datetime string at `23:59:59.999` local time on that day.
+ *
+ * @example
+ * endOfDayIso("2026-07-29") // "2026-07-29T23:59:59.999" (local offset applied)
+ */
+export function endOfDayIso(date: DateKey): string {
+  return endOfDay(parseISO(date)).toISOString()
+}
+
+/**
+ * Truncates an ISO date/datetime string to its local calendar day key,
+ * regardless of any time-of-day component.
+ *
+ * @param isoDate - ISO date/datetime string.
+ * @returns Date key in `YYYY-MM-DD` format.
+ *
+ * @example
+ * toDayKey("2026-07-29T14:30:00.000Z") // "2026-07-29" (local offset applied)
+ */
+export function toDayKey(isoDate: string): DateKey {
+  return format(new Date(isoDate), 'yyyy-MM-dd')
+}
+
+/**
+ * Returns every local calendar day between two date keys, inclusive.
+ *
+ * @param from - Start date key in `YYYY-MM-DD` format.
+ * @param to - End date key in `YYYY-MM-DD` format.
+ * @returns Date keys ordered oldest to newest.
+ *
+ * @example
+ * getDaysInRange("2026-07-01", "2026-07-03")
+ * // ["2026-07-01", "2026-07-02", "2026-07-03"]
+ */
+export function getDaysInRange(from: DateKey, to: DateKey): DateKey[] {
+  const start = startOfDay(parseISO(from))
+  const end = startOfDay(parseISO(to))
+  const days: DateKey[] = []
+  for (let d = start; d <= end; d = addDays(d, 1)) {
+    days.push(format(d, 'yyyy-MM-dd'))
+  }
+  return days
 }

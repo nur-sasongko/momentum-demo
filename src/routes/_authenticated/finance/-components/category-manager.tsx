@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, Pencil, Plus, Settings, Trash2, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { DiscardChangesDialog } from '#/components/discard-changes-dialog'
 import { Button } from '#/components/ui/button'
 import { FieldError } from '#/components/ui/field-error'
 import { Input } from '#/components/ui/input'
@@ -25,6 +26,7 @@ import {
   SheetTrigger,
 } from '#/components/ui/sheet'
 import { useIsMobile } from '#/hooks/use-mobile'
+import { useUnsavedChangesGuard } from '#/hooks/use-unsaved-changes-guard'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
 import {
@@ -199,13 +201,21 @@ function CategoryRow({ cat }: { cat: FinanceCategory }) {
   )
 }
 
-function AddCategoryForm() {
+function AddCategoryForm({
+  onDirtyChange,
+}: {
+  onDirtyChange?: (dirty: boolean) => void
+}) {
   const createMutation = useCreateCategoryMutation()
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: { name: '', type: 'expense', color: '#6366f1' },
   })
+
+  useEffect(() => {
+    onDirtyChange?.(form.formState.isDirty)
+  }, [form.formState.isDirty, onDirtyChange])
 
   const onSubmit = form.handleSubmit(async (values) => {
     await createMutation.mutateAsync(values)
@@ -284,6 +294,8 @@ function sortWithOtherLast(categories: FinanceCategory[]) {
 
 export function CategoryManager() {
   const isMobile = useIsMobile()
+  const [open, setOpen] = useState(false)
+  const [addFormDirty, setAddFormDirty] = useState(false)
   const categories = useFinanceStore((s) => s.categories)
   const expenseCategories = sortWithOtherLast(
     categories.filter((c) => c.type === 'expense'),
@@ -292,8 +304,22 @@ export function CategoryManager() {
     categories.filter((c) => c.type === 'income'),
   )
 
+  const { confirmOpen, setConfirmOpen, requestClose } = useUnsavedChangesGuard(
+    addFormDirty,
+    () => setOpen(false),
+  )
+
   return (
-    <Sheet>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (next) {
+          setOpen(true)
+        } else {
+          requestClose()
+        }
+      }}
+    >
       <SheetTrigger asChild>
         <Button
           variant="outline"
@@ -347,10 +373,17 @@ export function CategoryManager() {
             <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Add new category
             </h3>
-            <AddCategoryForm />
+            <AddCategoryForm onDirtyChange={setAddFormDirty} />
           </div>
         </div>
       </SheetContent>
+
+      <DiscardChangesDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onDiscard={() => setOpen(false)}
+        description="You have unsaved changes to the new category. Closing now will discard them."
+      />
     </Sheet>
   )
 }

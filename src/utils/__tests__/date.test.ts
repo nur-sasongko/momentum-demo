@@ -1,11 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  endOfDayIso,
+  formatDateTimeLabel,
   formatMonthLabel,
   formatTodayDate,
   formatTransactionDate,
   getCurrentMonthKey,
+  getDaysInRange,
   getLast7Days,
+  hasExplicitTime,
   toDateKey,
+  toDayKey,
   toMonthKey,
 } from '#/utils/date'
 
@@ -114,5 +119,66 @@ describe('date utility edge cases', () => {
 
   it('formats January month keys consistently', () => {
     expect(formatMonthLabel('2026-01')).toBe('January 2026')
+  })
+})
+
+describe('hasExplicitTime', () => {
+  it('returns false for undefined', () => {
+    expect(hasExplicitTime(undefined)).toBe(false)
+  })
+
+  it('returns false for local midnight', () => {
+    const iso = new Date(2026, 6, 29, 0, 0, 0, 0).toISOString()
+    expect(hasExplicitTime(iso)).toBe(false)
+  })
+
+  it('returns true when a time other than midnight is set', () => {
+    const iso = new Date(2026, 6, 29, 14, 30, 0, 0).toISOString()
+    expect(hasExplicitTime(iso)).toBe(true)
+  })
+})
+
+describe('formatDateTimeLabel', () => {
+  it('omits the time when none was explicitly set', () => {
+    const iso = new Date(2026, 6, 29, 0, 0, 0, 0).toISOString()
+    expect(formatDateTimeLabel(iso)).toBe('Jul 29')
+  })
+
+  it('includes the time when one was explicitly set', () => {
+    const iso = new Date(2026, 6, 29, 14, 30, 0, 0).toISOString()
+    expect(formatDateTimeLabel(iso)).toBe('Jul 29, 2:30 PM')
+  })
+})
+
+describe('endOfDayIso', () => {
+  it('returns the end of the given local day', () => {
+    expect(endOfDayIso('2026-07-29')).toBe(
+      new Date(2026, 6, 29, 23, 59, 59, 999).toISOString(),
+    )
+  })
+})
+
+describe('toDayKey', () => {
+  it('truncates a UTC-noon ISO datetime to its local calendar day', () => {
+    expect(toDayKey('2026-07-29T12:00:00.000Z')).toBe('2026-07-29')
+  })
+
+  it('truncates a locally-constructed ISO datetime to the same day', () => {
+    const iso = new Date(2026, 6, 29, 14, 30, 0, 0).toISOString()
+    expect(toDayKey(iso)).toBe('2026-07-29')
+  })
+})
+
+describe('getDaysInRange', () => {
+  it('returns every day between from and to, inclusive, oldest first', () => {
+    expect(getDaysInRange('2026-07-01', '2026-07-03')).toEqual([
+      '2026-07-01',
+      '2026-07-02',
+      '2026-07-03',
+    ])
+  })
+
+  it('returns a single-day array when from equals to', () => {
+    expect(getDaysInRange('2026-07-15', '2026-07-15')).toEqual(['2026-07-15'])
   })
 })

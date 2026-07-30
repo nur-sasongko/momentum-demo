@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DiscardChangesDialog } from '#/components/discard-changes-dialog'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
@@ -20,6 +21,7 @@ import {
 } from '#/components/ui/sheet'
 import { useIsMobile } from '#/hooks/use-mobile'
 import { useToast } from '#/hooks/use-toast'
+import { useUnsavedChangesGuard } from '#/hooks/use-unsaved-changes-guard'
 import { cn } from '#/libs/utils'
 import type { TaskList } from '#/stores/tasks-store'
 import { useTasksStore } from '#/stores/tasks-store'
@@ -59,9 +61,12 @@ export function AddTaskSheet({
     }
   }, [open, defaultListId, lists])
 
-  const handleOpenChange = (newOpen: boolean) => {
-    onOpenChange(newOpen)
-  }
+  const isDirty = title.trim() !== '' || notes.trim() !== '' || deadline !== ''
+  const closeSheet = () => onOpenChange(false)
+  const { confirmOpen, setConfirmOpen, requestClose } = useUnsavedChangesGuard(
+    isDirty,
+    closeSheet,
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,7 +101,7 @@ export function AddTaskSheet({
       toast({
         description: 'Task created',
       })
-      handleOpenChange(false)
+      closeSheet()
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -107,7 +112,12 @@ export function AddTaskSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) requestClose()
+      }}
+    >
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
         className={cn(isMobile ? 'h-[90dvh] rounded-t-xl' : 'sm:max-w-md')}
@@ -181,7 +191,7 @@ export function AddTaskSheet({
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleOpenChange(false)}
+              onClick={requestClose}
               disabled={isLoading}
             >
               Cancel
@@ -192,6 +202,13 @@ export function AddTaskSheet({
           </SheetFooter>
         </form>
       </SheetContent>
+
+      <DiscardChangesDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onDiscard={closeSheet}
+        description="You have unsaved changes to this task. Closing now will discard them."
+      />
     </Sheet>
   )
 }

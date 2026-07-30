@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DiscardChangesDialog } from '#/components/discard-changes-dialog'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
@@ -12,6 +13,7 @@ import {
 } from '#/components/ui/sheet'
 import { useIsMobile } from '#/hooks/use-mobile'
 import { useToast } from '#/hooks/use-toast'
+import { useUnsavedChangesGuard } from '#/hooks/use-unsaved-changes-guard'
 import { cn } from '#/libs/utils'
 import { useTasksStore } from '#/stores/tasks-store'
 import {
@@ -46,13 +48,20 @@ export function NewListSheet({
   const isEditing = !!editListId && !!editList
   const isLoading = createListMutation.isPending || updateListMutation.isPending
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      setName('')
-      setColor('')
-    }
-    onOpenChange(newOpen)
+  const isDirty = editList
+    ? name !== editList.name || color !== (editList.color ?? '')
+    : name.trim() !== '' || color !== ''
+
+  const closeSheet = () => {
+    setName('')
+    setColor('')
+    onOpenChange(false)
   }
+
+  const { confirmOpen, setConfirmOpen, requestClose } = useUnsavedChangesGuard(
+    isDirty,
+    closeSheet,
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,7 +96,7 @@ export function NewListSheet({
           description: 'List created',
         })
       }
-      handleOpenChange(false)
+      closeSheet()
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -108,7 +117,12 @@ export function NewListSheet({
   }, [open, isEditing, editList])
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) requestClose()
+      }}
+    >
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
         className={cn(isMobile ? 'h-[90dvh] rounded-t-xl' : 'sm:max-w-md')}
@@ -166,7 +180,7 @@ export function NewListSheet({
             <Button
               type="button"
               variant="outline"
-              onClick={() => handleOpenChange(false)}
+              onClick={requestClose}
               disabled={isLoading}
             >
               Cancel
@@ -177,6 +191,13 @@ export function NewListSheet({
           </SheetFooter>
         </form>
       </SheetContent>
+
+      <DiscardChangesDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onDiscard={closeSheet}
+        description="You have unsaved changes to this list. Closing now will discard them."
+      />
     </Sheet>
   )
 }

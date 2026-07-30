@@ -1,5 +1,8 @@
 import { addDays, format, startOfDay } from 'date-fns'
+import { hasExplicitTime } from '#/utils/date'
 import type { Task, TaskList, TaskView } from '#/stores/tasks-store'
+
+export { hasExplicitTime }
 
 export function groupTasksByList(
   tasks: Task[],
@@ -142,12 +145,6 @@ export function getDeleteFallbackList(
     .filter((l) => l.id !== excludeId)
     .sort((a, b) => a.order - b.order)
   return others.find((l) => l.name === 'Inbox') ?? others[0]
-}
-
-export function hasExplicitTime(deadlineIso?: string): boolean {
-  if (!deadlineIso) return false
-  const d = new Date(deadlineIso)
-  return d.getHours() !== 0 || d.getMinutes() !== 0
 }
 
 export function getTodayDeadline(): string {

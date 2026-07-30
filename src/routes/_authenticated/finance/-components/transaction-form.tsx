@@ -1,22 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { format, parseISO } from 'date-fns'
+import { startOfDay } from 'date-fns'
 import { CalendarIcon, MapPin } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import { LocationFields } from '#/components/location/location-fields'
 import { LocationPickerDialog } from '#/components/location/location-picker'
+import { DiscardChangesDialog } from '#/components/discard-changes-dialog'
 import { Button } from '#/components/ui/button'
-import { Calendar } from '#/components/ui/calendar'
 import { CurrencyInput } from '#/components/ui/currency-input'
+import { DateTimePicker } from '#/components/ui/datetime-picker'
 import { FieldError } from '#/components/ui/field-error'
 import { Label } from '#/components/ui/label'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '#/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -32,10 +28,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet'
-import { Textarea } from '#/components/ui/textarea'
 import { useIsMobile } from '#/hooks/use-mobile'
+import { MarkdownEditor } from '#/components/markdown/markdown-editor'
+import { useUnsavedChangesGuard } from '#/hooks/use-unsaved-changes-guard'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
+import { formatDateTimeLabel } from '#/utils/date'
 import {
   useCreateTransactionMutation,
   useUpdateTransactionMutation,
@@ -55,18 +53,17 @@ const transactionSchema = z.object({
   amount: z.number().positive('Amount must be greater than 0'),
   categoryId: z.string().min(1, 'Category is required'),
   date: z.string().min(1, 'Date is required'),
-  note: z.string().max(200).optional(),
+  note: z.string().max(5000).optional(),
   location: transactionLocationSchema.nullable(),
 })
 
 type TransactionFormValues = z.infer<typeof transactionSchema>
 
-function todayDateKey(): string {
-  return new Date().toISOString().slice(0, 10)
+function defaultTransactionDate(): string {
+  return startOfDay(new Date()).toISOString()
 }
 
 export function TransactionFormSheet() {
-  const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [locationPickerOpen, setLocationPickerOpen] = useState(false)
   const isMobile = useIsMobile()
   const isOpen = useFinanceStore((s) => s.isAddTransactionOpen)
@@ -90,7 +87,7 @@ export function TransactionFormSheet() {
       type: 'expense',
       amount: 0,
       categoryId: defaultExpenseCategoryId,
-      date: todayDateKey(),
+      date: defaultTransactionDate(),
       note: '',
       location: null,
     },
@@ -113,7 +110,7 @@ export function TransactionFormSheet() {
         type: 'expense',
         amount: 0,
         categoryId: defaultExpenseCategoryId,
-        date: todayDateKey(),
+        date: defaultTransactionDate(),
         note: '',
         location: null,
       })
@@ -139,6 +136,11 @@ export function TransactionFormSheet() {
     form.reset()
   }
 
+  const { confirmOpen, setConfirmOpen, requestClose } = useUnsavedChangesGuard(
+    form.formState.isDirty,
+    handleClose,
+  )
+
   const onSubmit = form.handleSubmit(async (values) => {
     const input = {
       type: values.type,
@@ -161,7 +163,12 @@ export function TransactionFormSheet() {
   const isDirty = form.formState.isDirty
 
   return (
-    <Sheet open={isOpen} onOpenChange={handleClose}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) requestClose()
+      }}
+    >
       <SheetContent
         side={isMobile ? 'bottom' : 'right'}
         className={cn(isMobile ? 'h-[90dvh] rounded-t-xl' : 'sm:max-w-md')}
@@ -254,8 +261,15 @@ export function TransactionFormSheet() {
 
             <div className="space-y-2">
               <Label>Date</Label>
-              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
-                <PopoverTrigger asChild>
+              <DateTimePicker
+                value={form.watch('date')}
+                onChange={(isoDate) =>
+                  form.setValue('date', isoDate, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+                trigger={
                   <Button
                     type="button"
                     variant="outline"
@@ -266,30 +280,11 @@ export function TransactionFormSheet() {
                   >
                     <CalendarIcon className="mr-2 size-4" />
                     {form.watch('date')
-                      ? format(parseISO(form.watch('date')), 'PPP')
+                      ? formatDateTimeLabel(form.watch('date'))
                       : 'Pick a date'}
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={
-                      form.watch('date')
-                        ? parseISO(form.watch('date'))
-                        : undefined
-                    }
-                    onSelect={(date) => {
-                      if (date) {
-                        form.setValue('date', format(date, 'yyyy-MM-dd'), {
-                          shouldValidate: true,
-                          shouldDirty: true,
-                        })
-                        setDatePickerOpen(false)
-                      }
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
+                }
+              />
               {form.formState.errors.date && (
                 <FieldError>{form.formState.errors.date.message}</FieldError>
               )}
@@ -297,11 +292,17 @@ export function TransactionFormSheet() {
 
             <div className="space-y-2">
               <Label htmlFor="tx-note">Note</Label>
-              <Textarea
-                id="tx-note"
-                placeholder="Optional description"
-                rows={3}
-                {...form.register('note')}
+              <Controller
+                name="note"
+                control={form.control}
+                render={({ field }) => (
+                  <MarkdownEditor
+                    id="tx-note"
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    placeholder="Optional description — supports markdown"
+                  />
+                )}
               />
             </div>
 
@@ -336,7 +337,7 @@ export function TransactionFormSheet() {
           </div>
 
           <SheetFooter className="border-t">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={requestClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending || !isDirty}>
@@ -356,6 +357,13 @@ export function TransactionFormSheet() {
         onConfirm={(next) =>
           form.setValue('location', next, { shouldDirty: true })
         }
+      />
+
+      <DiscardChangesDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onDiscard={handleClose}
+        description="You have unsaved changes to this transaction. Closing now will discard them."
       />
     </Sheet>
   )

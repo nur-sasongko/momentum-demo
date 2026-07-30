@@ -7,18 +7,31 @@ export interface EditableCellOption {
   label: string
 }
 
+export interface EditableCellRenderInputContext {
+  value: string
+  onChange: (next: string) => void
+  onCommit: () => void
+  onCancel: () => void
+  className: string
+}
+
 interface EditableCellProps {
   value: string
   onSave: (newValue: string) => void | Promise<void>
   /** Custom read-mode display. Defaults to plain value text. */
   display?: React.ReactNode
-  /** Input type when editing. Ignored when `options` is provided. */
+  /** Input type when editing. Ignored when `options` or `renderInput` is provided. */
   type?: 'text' | 'number' | 'date'
   /** When provided renders a native select instead of a text input. Saves on change. */
   options?: EditableCellOption[]
+  /** When provided, replaces the built-in edit-mode input entirely (e.g. for a custom formatted input). Takes priority over `options`/`type`. */
+  renderInput?: (ctx: EditableCellRenderInputContext) => React.ReactNode
   placeholder?: string
   className?: string
 }
+
+const overlayInputClassName =
+  'absolute inset-0 w-full rounded-sm border border-ring bg-background px-1 text-sm outline-none focus:ring-1 focus:ring-ring'
 
 /**
  * Inline editable cell — no layout shift on edit.
@@ -37,6 +50,7 @@ export function EditableCell({
   display,
   type = 'text',
   options,
+  renderInput,
   placeholder,
   className,
 }: EditableCellProps) {
@@ -52,14 +66,14 @@ export function EditableCell({
 
   // Auto-focus when entering edit mode
   useEffect(() => {
-    if (!editing) return
+    if (!editing || renderInput) return
     if (options) {
       selectRef.current?.focus()
     } else {
       inputRef.current?.focus()
       inputRef.current?.select()
     }
-  }, [editing, options])
+  }, [editing, options, renderInput])
 
   const startEdit = () => {
     setDraft(value)
@@ -111,11 +125,19 @@ export function EditableCell({
 
       {/* Input: absolutely overlays the display so column width never changes */}
       {editing &&
-        (options ? (
+        (renderInput ? (
+          renderInput({
+            value: draft,
+            onChange: setDraft,
+            onCommit: commit,
+            onCancel: cancel,
+            className: overlayInputClassName,
+          })
+        ) : options ? (
           <select
             ref={selectRef}
             value={draft}
-            className="absolute inset-0 w-full rounded-sm border border-ring bg-background px-1 text-sm outline-none focus:ring-1 focus:ring-ring"
+            className={overlayInputClassName}
             onChange={(e) => {
               const next = e.target.value
               setDraft(next)
@@ -139,7 +161,7 @@ export function EditableCell({
             type={type}
             value={draft}
             placeholder={placeholder}
-            className="absolute inset-0 w-full rounded-sm border border-ring bg-background px-1 text-sm outline-none focus:ring-1 focus:ring-ring"
+            className={overlayInputClassName}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={commit}
             onKeyDown={(e) => {
