@@ -39,7 +39,9 @@ interface FinanceState {
   categories: FinanceCategory[]
   dateRange: DateRange
   selectedType: TransactionType | null
-  selectedCategory: string | null
+  selectedCategories: string[]
+  /** Selected `location_city` values. `''` means "no location recorded". */
+  selectedCities: string[]
   isAddTransactionOpen: boolean
   editingTransactionId: string | null
   editingTransaction: Transaction | null
@@ -56,7 +58,9 @@ interface FinanceState {
 
   setDateRange: (range: DateRange) => void
   setSelectedType: (type: TransactionType | null) => void
-  setSelectedCategory: (categoryId: string | null) => void
+  toggleCategory: (categoryId: string) => void
+  toggleCity: (city: string) => void
+  clearTransactionFilters: () => void
   setAddTransactionOpen: (open: boolean) => void
   setEditingTransactionId: (id: string | null) => void
   setEditingTransaction: (tx: Transaction | null) => void
@@ -70,7 +74,8 @@ export const useFinanceStore = create<FinanceState>()(
       categories: [],
       dateRange: { from: null, to: null },
       selectedType: null,
-      selectedCategory: null,
+      selectedCategories: [],
+      selectedCities: [],
       isAddTransactionOpen: false,
       editingTransactionId: null,
       editingTransaction: null,
@@ -92,9 +97,32 @@ export const useFinanceStore = create<FinanceState>()(
         })),
 
       setDateRange: (range) => set({ dateRange: range }),
-      setSelectedType: (type) => set({ selectedType: type }),
-      setSelectedCategory: (categoryId) =>
-        set({ selectedCategory: categoryId }),
+      // Categories are typed, so narrowing the type drops any selection that
+      // no longer belongs to it — otherwise the table would return no rows.
+      setSelectedType: (type) =>
+        set((state) => ({
+          selectedType: type,
+          selectedCategories: type
+            ? state.selectedCategories.filter(
+                (id) =>
+                  state.categories.find((c) => c.id === id)?.type === type,
+              )
+            : state.selectedCategories,
+        })),
+      toggleCategory: (categoryId) =>
+        set((state) => ({
+          selectedCategories: state.selectedCategories.includes(categoryId)
+            ? state.selectedCategories.filter((id) => id !== categoryId)
+            : [...state.selectedCategories, categoryId],
+        })),
+      toggleCity: (city) =>
+        set((state) => ({
+          selectedCities: state.selectedCities.includes(city)
+            ? state.selectedCities.filter((c) => c !== city)
+            : [...state.selectedCities, city],
+        })),
+      clearTransactionFilters: () =>
+        set({ selectedType: null, selectedCategories: [], selectedCities: [] }),
       setAddTransactionOpen: (open) =>
         set({
           isAddTransactionOpen: open,

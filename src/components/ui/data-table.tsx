@@ -39,11 +39,28 @@ import type {
   ColumnDef,
   ColumnFiltersState,
   PaginationState,
+  RowData,
   SortingState,
   Table as TanstackTable,
 } from '@tanstack/react-table'
 
+declare module '@tanstack/react-table' {
+  // The generics are required to match TanStack's declaration.
+  interface ColumnMeta<TData extends RowData, TValue> {
+    /** Filter control rendered beside the sort icon. Desktop (md+) only. */
+    headerFilter?: React.ReactNode
+  }
+}
+
 const DEFAULT_PAGE_SIZE_OPTIONS = [25, 50, 100, 200]
+
+/**
+ * Idle header affordances (neutral sort chevron, inactive filter icon) fade in
+ * on hover/focus of the header row. Kept visible below `md`, where there is no
+ * hover. Uses opacity rather than `hidden` so nothing shifts on hover.
+ */
+export const HEADER_AFFORDANCE_REVEAL =
+  'opacity-0 transition-opacity max-md:opacity-100 group-hover/header:opacity-100 group-focus-within/header:opacity-100'
 
 export interface ServerPaginationProps {
   pageIndex: number
@@ -341,40 +358,53 @@ export function DataTable<TData>({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
+              <TableRow
+                key={headerGroup.id}
+                className="group/header hover:bg-transparent"
+              >
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort()
                   const sorted = header.column.getIsSorted()
+                  const headerFilter =
+                    header.column.columnDef.meta?.headerFilter
+                  const label = header.isPlaceholder
+                    ? null
+                    : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )
                   return (
                     <TableHead
                       key={header.id}
-                      className={cn(
-                        'h-11 text-sm font-medium sm:h-9 sm:text-xs',
-                        canSort &&
-                          'cursor-pointer select-none hover:text-foreground',
-                      )}
-                      onClick={
-                        canSort
-                          ? header.column.getToggleSortingHandler()
-                          : undefined
-                      }
+                      className="h-11 text-sm font-medium sm:h-9 sm:text-xs"
                     >
                       <span className="flex items-center gap-1">
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                        {canSort && (
-                          <span className="text-muted-foreground">
+                        {canSort ? (
+                          <button
+                            type="button"
+                            onClick={header.column.getToggleSortingHandler()}
+                            className="flex items-center gap-1 rounded select-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
+                          >
+                            {label}
                             {sorted === 'asc' ? (
-                              <ChevronUp className="size-4 sm:size-3" />
+                              <ChevronUp className="size-4 text-foreground sm:size-3" />
                             ) : sorted === 'desc' ? (
-                              <ChevronDown className="size-4 sm:size-3" />
+                              <ChevronDown className="size-4 text-foreground sm:size-3" />
                             ) : (
-                              <ChevronsUpDown className="size-4 sm:size-3" />
+                              <ChevronsUpDown
+                                className={cn(
+                                  HEADER_AFFORDANCE_REVEAL,
+                                  'size-4 text-muted-foreground sm:size-3',
+                                )}
+                              />
                             )}
+                          </button>
+                        ) : (
+                          label
+                        )}
+                        {headerFilter && (
+                          <span className="hidden md:inline-flex">
+                            {headerFilter}
                           </span>
                         )}
                       </span>

@@ -18,6 +18,10 @@ import { formatDateTimeLabel } from '#/utils/date'
 import { CategoryManager } from './category-manager'
 import { TransactionFilters } from './transaction-filters'
 import {
+  CategoryHeaderFilter,
+  LocationHeaderFilter,
+} from './transaction-header-filters'
+import {
   useDeleteTransactionMutation,
   useTransactionsQuery,
   useUpdateTransactionMutation,
@@ -112,6 +116,7 @@ function buildColumns(
     columnHelper.accessor((row) => row.category?.name ?? 'Other', {
       id: 'category',
       header: 'Category',
+      meta: { headerFilter: <CategoryHeaderFilter /> },
       cell: (info) => {
         const row = info.row.original
         const color = row.category?.color ?? '#71717a'
@@ -163,6 +168,7 @@ function buildColumns(
       {
         id: 'location',
         header: 'Location',
+        meta: { headerFilter: <LocationHeaderFilter /> },
         cell: (info) => {
           const row = info.row.original
           return (
@@ -252,9 +258,16 @@ export function TransactionsTable() {
 
   const dateRange = useFinanceStore((s) => s.dateRange)
   const selectedType = useFinanceStore((s) => s.selectedType)
-  const selectedCategory = useFinanceStore((s) => s.selectedCategory)
+  const selectedCategories = useFinanceStore((s) => s.selectedCategories)
+  const selectedCities = useFinanceStore((s) => s.selectedCities)
   const categories = useFinanceStore((s) => s.categories)
   const setAddTransactionOpen = useFinanceStore((s) => s.setAddTransactionOpen)
+
+  const categoryIds = useMemo(
+    () => [...selectedCategories].sort(),
+    [selectedCategories],
+  )
+  const cities = useMemo(() => [...selectedCities].sort(), [selectedCities])
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -263,7 +276,8 @@ export function TransactionsTable() {
     dateRange.from,
     dateRange.to,
     selectedType,
-    selectedCategory,
+    categoryIds,
+    cities,
     debouncedSearch,
   ])
 
@@ -273,7 +287,8 @@ export function TransactionsTable() {
     dateFrom: dateRange.from,
     dateTo: dateRange.to,
     type: selectedType,
-    categoryId: selectedCategory,
+    categoryIds,
+    cities,
     search: debouncedSearch || null,
   })
 

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { FinanceCategory } from '#/stores/finance-store'
 import type { AggregateRow } from '../finance-utils'
 import {
+  getCategoryFacetCounts,
+  getCityFacetOptions,
   getDailySpendingByCategory,
   getDateRangeTotals,
   getSpendingByCity,
@@ -221,6 +223,77 @@ describe('getDailySpendingByCategory', () => {
 
     expect(series).toEqual([])
     expect(data[0]).toMatchObject({ date: '2026-07-01', total: 0 })
+  })
+})
+
+describe('getCategoryFacetCounts', () => {
+  it('counts transactions per category within the date range', () => {
+    const rows = [
+      row({ category_id: 'cat-1', date: '2026-07-01' }),
+      row({ category_id: 'cat-1', date: '2026-07-02' }),
+      row({ category_id: 'cat-2', date: '2026-07-01' }),
+      row({ category_id: 'cat-1', date: '2026-01-01' }),
+    ]
+
+    const counts = getCategoryFacetCounts(
+      rows,
+      { from: '2026-07-01', to: '2026-07-31' },
+      null,
+    )
+
+    expect(counts.get('cat-1')).toBe(2)
+    expect(counts.get('cat-2')).toBe(1)
+  })
+
+  it('counts income rows too, unlike the chart aggregations', () => {
+    const rows = [row({ category_id: 'cat-1', type: 'income' })]
+
+    expect(getCategoryFacetCounts(rows, NO_RANGE, null).get('cat-1')).toBe(1)
+  })
+
+  it('filters by transaction type when given', () => {
+    const rows = [
+      row({ category_id: 'cat-1', type: 'expense' }),
+      row({ category_id: 'cat-1', type: 'income' }),
+    ]
+
+    expect(getCategoryFacetCounts(rows, NO_RANGE, 'expense').get('cat-1')).toBe(
+      1,
+    )
+  })
+})
+
+describe('getCityFacetOptions', () => {
+  it('sorts cities by count descending, then name ascending', () => {
+    const rows = [
+      row({ location_city: 'Bandung' }),
+      row({ location_city: 'Jakarta' }),
+      row({ location_city: 'Jakarta' }),
+    ]
+
+    expect(getCityFacetOptions(rows, NO_RANGE)).toEqual([
+      { value: 'Jakarta', count: 2 },
+      { value: 'Bandung', count: 1 },
+    ])
+  })
+
+  it('buckets rows with no city under the empty-string value', () => {
+    const rows = [row({ location_city: null }), row({ location_city: null })]
+
+    expect(getCityFacetOptions(rows, NO_RANGE)).toEqual([
+      { value: '', count: 2 },
+    ])
+  })
+
+  it('respects the date range', () => {
+    const rows = [
+      row({ location_city: 'Jakarta', date: '2026-01-01' }),
+      row({ location_city: 'Jakarta', date: '2026-07-01' }),
+    ]
+
+    expect(
+      getCityFacetOptions(rows, { from: '2026-07-01', to: '2026-07-31' }),
+    ).toEqual([{ value: 'Jakarta', count: 1 }])
   })
 })
 
