@@ -50,22 +50,37 @@ The page composes:
 
 ## State and Persistence
 
-State is managed with Zustand + `persist` middleware (`useFinanceStore`).
+`useFinanceStore` (Zustand + `persist`, `src/stores/finance-store.ts`) holds only categories and add/edit-sheet state:
 
 - Storage key: `myspace-finance`
-- Version: `1`
-- Persisted slice: `transactions` only
-- Rehydrate behavior: re-seeds when persisted list is empty
+- Version: `5`
+- Persisted slice: `isBalanceHidden` only
+- `categories`, `isAddTransactionOpen`, `editingTransactionId`, `editingTransaction` are in-memory only
+
+Date range, transaction type, selected categories, selected cities, and the active Chart/Table tab live in the URL instead of the store — see [URL Search Params](#url-search-params). See [`docs/specs/finance-filters-url-state.md`](./specs/finance-filters-url-state.md).
 
 ### Store Actions
 
-- `addTransaction(input)` appends a transaction and closes the add sheet
-- `deleteTransaction(id)` removes a transaction
-- `setSelectedMonth(monthKey)` updates month filter (`YYYY-MM`)
-- `setSelectedCategory(category | null)` updates category filter
-- `setAddTransactionOpen(open)` controls add-transaction sheet visibility
+- `setCategories` / `addCategory` / `updateCategory` / `removeCategory` — category CRUD, kept in sync with the `finance_categories` table
+- `setAddTransactionOpen(open)` / `setEditingTransactionId(id)` / `setEditingTransaction(tx)` — control the add/edit transaction sheet
+- `setBalanceHidden(hidden)` — toggles balance masking, the only persisted preference
 
-UI filter state (`selectedMonth`, `selectedCategory`, `isAddTransactionOpen`) is not persisted and resets on reload.
+## URL Search Params
+
+Finance filters and the active tab are validated TanStack Router search params on `/_authenticated/finance/` (`src/routes/_authenticated/finance/-utils/finance-search.ts`), read/written through `useFinanceFilters()` (`src/routes/_authenticated/finance/-utils/use-finance-filters.ts`) rather than directly via `useSearch`/`useNavigate`.
+
+| Param  | Type                    | Default   | Meaning                                                            |
+| ------ | ----------------------- | --------- | ------------------------------------------------------------------ |
+| `view` | `'chart' \| 'table'`    | `'chart'` | Active tab                                                         |
+| `from` | `YYYY-MM-DD`            | unset     | Date range start                                                   |
+| `to`   | `YYYY-MM-DD`            | unset     | Date range end                                                     |
+| `type` | `'income' \| 'expense'` | unset     | Transaction type filter                                            |
+| `cat`  | `string[]`              | `[]`      | Selected category ids                                              |
+| `city` | `string[]`              | `[]`      | Selected `location_city` values; `''` means "no location recorded" |
+
+Example: `/finance?type=expense&cat=["abc123"]&city=["","Jakarta"]` — expense transactions in category `abc123`, in Jakarta or with no recorded city.
+
+Defaults are stripped from the URL (`stripSearchParams` route middleware), so an unfiltered view has a clean `/finance` URL. Every field degrades to its default on a malformed value instead of throwing (each is `.catch()`-guarded in the zod schema). Each filter change is a browser history entry (Back undoes it), except category/city checkbox toggles, which coalesce into one entry while the selection stays non-empty.
 
 ## Core Utilities
 
@@ -119,6 +134,18 @@ Form fields: type, amount, category, date, note. Validated with `react-hook-form
 - Month selector (Select)
 - Category chips (`All` + all income/expense categories)
 - **Add Transaction** button
+
+## Chart Click-to-Drilldown
+
+See [`docs/specs/finance-chart-drilldown.md`](./specs/finance-chart-drilldown.md) for the full spec. Summary:
+
+- Every bar in all three finance charts (`spending-by-category-chart.tsx`, `spending-by-daily-chart.tsx`, `spending-by-location-chart.tsx`) is clickable — the click payload is converted into a `DrilldownSelection` (`src/routes/_authenticated/finance/-utils/finance-drilldown.ts`) via `selectionFromCategoryBar` / `selectionFromDaySegment` / `selectionFromCityBar` / `selectionFromCountryBar`. `selectionFromDaySegment` returns `null` for a zero-amount segment, so clicking empty space opens nothing.
+- `useDrilldown()` (`-utils/use-drilldown.ts`) holds the sheet's ephemeral `{ state, open, close }` — never persisted, never in the URL.
+- `<SpendingDrilldownSheet>` (`-components/spending-drilldown-sheet.tsx`), mounted once at the page root, shows the bucket's total, share of period spending, transaction count, and up to 8 recent transactions. "View all N transactions →" calls `toFilterPatch(spec)` and commits it via `useFinanceFilters().setFilters(...)` (spec 11), switching to the Table tab as a single history entry. Disabled for a `country` selection — see `isCommittable()` — since there's no `selectedCountries` URL filter to commit into.
+- `toDrilldownSpec()` always replaces rather than merges: it ignores any already-active table filters, because the charts compute a bar's amount from the date range alone.
+- `chart-card.tsx` extracts the `Card`/`ResponsiveContainer`/empty-state chrome shared by all three charts and fixes an invalid `hsl(var(--muted))` tooltip cursor (this app's theme variables are `oklch()`, so the wrapped value never rendered) — use `CHART_TOOLTIP_CURSOR` from that module for any new chart.
+- `getSpendingByCategory` / `getDailySpendingByCategory` (`finance-utils.ts`) group by `category_id`, not display name, so a deleted category (falling back to "Other") never merges with a category actually named "Other".
+- `startOfDayIso()` (`#/utils/date`) is the lower-bound counterpart to `endOfDayIso()` — always use it (not a raw date-key string) when filtering a `date`/timestamp column by a local calendar day, to avoid excluding early-morning local transactions at positive UTC offsets.
 
 ## Location Tracking
 

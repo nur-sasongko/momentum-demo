@@ -14,6 +14,7 @@ import {
   getCategoryFacetCounts,
   getCityFacetOptions,
 } from '../-utils/finance-utils'
+import { useFinanceFilters } from '../-utils/use-finance-filters'
 
 import type { TransactionType } from '#/stores/finance-store'
 
@@ -99,11 +100,13 @@ export const TYPE_OPTIONS: Array<{
 
 export function CategoryHeaderFilter() {
   const categories = useFinanceStore((s) => s.categories)
-  const dateRange = useFinanceStore((s) => s.dateRange)
-  const selectedType = useFinanceStore((s) => s.selectedType)
-  const setSelectedType = useFinanceStore((s) => s.setSelectedType)
-  const selectedCategories = useFinanceStore((s) => s.selectedCategories)
-  const toggleCategory = useFinanceStore((s) => s.toggleCategory)
+  const {
+    dateRange,
+    selectedType,
+    setSelectedType,
+    selectedCategories,
+    toggleCategory,
+  } = useFinanceFilters()
   const { data: aggregateRows = [] } = useFinanceAggregateQuery()
 
   const facetCounts = getCategoryFacetCounts(
@@ -175,9 +178,7 @@ export function CategoryHeaderFilter() {
 }
 
 export function LocationHeaderFilter() {
-  const dateRange = useFinanceStore((s) => s.dateRange)
-  const selectedCities = useFinanceStore((s) => s.selectedCities)
-  const toggleCity = useFinanceStore((s) => s.toggleCity)
+  const { dateRange, selectedCities, toggleCity } = useFinanceFilters()
   const { data: aggregateRows = [] } = useFinanceAggregateQuery()
 
   const cityOptions = getCityFacetOptions(aggregateRows, dateRange)

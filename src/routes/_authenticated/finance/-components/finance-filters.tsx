@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '#/components/ui/popover'
-import { useFinanceStore } from '#/stores/finance-store'
+import { useFinanceFilters } from '../-utils/use-finance-filters'
 
 function toStoreRange(range: DayPickerDateRange) {
   return {
@@ -26,8 +26,7 @@ export function FinanceFilters() {
     to: undefined,
   })
 
-  const dateRange = useFinanceStore((s) => s.dateRange)
-  const setDateRange = useFinanceStore((s) => s.setDateRange)
+  const { dateRange, setDateRange } = useFinanceFilters()
 
   const hasRange = dateRange.from !== null || dateRange.to !== null
 

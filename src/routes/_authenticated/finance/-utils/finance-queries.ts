@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 
 import { getSupabaseBrowserClient } from '#/libs/supabase/client'
 import { useFinanceStore } from '#/stores/finance-store'
-import { endOfDayIso } from '#/utils/date'
+import { endOfDayIso, startOfDayIso } from '#/utils/date'
 import { DEFAULT_CATEGORY_CONFIGS } from './finance-utils'
 
 import type { AggregateRow } from './finance-utils'
@@ -170,6 +170,8 @@ export interface TransactionQueryParams {
   categoryIds: string[]
   /** Empty means "all locations". `''` selects rows with no city recorded. */
   cities: string[]
+  /** Empty means "all countries". `''` selects rows with no country recorded. */
+  countries: string[]
   search: string | null
 }
 
@@ -178,8 +180,8 @@ export interface TransactionPage {
   count: number
 }
 
-function quoteCity(city: string): string {
-  return `"${city.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+function quoteLocationValue(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 }
 
 export type CityFilter =
@@ -188,23 +190,31 @@ export type CityFilter =
   | { kind: 'or'; expression: string }
 
 /**
- * Translates selected cities into a PostgREST predicate. `.in()` cannot express
- * NULL, so selections including the "no location" bucket (`''`) fall back to an
- * `or` expression. Rows store either NULL or `''` for an unset city.
+ * Translates selected values for a location column into a PostgREST
+ * predicate. `.in()` cannot express NULL, so selections including the "no
+ * location" bucket (`''`) fall back to an `or` expression. Rows store either
+ * NULL or `''` for an unset location.
  */
-export function buildCityFilter(cities: string[]): CityFilter {
-  if (cities.length === 0) return { kind: 'none' }
+export function buildLocationFilter(
+  column: 'location_city' | 'location_country',
+  values: string[],
+): CityFilter {
+  if (values.length === 0) return { kind: 'none' }
 
-  const named = cities.filter((city) => city !== '')
-  const includesUnset = named.length !== cities.length
+  const named = values.filter((value) => value !== '')
+  const includesUnset = named.length !== values.length
 
   if (!includesUnset) return { kind: 'in', values: named }
 
-  const clauses = ['location_city.is.null', 'location_city.eq.']
+  const clauses = [`${column}.is.null`, `${column}.eq.`]
   if (named.length > 0) {
-    clauses.push(`location_city.in.(${named.map(quoteCity).join(',')})`)
+    clauses.push(`${column}.in.(${named.map(quoteLocationValue).join(',')})`)
   }
   return { kind: 'or', expression: clauses.join(',') }
+}
+
+export function buildCityFilter(cities: string[]): CityFilter {
+  return buildLocationFilter('location_city', cities)
 }
 
 export function useTransactionsQuery(params: TransactionQueryParams) {
@@ -223,15 +233,23 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
         .order('created_at', { ascending: false })
         .range(from, to)
 
-      if (params.dateFrom) q = q.gte('date', params.dateFrom)
+      if (params.dateFrom) q = q.gte('date', startOfDayIso(params.dateFrom))
       if (params.dateTo) q = q.lte('date', endOfDayIso(params.dateTo))
       if (params.type) q = q.eq('type', params.type)
       if (params.categoryIds.length > 0)
         q = q.in('category_id', params.categoryIds)
 
-      const cityFilter = buildCityFilter(params.cities)
+      const cityFilter = buildLocationFilter('location_city', params.cities)
       if (cityFilter.kind === 'in') q = q.in('location_city', cityFilter.values)
       else if (cityFilter.kind === 'or') q = q.or(cityFilter.expression)
+
+      const countryFilter = buildLocationFilter(
+        'location_country',
+        params.countries,
+      )
+      if (countryFilter.kind === 'in')
+        q = q.in('location_country', countryFilter.values)
+      else if (countryFilter.kind === 'or') q = q.or(countryFilter.expression)
 
       if (params.search) q = q.ilike('note', `%${params.search}%`)
 

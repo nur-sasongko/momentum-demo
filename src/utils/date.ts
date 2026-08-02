@@ -200,6 +200,24 @@ export function endOfDayIso(date: DateKey): string {
 }
 
 /**
+ * Returns the start of the local day for a date key, for use as an inclusive
+ * lower bound when comparing against timestamps that may carry time-of-day.
+ *
+ * Pairs with {@link endOfDayIso}. Using the date key's raw string (or its
+ * UTC midnight) as a lower bound instead of this would silently exclude
+ * early-morning local transactions at positive UTC offsets.
+ *
+ * @param date - Date key in `YYYY-MM-DD` format.
+ * @returns ISO datetime string at `00:00:00.000` local time on that day.
+ *
+ * @example
+ * startOfDayIso("2026-07-29") // "2026-07-29T00:00:00.000" (local offset applied)
+ */
+export function startOfDayIso(date: DateKey): string {
+  return startOfDay(parseISO(date)).toISOString()
+}
+
+/**
  * Truncates an ISO date/datetime string to its local calendar day key,
  * regardless of any time-of-day component.
  *
