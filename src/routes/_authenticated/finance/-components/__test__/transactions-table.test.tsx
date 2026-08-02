@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useFinanceStore } from '#/stores/finance-store'
 import {
   useDeleteTransactionMutation,
+  useFinanceAggregateQuery,
   useTransactionsQuery,
   useUpdateTransactionMutation,
 } from '../../-utils/finance-queries'
@@ -14,6 +15,7 @@ import type { Mock } from 'vitest'
 
 vi.mock('../../-utils/finance-queries', () => ({
   useTransactionsQuery: vi.fn(),
+  useFinanceAggregateQuery: vi.fn(() => ({ data: [] })),
   useUpdateTransactionMutation: vi.fn(),
   useDeleteTransactionMutation: vi.fn(),
   useCreateCategoryMutation: vi.fn(() => ({
@@ -31,6 +33,7 @@ vi.mock('../../-utils/finance-queries', () => ({
 }))
 
 const useTransactionsQueryMock = useTransactionsQuery as unknown as Mock
+const useFinanceAggregateQueryMock = useFinanceAggregateQuery as unknown as Mock
 const useUpdateTransactionMutationMock =
   useUpdateTransactionMutation as unknown as Mock
 const useDeleteTransactionMutationMock =
@@ -78,13 +81,15 @@ beforeEach(() => {
     categories: [category],
     dateRange: { from: null, to: null },
     selectedType: null,
-    selectedCategory: null,
+    selectedCategories: [],
+    selectedCities: [],
   })
 
   useTransactionsQueryMock.mockReturnValue({
     data: { data: [transaction], count: 1 },
     isFetching: false,
   })
+  useFinanceAggregateQueryMock.mockReturnValue({ data: [] })
   updateMutate = vi.fn()
   useUpdateTransactionMutationMock.mockReturnValue({
     mutate: updateMutate,

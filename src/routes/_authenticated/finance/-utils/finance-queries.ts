@@ -166,13 +166,45 @@ export interface TransactionQueryParams {
   dateFrom: string | null
   dateTo: string | null
   type: 'income' | 'expense' | null
-  categoryId: string | null
+  /** Empty means "all categories". Sort before passing — this is a cache key. */
+  categoryIds: string[]
+  /** Empty means "all locations". `''` selects rows with no city recorded. */
+  cities: string[]
   search: string | null
 }
 
 export interface TransactionPage {
   data: Transaction[]
   count: number
+}
+
+function quoteCity(city: string): string {
+  return `"${city.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
+export type CityFilter =
+  | { kind: 'none' }
+  | { kind: 'in'; values: string[] }
+  | { kind: 'or'; expression: string }
+
+/**
+ * Translates selected cities into a PostgREST predicate. `.in()` cannot express
+ * NULL, so selections including the "no location" bucket (`''`) fall back to an
+ * `or` expression. Rows store either NULL or `''` for an unset city.
+ */
+export function buildCityFilter(cities: string[]): CityFilter {
+  if (cities.length === 0) return { kind: 'none' }
+
+  const named = cities.filter((city) => city !== '')
+  const includesUnset = named.length !== cities.length
+
+  if (!includesUnset) return { kind: 'in', values: named }
+
+  const clauses = ['location_city.is.null', 'location_city.eq.']
+  if (named.length > 0) {
+    clauses.push(`location_city.in.(${named.map(quoteCity).join(',')})`)
+  }
+  return { kind: 'or', expression: clauses.join(',') }
 }
 
 export function useTransactionsQuery(params: TransactionQueryParams) {
@@ -194,7 +226,13 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
       if (params.dateFrom) q = q.gte('date', params.dateFrom)
       if (params.dateTo) q = q.lte('date', endOfDayIso(params.dateTo))
       if (params.type) q = q.eq('type', params.type)
-      if (params.categoryId) q = q.eq('category_id', params.categoryId)
+      if (params.categoryIds.length > 0)
+        q = q.in('category_id', params.categoryIds)
+
+      const cityFilter = buildCityFilter(params.cities)
+      if (cityFilter.kind === 'in') q = q.in('location_city', cityFilter.values)
+      else if (cityFilter.kind === 'or') q = q.or(cityFilter.expression)
+
       if (params.search) q = q.ilike('note', `%${params.search}%`)
 
       const { data, count, error } = await q

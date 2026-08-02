@@ -255,3 +255,51 @@ export function getSpendingByCountry(
 export function hasLocationData(rows: AggregateRow[]): boolean {
   return rows.some((row) => row.location_city || row.location_country)
 }
+
+// ---------------------------------------------------------------------------
+// Filter facets — counts shown next to each option in the transaction filters.
+// Derived from the aggregate query, which already holds every transaction
+// (unpaginated) with its category and city, so no extra request is needed.
+// Unlike the chart aggregations these count income rows too, and they do emit
+// the "no location" bucket.
+// ---------------------------------------------------------------------------
+
+export interface FacetOption {
+  value: string
+  count: number
+}
+
+/** Transaction count per category id, within `dateRange` and `type`. */
+export function getCategoryFacetCounts(
+  rows: AggregateRow[],
+  dateRange: DateRange,
+  type: TransactionType | null,
+): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const row of rows) {
+    if (type && row.type !== type) continue
+    if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
+    counts.set(row.category_id, (counts.get(row.category_id) ?? 0) + 1)
+  }
+  return counts
+}
+
+/**
+ * Cities present in `dateRange`, most frequent first. Rows without a city are
+ * collected under the `''` value, which the filter renders as "No location".
+ */
+export function getCityFacetOptions(
+  rows: AggregateRow[],
+  dateRange: DateRange,
+): FacetOption[] {
+  const counts = new Map<string, number>()
+  for (const row of rows) {
+    if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
+    const city = row.location_city ?? ''
+    counts.set(city, (counts.get(city) ?? 0) + 1)
+  }
+
+  return Array.from(counts.entries())
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+}
