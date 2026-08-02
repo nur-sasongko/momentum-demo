@@ -4,6 +4,7 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                         | Feature | Status      | Created    |
 | --- | -------------------------------------------------------------------------------------------- | ------- | ----------- | ---------- |
+| 14  | [Chart Zoom, Pan & Readable Axis Labels](./finance-chart-zoom-pan.md)                        | finance | done        | 2026-08-02 |
 | 13  | [Filtered Transaction Summary](./finance-filtered-summary.md)                                | finance | done        | 2026-08-02 |
 | 12  | [Chart Click-to-Drilldown](./finance-chart-drilldown.md)                                     | finance | done        | 2026-08-01 |
 | 11  | [Finance Filters as URL Search Params](./finance-filters-url-state.md)                       | finance | done        | 2026-08-01 |

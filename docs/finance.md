@@ -11,19 +11,19 @@ The Finance module is the personal finance tracker at `/finance`. It provides ba
 
 ## Source of Truth
 
-- Route entry: `src/routes/finance/index.tsx`
+- Route entry: `src/routes/_authenticated/finance/index.tsx`
 - Finance store: `src/stores/finance-store.ts`
-- Finance utilities: `src/routes/finance/-utils/finance-utils.ts`
-- Stat cards: `src/routes/finance/-components/finance-stat-cards.tsx`
-- Filters: `src/routes/finance/-components/finance-filters.tsx`
-- Category chart: `src/routes/finance/-components/spending-by-category-chart.tsx`
-- Transaction list: `src/routes/finance/-components/transaction-list.tsx`
-- Add transaction sheet: `src/routes/finance/-components/add-transaction-sheet.tsx`
-- Empty state: `src/routes/finance/-components/finance-empty-state.tsx`
+- Finance utilities: `src/routes/_authenticated/finance/-utils/finance-utils.ts`
+- Stat cards: `src/routes/_authenticated/finance/-components/finance-stat-cards.tsx`
+- Filters: `src/routes/_authenticated/finance/-components/finance-filters.tsx`
+- Category chart: `src/routes/_authenticated/finance/-components/spending-by-category-chart.tsx`
+- Transaction table: `src/routes/_authenticated/finance/-components/transactions-table.tsx`
+- Add/edit transaction form: `src/routes/_authenticated/finance/-components/transaction-form.tsx`
+- Empty state: `src/routes/_authenticated/finance/-components/finance-empty-state.tsx`
 
 ## Route and Composition
 
-`createFileRoute('/finance/')` is defined in `src/routes/finance/index.tsx`.
+`createFileRoute('/finance/')` is defined in `src/routes/_authenticated/finance/index.tsx`.
 
 The page composes:
 
@@ -84,7 +84,7 @@ Defaults are stripped from the URL (`stripSearchParams` route middleware), so an
 
 ## Core Utilities
 
-Defined in `src/routes/finance/-utils/finance-utils.ts`:
+Defined in `src/routes/_authenticated/finance/-utils/finance-utils.ts`:
 
 - `formatCurrency(amount)` — USD formatting via `Intl.NumberFormat`
 - `toMonthKey(date)` / `getCurrentMonthKey()` — month grouping keys
@@ -108,7 +108,15 @@ Two cards:
 
 ### Spending Chart
 
-Recharts bar chart showing expense totals grouped by category for the selected month. Empty state when no expenses exist in that month.
+Three Recharts bar charts — category, location, and daily — share `<ChartCard>` (`-components/chart-card.tsx`). Each shows an empty state when no expenses exist in the selected date range.
+
+Every category/location/day gets a labelled X-axis tick — no Recharts `interval`-based dropping. Ticks are angled at −35° (`AngledCategoryTick`, `-components/chart-axis-tick.tsx`) and truncated with an ellipsis only when they still don't fit; each chart carries a zoom control (`-components/chart-zoom-controls.tsx`) in the top-right of its plot area that widens the bars, revealing more of any truncated label. See [`docs/specs/finance-chart-zoom-pan.md`](./specs/finance-chart-zoom-pan.md) for the full spec. Summary:
+
+- `-utils/chart-zoom.ts` — pure sizing/geometry helpers (`clampZoom`, `getContentSize`, `getMaxTickChars`, `truncateLabel`, pinch geometry), unit-tested without a DOM.
+- `-utils/use-chart-zoom.ts` — the stateful hook: `ResizeObserver`-measured viewport, zoom state, mouse drag-to-pan and two-finger pinch (both anchored so the gesture's centre/midpoint stays in place), and a manually-registered non-passive Ctrl/⌘+wheel listener for zoom (JSX `onWheel` is passive and can't `preventDefault()`).
+- `ChartCard`'s `zoomable`/`dataLength` props mount a scrollable viewport sized via `getContentSize` and wrap the chart in `ChartZoomContext` so `AngledCategoryTick`, rendered deep inside the Recharts SVG tree, can read the current truncation budget.
+- A pan/pinch gesture that ends over a bar installs a one-shot capture-phase `click` blocker so it doesn't trigger the existing click-to-drilldown behavior; a plain click/tap still opens the drilldown sheet as before.
+- Zoom is transient view state (`useState`, not URL-synced, not persisted) — it resets on reload and on switching away from the Chart tab.
 
 ### Transaction List
 
