@@ -147,6 +147,17 @@ See [`docs/specs/finance-chart-drilldown.md`](./specs/finance-chart-drilldown.md
 - `getSpendingByCategory` / `getDailySpendingByCategory` (`finance-utils.ts`) group by `category_id`, not display name, so a deleted category (falling back to "Other") never merges with a category actually named "Other".
 - `startOfDayIso()` (`#/utils/date`) is the lower-bound counterpart to `endOfDayIso()` — always use it (not a raw date-key string) when filtering a `date`/timestamp column by a local calendar day, to avoid excluding early-morning local transactions at positive UTC offsets.
 
+## Filtered Transaction Summary
+
+See [`docs/specs/finance-filtered-summary.md`](./specs/finance-filtered-summary.md) for the full spec. Summary:
+
+- `<FilteredSummaryBar>` (`-components/filtered-summary-bar.tsx`), rendered inside `transactions-table.tsx` between the heading and `<DataTable>`, shows the aggregate money for the Table tab's active type/category/city filters. It's a Table-tab-only element — the shared stat cards above the tabs deliberately stay date-range-only (see spec 12 Non-Goals), and wiring table filters into them would make the cards and this bar disagree.
+- Hidden unless at least one type/category/city filter is active (a bare date range is already covered by the stat cards), and hidden entirely while the note-search box is non-empty, since `useFinanceAggregateQuery()`'s rows don't carry `note` and can't reproduce a search-narrowed row set.
+- `getFilteredSummary()` (`finance-utils.ts`) derives `{ income, expense, net, count, share, average }` from the same aggregate rows already loaded for the charts/facets — no new network request. A single active `type` renders Total/Share of period/Transactions/Average; no `type` filter renders Income/Expenses/Net/Transactions instead, since summing across signs is meaningless. `share` and `average` are `null` (never `NaN`/`0`) whenever the filtered count is 0.
+- Active selections render as removable chips (✕ calls `setSelectedType(null)` / `toggleCategory(id)` / `toggleCity(city)`); the active date range renders as a non-removable context chip since it's owned by `FinanceFilters`'s date picker. "Clear all" calls `clearTransactionFilters()`.
+- `StatBlock` (`-components/stat-block.tsx`) is shared between this bar and `spending-drilldown-sheet.tsx`, so a drilldown "View all →" commit lands on numbers that visually continue the sheet's.
+- `transaction-filters.tsx`'s desktop-only `Clear filters (N)` toolbar button was removed — the summary bar's "Clear all" now owns that affordance under the same `activeFilterCount > 0` condition. The mobile filter sheet keeps its own in-sheet clear button.
+
 ## Location Tracking
 
 See [`docs/specs/finance-location-tracking.md`](./specs/finance-location-tracking.md) for the full spec. Summary:

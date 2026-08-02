@@ -1,4 +1,4 @@
-import { ListFilter, X } from 'lucide-react'
+import { ListFilter } from 'lucide-react'
 
 import {
   Accordion,
@@ -182,18 +182,6 @@ export function TransactionFilters() {
             </div>
           </SheetContent>
         </Sheet>
-      )}
-
-      {activeCount > 0 && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="hidden gap-1.5 text-xs text-muted-foreground hover:text-foreground md:inline-flex"
-          onClick={clearTransactionFilters}
-        >
-          <X className="size-3.5" />
-          Clear filters ({activeCount})
-        </Button>
       )}
     </>
   )

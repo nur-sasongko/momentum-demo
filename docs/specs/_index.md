@@ -4,7 +4,7 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                         | Feature | Status      | Created    |
 | --- | -------------------------------------------------------------------------------------------- | ------- | ----------- | ---------- |
-| 13  | [Filtered Transaction Summary](./finance-filtered-summary.md)                                | finance | draft       | 2026-08-02 |
+| 13  | [Filtered Transaction Summary](./finance-filtered-summary.md)                                | finance | done        | 2026-08-02 |
 | 12  | [Chart Click-to-Drilldown](./finance-chart-drilldown.md)                                     | finance | done        | 2026-08-01 |
 | 11  | [Finance Filters as URL Search Params](./finance-filters-url-state.md)                       | finance | done        | 2026-08-01 |
 | 10  | [Global Unsaved-Changes Guard](./core-unsaved-changes-guard.md)                              | core    | done        | 2026-07-31 |

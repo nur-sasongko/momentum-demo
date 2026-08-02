@@ -16,6 +16,7 @@ import { useFinanceStore } from '#/stores/finance-store'
 import { parseFormattedNumber } from '#/utils/currency'
 import { formatDateTimeLabel } from '#/utils/date'
 import { CategoryManager } from './category-manager'
+import { FilteredSummaryBar } from './filtered-summary-bar'
 import { TransactionFilters } from './transaction-filters'
 import {
   CategoryHeaderFilter,
@@ -336,6 +337,7 @@ export function TransactionsTable() {
           </span>
         )}
       </h2>
+      <FilteredSummaryBar isSearchActive={Boolean(debouncedSearch)} />
       <DataTable
         columns={columns}
         data={transactions}

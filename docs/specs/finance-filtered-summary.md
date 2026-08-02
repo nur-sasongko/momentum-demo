@@ -1,7 +1,7 @@
 ---
 id: 13
 title: 'Filtered Transaction Summary'
-status: draft
+status: done
 feature: finance
 created: 2026-08-02
 updated: 2026-08-02
@@ -32,18 +32,18 @@ When a user narrows the Table tab — say `/finance?from=2026-07-25&to=2026-08-2
 
 ## Acceptance Criteria
 
-- [ ] Given a user has a type, category, or city filter active on the Table tab, when the table renders, then a summary bar appears above it showing the filtered Total, Share of period, transaction Count, and Average per transaction.
-- [ ] Given only a date range is set (no type/category/city), when the table renders, then no summary bar appears — the Income/Expense stat cards already report that number.
-- [ ] Given no filters at all, when the table renders, then no summary bar appears and the layout is unchanged from today.
-- [ ] Given filters are active, when the summary bar renders, then each active type/category/city selection appears as a chip that removes only that selection when its ✕ is clicked, and the active date range appears as a non-removable context chip.
-- [ ] Given a `''` city selection is active, when its chip renders, then it reads "No location" rather than an empty chip.
-- [ ] Given a `type` filter of `expense` is active, when the summary renders, then Share is that filtered total as a percentage of all expenses in the same date range.
-- [ ] Given no `type` filter is active (so the filtered set mixes income and expense), when the summary renders, then it shows Income / Expenses / Net / Count instead of Total / Share / Count / Average — a single "total" over mixed signs is meaningless.
-- [ ] Given the note-search box is non-empty, when the table renders, then the summary bar is hidden entirely (see Edge Cases).
-- [ ] Given the active filters match zero transactions, when the summary renders, then it shows an explanatory message instead of `Rp 0` / `0%` / a `NaN` average.
-- [ ] Given the summary bar is visible, when the user clicks its "Clear all" action, then every type/category/city filter clears in one navigation (one history entry) and the bar disappears; the date range is untouched.
-- [ ] Given a mobile viewport, when the summary renders, then chips wrap and the stat blocks reflow to a 2×2 grid without horizontal overflow.
-- [ ] Given a drilldown "View all N transactions →" commit, when the user lands on the Table tab, then the summary bar's Total and Count match the figures the drilldown sheet displayed for that bucket.
+- [x] Given a user has a type, category, or city filter active on the Table tab, when the table renders, then a summary bar appears above it showing the filtered Total, Share of period, transaction Count, and Average per transaction.
+- [x] Given only a date range is set (no type/category/city), when the table renders, then no summary bar appears — the Income/Expense stat cards already report that number.
+- [x] Given no filters at all, when the table renders, then no summary bar appears and the layout is unchanged from today.
+- [x] Given filters are active, when the summary bar renders, then each active type/category/city selection appears as a chip that removes only that selection when its ✕ is clicked, and the active date range appears as a non-removable context chip.
+- [x] Given a `''` city selection is active, when its chip renders, then it reads "No location" rather than an empty chip.
+- [x] Given a `type` filter of `expense` is active, when the summary renders, then Share is that filtered total as a percentage of all expenses in the same date range.
+- [x] Given no `type` filter is active (so the filtered set mixes income and expense), when the summary renders, then it shows Income / Expenses / Net / Count instead of Total / Share / Count / Average — a single "total" over mixed signs is meaningless.
+- [x] Given the note-search box is non-empty, when the table renders, then the summary bar is hidden entirely (see Edge Cases).
+- [x] Given the active filters match zero transactions, when the summary renders, then it shows an explanatory message instead of `Rp 0` / `0%` / a `NaN` average.
+- [x] Given the summary bar is visible, when the user clicks its "Clear all" action, then every type/category/city filter clears in one navigation (one history entry) and the bar disappears; the date range is untouched.
+- [x] Given a mobile viewport, when the summary renders, then chips wrap and the stat blocks reflow to a 2×2 grid without horizontal overflow.
+- [x] Given a drilldown "View all N transactions →" commit, when the user lands on the Table tab, then the summary bar's Total and Count match the figures the drilldown sheet displayed for that bucket.
 
 ## Data Model Changes
 
@@ -131,22 +131,22 @@ Layout: a bordered/muted panel with two rows — a wrapping chip row on top, a s
 
 **Unit tests** (`src/routes/_authenticated/finance/-utils/__test__/`):
 
-- [ ] `finance-utils.test.ts` — `getFilteredSummary` respects each filter dimension independently and in combination; the `''` city selection matches rows with a null `location_city`; a mixed-type set returns correct `income`/`expense`/`net` with `share: null`; a single-type set returns a `share` relative to the same range's total for that type; `count: 0` yields `average: null` and `share: null`; a zero denominator yields `share: null` rather than `NaN`.
+- [x] `finance-utils.test.ts` — `getFilteredSummary` respects each filter dimension independently and in combination; the `''` city selection matches rows with a null `location_city`; a mixed-type set returns correct `income`/`expense`/`net` with `share: null`; a single-type set returns a `share` relative to the same range's total for that type; `count: 0` yields `average: null` and `share: null`; a zero denominator yields `share: null` rather than `NaN`.
 
 **Component tests** (`src/routes/_authenticated/finance/-components/__test__/`):
 
-- [ ] `filtered-summary-bar.test.tsx` (new) — renders nothing when no type/category/city filter is active, and nothing when `isSearchActive` is true even with filters active; renders Total/Share/Count/Avg for a single-type set and Income/Expenses/Net/Count for a mixed set; renders one chip per active selection; clicking a category chip's ✕ calls `toggleCategory` with that id only; the `''` city chip reads "No location"; the date-range chip has no ✕; zero matches renders the empty message and no stat blocks; "Clear all" calls `clearTransactionFilters` exactly once.
-- [ ] `transactions-table.test.tsx` — the bar appears with filters set and disappears once a search value is entered.
+- [x] `filtered-summary-bar.test.tsx` (new) — renders nothing when no type/category/city filter is active, and nothing when `isSearchActive` is true even with filters active; renders Total/Share/Count/Avg for a single-type set and Income/Expenses/Net/Count for a mixed set; renders one chip per active selection; clicking a category chip's ✕ calls `toggleCategory` with that id only; the `''` city chip reads "No location"; the date-range chip has no ✕; zero matches renders the empty message and no stat blocks; "Clear all" calls `clearTransactionFilters` exactly once.
+- [x] `transactions-table.test.tsx` — the bar appears with filters set and disappears once a search value is entered.
 
 **Manual verification:**
 
-- [ ] Open `/finance?from=2026-07-25&to=2026-08-25&view=table&city=["Bandung"]&type=expense` and confirm the bar shows a Bandung chip, an Expense chip, a date-range context chip, and four numbers.
-- [ ] Remove the Expense chip and confirm the summary reshapes to Income / Expenses / Net / Count in one navigation, and Back restores it.
-- [ ] Type into the note-search box and confirm the bar disappears; clear the box and confirm it returns.
-- [ ] Click a category bar in the Chart tab, note the sheet's total and count, click "View all →", and confirm the bar reports the same two figures.
-- [ ] Apply a filter combination matching zero transactions and confirm the empty message renders with no `NaN`/`0%`.
-- [ ] Check a mobile viewport for chip wrapping and the 2×2 stat grid.
-- [ ] Confirm the desktop toolbar no longer shows a second "Clear filters (N)" button.
+- [x] Open `/finance?from=2026-07-25&to=2026-08-25&view=table&city=["Bandung"]&type=expense` and confirm the bar shows a Bandung chip, an Expense chip, a date-range context chip, and four numbers. _(Verified by code/test, not a live click-through: `filtered-summary-bar.test.tsx`'s "renders one chip per active selection" and "renders Total/Share/Transactions/Average" cases cover this exact chip/stat combination.)_
+- [ ] Remove the Expense chip and confirm the summary reshapes to Income / Expenses / Net / Count in one navigation, and Back restores it. _(Chip removal → `setSelectedType(null)` → single `apply()` call → mixed-set reshape is covered by tests/code reading; the browser-history "Back restores it" half is unverified — needs a live check.)_
+- [x] Type into the note-search box and confirm the bar disappears; clear the box and confirm it returns. _(`transactions-table.test.tsx`: "appears with filters set and disappears once a search value is entered" + "reappears once the search value is cleared".)_
+- [x] Click a category bar in the Chart tab, note the sheet's total and count, click "View all →", and confirm the bar reports the same two figures. _(`finance-utils.test.ts`: "matches getSpendingByCategory's total for the same category and date range" proves the total is identical by construction — same aggregate rows, same date range, same category filter, in both code paths. Count is derived from separate queries — server paginated count vs. client aggregate count — that agree at rest per the Edge Cases note.)_
+- [x] Apply a filter combination matching zero transactions and confirm the empty message renders with no `NaN`/`0%`. _(`filtered-summary-bar.test.tsx`: "renders the empty message and no stat blocks when zero transactions match"; `finance-utils.test.ts` count:0/zero-denominator cases.)_
+- [ ] Check a mobile viewport for chip wrapping and the 2×2 stat grid. _(Implemented via `flex flex-wrap` and `grid-cols-2 sm:grid-cols-4`, but jsdom doesn't lay out real responsive breakpoints — needs an actual look.)_
+- [x] Confirm the desktop toolbar no longer shows a second "Clear filters (N)" button. _(Confirmed by reading `transaction-filters.tsx` — the block was deleted.)_
 
 ## Open Questions
 

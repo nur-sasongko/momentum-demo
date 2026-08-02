@@ -7,6 +7,8 @@ import {
   getCityFacetOptions,
   getDailySpendingByCategory,
   getDateRangeTotals,
+  getFilteredSummary,
+  getSpendingByCategory,
   getSpendingByCity,
   getSpendingByCountry,
   hasLocationData,
@@ -294,6 +296,184 @@ describe('getCityFacetOptions', () => {
     expect(
       getCityFacetOptions(rows, { from: '2026-07-01', to: '2026-07-31' }),
     ).toEqual([{ value: 'Jakarta', count: 1 }])
+  })
+})
+
+describe('getFilteredSummary', () => {
+  it('sums income/expense/count within the date range, ignoring rows outside it', () => {
+    const rows = [
+      row({ amount: 100, type: 'expense', date: '2026-07-01' }),
+      row({ amount: 50, type: 'income', date: '2026-07-02' }),
+      row({ amount: 999, type: 'expense', date: '2026-01-01' }),
+    ]
+
+    const summary = getFilteredSummary(
+      rows,
+      { from: '2026-07-01', to: '2026-07-31' },
+      null,
+      [],
+      [],
+    )
+
+    expect(summary).toMatchObject({
+      income: 50,
+      expense: 100,
+      net: -50,
+      count: 2,
+      share: null,
+    })
+  })
+
+  it('filters by category id', () => {
+    const rows = [
+      row({ amount: 100, category_id: 'cat-1' }),
+      row({ amount: 50, category_id: 'cat-2' }),
+    ]
+
+    const summary = getFilteredSummary(rows, NO_RANGE, null, ['cat-1'], [])
+
+    expect(summary).toMatchObject({ count: 1, expense: 100 })
+  })
+
+  it('matches rows with a null location_city under the "" city selection', () => {
+    const rows = [
+      row({ amount: 100, location_city: null }),
+      row({ amount: 50, location_city: 'Jakarta' }),
+    ]
+
+    const summary = getFilteredSummary(rows, NO_RANGE, null, [], [''])
+
+    expect(summary).toMatchObject({ count: 1, expense: 100 })
+  })
+
+  it('combines type, category, and city filters', () => {
+    const rows = [
+      row({
+        amount: 100,
+        type: 'expense',
+        category_id: 'cat-1',
+        location_city: 'Jakarta',
+      }),
+      row({
+        amount: 50,
+        type: 'expense',
+        category_id: 'cat-1',
+        location_city: 'Bandung',
+      }),
+      row({
+        amount: 999,
+        type: 'income',
+        category_id: 'cat-1',
+        location_city: 'Jakarta',
+      }),
+    ]
+
+    const summary = getFilteredSummary(
+      rows,
+      NO_RANGE,
+      'expense',
+      ['cat-1'],
+      ['Jakarta'],
+    )
+
+    expect(summary.count).toBe(1)
+    expect(summary.expense).toBe(100)
+  })
+
+  it('returns income/expense/net with a null share for a mixed-type set', () => {
+    const rows = [
+      row({ amount: 100, type: 'expense' }),
+      row({ amount: 200, type: 'income' }),
+    ]
+
+    const summary = getFilteredSummary(rows, NO_RANGE, null, [], [])
+
+    expect(summary).toMatchObject({
+      income: 200,
+      expense: 100,
+      net: 100,
+      share: null,
+    })
+  })
+
+  it('returns a share relative to the date range total for a single active type', () => {
+    const rows = [
+      row({ amount: 100, type: 'expense', category_id: 'cat-1' }),
+      row({ amount: 300, type: 'expense', category_id: 'cat-2' }),
+    ]
+
+    const summary = getFilteredSummary(rows, NO_RANGE, 'expense', ['cat-1'], [])
+
+    expect(summary.share).toBeCloseTo(0.25)
+  })
+
+  it('computes the average amount per matching transaction', () => {
+    const rows = [
+      row({ amount: 100, type: 'expense' }),
+      row({ amount: 300, type: 'expense' }),
+    ]
+
+    const summary = getFilteredSummary(rows, NO_RANGE, 'expense', [], [])
+
+    expect(summary.average).toBe(200)
+  })
+
+  it('yields a null average and share when the filtered count is 0', () => {
+    const rows = [
+      row({ amount: 100, type: 'expense', category_id: 'cat-1' }),
+      row({ amount: 100, type: 'expense', category_id: 'cat-2' }),
+    ]
+
+    const summary = getFilteredSummary(rows, NO_RANGE, 'expense', ['cat-3'], [])
+
+    expect(summary.count).toBe(0)
+    expect(summary.average).toBeNull()
+    expect(summary.share).toBeNull()
+  })
+
+  it('yields a null share rather than NaN for a zero denominator', () => {
+    const rows = [row({ amount: 100, type: 'income' })]
+
+    const summary = getFilteredSummary(rows, NO_RANGE, 'expense', [], [])
+
+    expect(summary.count).toBe(0)
+    expect(summary.share).toBeNull()
+  })
+
+  // Drilldown continuity (spec 13 AC): the sheet's category total
+  // (getSpendingByCategory) and the table summary bar's total for the same
+  // category + date range must agree, since a "View all" commit carries the
+  // exact same categoryIds/dateRange into the table filters.
+  it("matches getSpendingByCategory's total for the same category and date range", () => {
+    const rows = [
+      row({ amount: 120, category_id: 'cat-1', date: '2026-07-05' }),
+      row({ amount: 80, category_id: 'cat-1', date: '2026-07-20' }),
+      row({ amount: 999, category_id: 'cat-2', date: '2026-07-10' }),
+      row({
+        amount: 500,
+        type: 'income',
+        category_id: 'cat-1',
+        date: '2026-07-10',
+      }),
+      row({ amount: 50, category_id: 'cat-1', date: '2026-01-01' }),
+    ]
+    const dateRange = { from: '2026-07-01', to: '2026-07-31' }
+
+    const chartTotal = getSpendingByCategory(rows, dateRange, categories).find(
+      (c) => c.categoryId === 'cat-1',
+    )?.amount
+
+    const summary = getFilteredSummary(
+      rows,
+      dateRange,
+      'expense',
+      ['cat-1'],
+      [],
+    )
+
+    expect(chartTotal).toBe(200)
+    expect(summary.expense).toBe(chartTotal)
+    expect(summary.count).toBe(2)
   })
 })
 
