@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useFinanceStore } from '#/stores/finance-store'
@@ -8,6 +8,7 @@ import {
   useTransactionsQuery,
   useUpdateTransactionMutation,
 } from '../../-utils/finance-queries'
+import { useFinanceFilters } from '../../-utils/use-finance-filters'
 import { TransactionsTable } from '../transactions-table'
 
 import type { FinanceCategory, Transaction } from '#/stores/finance-store'
@@ -32,12 +33,32 @@ vi.mock('../../-utils/finance-queries', () => ({
   })),
 }))
 
+vi.mock('../../-utils/use-finance-filters', () => ({
+  useFinanceFilters: vi.fn(),
+}))
+
 const useTransactionsQueryMock = useTransactionsQuery as unknown as Mock
 const useFinanceAggregateQueryMock = useFinanceAggregateQuery as unknown as Mock
 const useUpdateTransactionMutationMock =
   useUpdateTransactionMutation as unknown as Mock
 const useDeleteTransactionMutationMock =
   useDeleteTransactionMutation as unknown as Mock
+const useFinanceFiltersMock = useFinanceFilters as unknown as Mock
+
+function mockFinanceFilters(overrides: Record<string, unknown> = {}) {
+  useFinanceFiltersMock.mockReturnValue({
+    dateRange: { from: null, to: null },
+    selectedType: null,
+    setSelectedType: vi.fn(),
+    selectedCategories: [],
+    toggleCategory: vi.fn(),
+    selectedCities: [],
+    toggleCity: vi.fn(),
+    clearTransactionFilters: vi.fn(),
+    activeFilterCount: 0,
+    ...overrides,
+  })
+}
 
 function mockMatchMedia() {
   Object.defineProperty(window, 'matchMedia', {
@@ -77,13 +98,8 @@ let updateMutate: Mock
 
 beforeEach(() => {
   mockMatchMedia()
-  useFinanceStore.setState({
-    categories: [category],
-    dateRange: { from: null, to: null },
-    selectedType: null,
-    selectedCategories: [],
-    selectedCities: [],
-  })
+  useFinanceStore.setState({ categories: [category] })
+  mockFinanceFilters()
 
   useTransactionsQueryMock.mockReturnValue({
     data: { data: [transaction], count: 1 },
@@ -149,5 +165,64 @@ describe('TransactionsTable — Amount cell', () => {
 
     expect(updateMutate).not.toHaveBeenCalled()
     expect(screen.getByText('−100.00')).toBeTruthy()
+  })
+})
+
+describe('TransactionsTable — filtered summary bar', () => {
+  it('appears with filters set and disappears once a search value is entered', async () => {
+    mockFinanceFilters({ selectedType: 'expense', activeFilterCount: 1 })
+    useFinanceAggregateQueryMock.mockReturnValue({
+      data: [
+        {
+          amount: 100,
+          type: 'expense',
+          date: '2026-07-01',
+          category_id: 'cat-1',
+          location_city: null,
+          location_country: null,
+        },
+      ],
+    })
+
+    render(<TransactionsTable />)
+
+    expect(screen.getByText('Clear all')).toBeTruthy()
+
+    fireEvent.change(screen.getByPlaceholderText('Search notes…'), {
+      target: { value: 'coffee' },
+    })
+
+    await waitFor(() => {
+      expect(screen.queryByText('Clear all')).toBeNull()
+    })
+  })
+
+  it('reappears once the search value is cleared', async () => {
+    mockFinanceFilters({ selectedType: 'expense', activeFilterCount: 1 })
+    useFinanceAggregateQueryMock.mockReturnValue({
+      data: [
+        {
+          amount: 100,
+          type: 'expense',
+          date: '2026-07-01',
+          category_id: 'cat-1',
+          location_city: null,
+          location_country: null,
+        },
+      ],
+    })
+
+    render(<TransactionsTable />)
+    const input = screen.getByPlaceholderText('Search notes…')
+
+    fireEvent.change(input, { target: { value: 'coffee' } })
+    await waitFor(() => {
+      expect(screen.queryByText('Clear all')).toBeNull()
+    })
+
+    fireEvent.change(input, { target: { value: '' } })
+    await waitFor(() => {
+      expect(screen.getByText('Clear all')).toBeTruthy()
+    })
   })
 })

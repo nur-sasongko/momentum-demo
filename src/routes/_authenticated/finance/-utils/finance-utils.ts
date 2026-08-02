@@ -97,6 +97,65 @@ export function getDateRangeTotals(
   return { income, expense }
 }
 
+export interface FilteredSummary {
+  /** Expense total within the filtered set. */
+  expense: number
+  /** Income total within the filtered set. */
+  income: number
+  /** `income - expense`. */
+  net: number
+  count: number
+  /**
+   * Filtered total as a fraction of the same date range's total for that
+   * type. `null` when no single `type` is active, the filtered count is 0,
+   * or the denominator is 0 — never a silent 0 or NaN.
+   */
+  share: number | null
+  /** Mean amount per matching transaction. `null` when `count === 0`. */
+  average: number | null
+}
+
+/**
+ * Mirrors the filter semantics of `useTransactionsQuery`: `type` equality,
+ * `categoryIds` membership, and `cities` membership where `''` matches a
+ * null/empty `location_city`.
+ */
+export function getFilteredSummary(
+  rows: AggregateRow[],
+  dateRange: DateRange,
+  type: TransactionType | null,
+  categoryIds: string[],
+  cities: string[],
+): FilteredSummary {
+  let income = 0
+  let expense = 0
+  let count = 0
+
+  for (const row of rows) {
+    if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
+    if (type && row.type !== type) continue
+    if (categoryIds.length > 0 && !categoryIds.includes(row.category_id))
+      continue
+    if (cities.length > 0 && !cities.includes(row.location_city ?? '')) continue
+
+    if (row.type === 'income') income += row.amount
+    else expense += row.amount
+    count += 1
+  }
+
+  const net = income - expense
+  const average = count > 0 ? (income + expense) / count : null
+
+  let share: number | null = null
+  if (type && count > 0) {
+    const periodTotal = getDateRangeTotals(rows, dateRange)[type]
+    const filteredTotal = type === 'income' ? income : expense
+    share = periodTotal > 0 ? filteredTotal / periodTotal : null
+  }
+
+  return { income, expense, net, count, share, average }
+}
+
 export interface CategorySpending {
   category: string
   categoryId: string

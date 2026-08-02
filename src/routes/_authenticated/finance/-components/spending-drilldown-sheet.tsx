@@ -28,6 +28,7 @@ import {
   formatDateRangeLabel,
   getDateRangeTotals,
 } from '../-utils/finance-utils'
+import { StatBlock } from './stat-block'
 
 import type { DateRange } from '#/stores/finance-store'
 import type { DrilldownSelection } from '../-utils/finance-drilldown'
@@ -46,15 +47,6 @@ function selectionKey(selection: DrilldownSelection): string {
     case 'country':
       return `country:${selection.country}`
   }
-}
-
-function StatBlock({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-0.5 rounded-lg border border-border px-3 py-2">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold tabular-nums">{value}</p>
-    </div>
-  )
 }
 
 function DrilldownSheetBody({
