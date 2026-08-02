@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
 import { PieChart, Table } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
@@ -8,20 +8,31 @@ import { FinanceStatCards } from '#/routes/_authenticated/finance/-components/fi
 import { SpendingByCategoryChart } from '#/routes/_authenticated/finance/-components/spending-by-category-chart'
 import { SpendingByDailyChart } from '#/routes/_authenticated/finance/-components/spending-by-daily-chart'
 import { SpendingByLocationChart } from '#/routes/_authenticated/finance/-components/spending-by-location-chart'
+import { SpendingDrilldownSheet } from '#/routes/_authenticated/finance/-components/spending-drilldown-sheet'
 import { TransactionFormSheet } from '#/routes/_authenticated/finance/-components/transaction-form'
 import { TransactionsTable } from '#/routes/_authenticated/finance/-components/transactions-table'
-import { useFinanceStore } from '#/stores/finance-store'
-import type { FinanceView } from '#/stores/finance-store'
 import {
   useFinanceAggregateQuery,
   useFinanceCategoriesQuery,
 } from './-utils/finance-queries'
 import { hasLocationData } from './-utils/finance-utils'
+import {
+  FINANCE_SEARCH_DEFAULTS,
+  financeSearchSchema,
+} from './-utils/finance-search'
+import { useDrilldown } from './-utils/use-drilldown'
+import { useFinanceFilters } from './-utils/use-finance-filters'
+
+import type { FinanceView } from './-utils/finance-search'
 
 export const Route = createFileRoute('/_authenticated/finance/')({
   head: () => ({
     meta: [{ title: 'Finance — Momentum' }],
   }),
+  validateSearch: financeSearchSchema,
+  search: {
+    middlewares: [stripSearchParams(FINANCE_SEARCH_DEFAULTS)],
+  },
   component: FinancePage,
 })
 
@@ -29,8 +40,9 @@ function FinancePage() {
   const { isLoading: catsLoading } = useFinanceCategoriesQuery()
   const { data: aggregateRows = [], isLoading: aggLoading } =
     useFinanceAggregateQuery()
-  const activeView = useFinanceStore((s) => s.activeView)
-  const setActiveView = useFinanceStore((s) => s.setActiveView)
+  const { activeView, setActiveView, dateRange, setFilters } =
+    useFinanceFilters()
+  const drilldown = useDrilldown()
 
   const isLoading = catsLoading || aggLoading
 
@@ -85,9 +97,11 @@ function FinancePage() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="chart" className="space-y-4">
-            <SpendingByCategoryChart />
-            <SpendingByDailyChart />
-            {hasLocationData(aggregateRows) && <SpendingByLocationChart />}
+            <SpendingByCategoryChart onSelect={drilldown.open} />
+            <SpendingByDailyChart onSelect={drilldown.open} />
+            {hasLocationData(aggregateRows) && (
+              <SpendingByLocationChart onSelect={drilldown.open} />
+            )}
           </TabsContent>
           <TabsContent value="table">
             <TransactionsTable />
@@ -98,6 +112,12 @@ function FinancePage() {
       )}
 
       <TransactionFormSheet />
+      <SpendingDrilldownSheet
+        selection={drilldown.state}
+        dateRange={dateRange}
+        onClose={drilldown.close}
+        onCommit={setFilters}
+      />
     </div>
   )
 }

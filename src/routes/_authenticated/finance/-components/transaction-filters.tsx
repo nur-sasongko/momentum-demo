@@ -22,21 +22,23 @@ import {
   getCategoryFacetCounts,
   getCityFacetOptions,
 } from '../-utils/finance-utils'
+import { useFinanceFilters } from '../-utils/use-finance-filters'
 import { FacetCheckboxList, TYPE_OPTIONS } from './transaction-header-filters'
 
 export function TransactionFilters() {
   const isMobile = useIsMobile()
   const categories = useFinanceStore((s) => s.categories)
-  const dateRange = useFinanceStore((s) => s.dateRange)
-  const selectedType = useFinanceStore((s) => s.selectedType)
-  const setSelectedType = useFinanceStore((s) => s.setSelectedType)
-  const selectedCategories = useFinanceStore((s) => s.selectedCategories)
-  const toggleCategory = useFinanceStore((s) => s.toggleCategory)
-  const selectedCities = useFinanceStore((s) => s.selectedCities)
-  const toggleCity = useFinanceStore((s) => s.toggleCity)
-  const clearTransactionFilters = useFinanceStore(
-    (s) => s.clearTransactionFilters,
-  )
+  const {
+    dateRange,
+    selectedType,
+    setSelectedType,
+    selectedCategories,
+    toggleCategory,
+    selectedCities,
+    toggleCity,
+    clearTransactionFilters,
+    activeFilterCount: activeCount,
+  } = useFinanceFilters()
   const { data: aggregateRows = [] } = useFinanceAggregateQuery()
 
   const categoryFacetCounts = getCategoryFacetCounts(
@@ -50,9 +52,6 @@ export function TransactionFilters() {
     .sort((a, b) => b.count - a.count)
   const categoryById = new Map(categories.map((c) => [c.id, c]))
   const cityOptions = getCityFacetOptions(aggregateRows, dateRange)
-
-  const activeCount =
-    (selectedType ? 1 : 0) + selectedCategories.length + selectedCities.length
 
   // Start expanded only for sections that already have an active selection,
   // so opening the sheet doesn't hide filters the user has already set.

@@ -27,6 +27,7 @@ import {
   useUpdateTransactionMutation,
 } from '../-utils/finance-queries'
 import { formatCurrency } from '../-utils/finance-utils'
+import { useFinanceFilters } from '../-utils/use-finance-filters'
 
 import type {
   FinanceCategory,
@@ -256,10 +257,8 @@ export function TransactionsTable() {
   const [searchInput, setSearchInput] = useState('')
   const debouncedSearch = useDebouncedValue(searchInput, 300)
 
-  const dateRange = useFinanceStore((s) => s.dateRange)
-  const selectedType = useFinanceStore((s) => s.selectedType)
-  const selectedCategories = useFinanceStore((s) => s.selectedCategories)
-  const selectedCities = useFinanceStore((s) => s.selectedCities)
+  const { dateRange, selectedType, selectedCategories, selectedCities } =
+    useFinanceFilters()
   const categories = useFinanceStore((s) => s.categories)
   const setAddTransactionOpen = useFinanceStore((s) => s.setAddTransactionOpen)
 
@@ -289,6 +288,7 @@ export function TransactionsTable() {
     type: selectedType,
     categoryIds,
     cities,
+    countries: [],
     search: debouncedSearch || null,
   })
 

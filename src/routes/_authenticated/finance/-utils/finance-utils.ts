@@ -8,6 +8,7 @@ import {
   endOfDayIso,
   formatTransactionDate,
   getDaysInRange,
+  startOfDayIso,
   toDayKey,
 } from '#/utils/date'
 
@@ -61,7 +62,7 @@ function isInDateRange(
   from: string | null,
   to: string | null,
 ): boolean {
-  if (from && date < from) return false
+  if (from && date < startOfDayIso(from)) return false
   if (to && date > endOfDayIso(to)) return false
   return true
 }
@@ -98,17 +99,23 @@ export function getDateRangeTotals(
 
 export interface CategorySpending {
   category: string
+  categoryId: string
   amount: number
   fill: string
 }
 
+// Grouped by category_id, not display name — a deleted category (falling
+// back to "Other") and a category actually named "Other" must not merge.
 export function getSpendingByCategory(
   rows: AggregateRow[],
   dateRange: DateRange,
   categories: FinanceCategory[],
 ): CategorySpending[] {
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
-  const totals = new Map<string, { amount: number; fill: string }>()
+  const totals = new Map<
+    string,
+    { name: string; amount: number; fill: string }
+  >()
 
   for (const row of rows) {
     if (row.type !== 'expense') continue
@@ -116,19 +123,26 @@ export function getSpendingByCategory(
     const cat = categoryMap.get(row.category_id)
     const name = cat?.name ?? 'Other'
     const fill = cat?.color ?? '#71717a'
-    const existing = totals.get(name)
-    totals.set(name, {
-      amount: (existing?.amount ?? 0) + row.amount,
+    const existing = totals.get(row.category_id)
+    totals.set(row.category_id, {
+      name,
       fill,
+      amount: (existing?.amount ?? 0) + row.amount,
     })
   }
 
   return Array.from(totals.entries())
-    .map(([category, { amount, fill }]) => ({ category, amount, fill }))
+    .map(([categoryId, { name, amount, fill }]) => ({
+      category: name,
+      categoryId,
+      amount,
+      fill,
+    }))
     .sort((a, b) => b.amount - a.amount)
 }
 
 export interface DailyCategorySeries {
+  /** Category id — also the corresponding key on each `DailySpendingPoint`. */
   key: string
   name: string
   color: string
@@ -150,7 +164,10 @@ export function getDailySpendingByCategory(
 
   const categoryMap = new Map(categories.map((c) => [c.id, c]))
   const dayTotals = new Map<DateKey, Map<string, number>>()
-  const categoryTotals = new Map<string, { fill: string; amount: number }>()
+  const categoryTotals = new Map<
+    string,
+    { name: string; fill: string; amount: number }
+  >()
 
   for (const row of rows) {
     if (row.type !== 'expense') continue
@@ -160,21 +177,30 @@ export function getDailySpendingByCategory(
     const name = cat?.name ?? 'Other'
     const fill = cat?.color ?? '#71717a'
     const day = toDayKey(row.date)
+    const categoryId = row.category_id
 
     const dayMap = dayTotals.get(day) ?? new Map<string, number>()
-    dayMap.set(name, (dayMap.get(name) ?? 0) + row.amount)
+    dayMap.set(categoryId, (dayMap.get(categoryId) ?? 0) + row.amount)
     dayTotals.set(day, dayMap)
 
-    const existing = categoryTotals.get(name)
-    categoryTotals.set(name, {
+    const existing = categoryTotals.get(categoryId)
+    categoryTotals.set(categoryId, {
+      name,
       fill,
       amount: (existing?.amount ?? 0) + row.amount,
     })
   }
 
+  // key is the category id — grouping by display name would merge a
+  // deleted category (falling back to "Other") with one actually named
+  // "Other".
   const series: DailyCategorySeries[] = Array.from(categoryTotals.entries())
     .sort((a, b) => b[1].amount - a[1].amount)
-    .map(([name, { fill }]) => ({ key: name, name, color: fill }))
+    .map(([categoryId, { name, fill }]) => ({
+      key: categoryId,
+      name,
+      color: fill,
+    }))
 
   const data: DailySpendingPoint[] = getDaysInRange(
     dateRange.from,

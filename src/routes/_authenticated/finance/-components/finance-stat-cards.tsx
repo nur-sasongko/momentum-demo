@@ -15,6 +15,7 @@ import {
   getDateRangeTotals,
   getTotalBalance,
 } from '../-utils/finance-utils'
+import { useFinanceFilters } from '../-utils/use-finance-filters'
 
 const MASKED_AMOUNT = '••••••'
 
@@ -27,7 +28,7 @@ interface StatCardConfig {
 }
 
 export function FinanceStatCards() {
-  const dateRange = useFinanceStore((s) => s.dateRange)
+  const { dateRange } = useFinanceFilters()
   const isBalanceHidden = useFinanceStore((s) => s.isBalanceHidden)
   const setBalanceHidden = useFinanceStore((s) => s.setBalanceHidden)
   const { data: aggregateRows = [] } = useFinanceAggregateQuery()
