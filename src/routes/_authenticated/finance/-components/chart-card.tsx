@@ -104,7 +104,10 @@ export function ChartCard({
                     height: chartZoom.contentSize.height,
                   }}
                 >
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer
+                    width={chartZoom.contentSize.width}
+                    height={chartZoom.contentSize.height}
+                  >
                     {children}
                   </ResponsiveContainer>
                 </div>
