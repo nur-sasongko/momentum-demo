@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { FinanceCategory } from '#/stores/finance-store'
+import { startOfDayIso } from '#/utils/date'
 import type { AggregateRow } from '../finance-utils'
 import {
   getCategoryFacetCounts,
@@ -118,6 +119,24 @@ describe('getDateRangeTotals', () => {
     expect(
       getDateRangeTotals(rows, { from: '2026-07-01', to: '2026-07-29' }),
     ).toEqual({ income: 0, expense: 0 })
+  })
+
+  it('includes a date-only transaction at the exact lower boundary, in PostgREST offset format', () => {
+    // Supabase/PostgREST serializes `timestamptz` as offset notation (e.g.
+    // "+00:00"), not the "Z"/millisecond form produced by
+    // `Date.prototype.toISOString()`. A date-only transaction sits exactly at
+    // local midnight, i.e. exactly at the range's lower boundary instant, so
+    // it's the case most likely to be dropped by a naive string comparison
+    // between the two differently-formatted-but-equal instants.
+    const boundaryInstant = startOfDayIso('2026-07-01').replace(
+      /\.\d{3}Z$/,
+      '+00:00',
+    )
+    const rows = [row({ amount: 40, type: 'expense', date: boundaryInstant })]
+
+    expect(
+      getDateRangeTotals(rows, { from: '2026-07-01', to: '2026-07-29' }),
+    ).toEqual({ income: 0, expense: 40 })
   })
 })
 

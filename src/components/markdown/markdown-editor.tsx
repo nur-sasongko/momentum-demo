@@ -89,7 +89,9 @@ export function MarkdownEditor({
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      StarterKit,
+      // StarterKit bundles Link; disable it so the configured one below is
+      // the only extension registered under the `link` name.
+      StarterKit.configure({ link: false }),
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: placeholder ?? 'Add a note…' }),
       Markdown.configure({

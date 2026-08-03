@@ -229,8 +229,8 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
       let q = supabase
         .from('finance_transactions')
         .select('*', { count: 'exact' })
-        .order('date', { ascending: false })
         .order('created_at', { ascending: false })
+        .order('date', { ascending: false })
         .range(from, to)
 
       if (params.dateFrom) q = q.gte('date', startOfDayIso(params.dateFrom))

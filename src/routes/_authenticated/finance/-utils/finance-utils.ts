@@ -62,8 +62,9 @@ function isInDateRange(
   from: string | null,
   to: string | null,
 ): boolean {
-  if (from && date < startOfDayIso(from)) return false
-  if (to && date > endOfDayIso(to)) return false
+  const time = new Date(date).getTime()
+  if (from && time < new Date(startOfDayIso(from)).getTime()) return false
+  if (to && time > new Date(endOfDayIso(to)).getTime()) return false
   return true
 }
 

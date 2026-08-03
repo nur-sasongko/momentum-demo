@@ -12,7 +12,9 @@ import {
 } from 'recharts'
 
 import { useFinanceStore } from '#/stores/finance-store'
+import { AngledCategoryTick } from './chart-axis-tick'
 import {
+  ANGLED_AXIS_HEIGHT,
   CHART_AXIS_TICK,
   CHART_MARGIN,
   CHART_TOOLTIP_CURSOR,
@@ -69,15 +71,23 @@ export function SpendingByCategoryChart({
     <ChartCard
       title="Spending by category"
       description={`Expenses — ${formatDateRangeLabel(dateRange.from, dateRange.to)}`}
-      hint={onSelect ? 'Click a bar to see transactions' : undefined}
+      hint={
+        onSelect
+          ? 'Click a bar to see transactions · pinch or use +/− to zoom'
+          : undefined
+      }
       isEmpty={data.length === 0}
       emptyMessage="No expenses recorded for this period."
+      zoomable
+      dataLength={data.length}
     >
       <BarChart data={data} margin={CHART_MARGIN}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
         <XAxis
           dataKey="category"
-          tick={CHART_AXIS_TICK}
+          interval={0}
+          height={ANGLED_AXIS_HEIGHT}
+          tick={<AngledCategoryTick />}
           className="text-muted-foreground"
         />
         <YAxis
