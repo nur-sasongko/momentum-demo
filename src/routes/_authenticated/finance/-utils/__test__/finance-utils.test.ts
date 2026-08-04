@@ -13,6 +13,7 @@ import {
   getSpendingByCity,
   getSpendingByCountry,
   hasLocationData,
+  NO_LOCATION_LABEL,
 } from '../finance-utils'
 
 const NO_RANGE = { from: null, to: null }
@@ -62,14 +63,28 @@ describe('getSpendingByCity', () => {
     ])
   })
 
-  it('excludes rows with no city, without throwing', () => {
+  it('groups rows with no city under a trailing "No location" bucket', () => {
     const rows = [
       row({ amount: 50, location_city: 'Jakarta' }),
       row({ amount: 30, location_city: null }),
+      row({ amount: 10, location_city: '' }),
     ]
 
     expect(getSpendingByCity(rows, NO_RANGE)).toEqual([
       { location: 'Jakarta', amount: 50, fill: expect.any(String) },
+      { location: NO_LOCATION_LABEL, amount: 40, fill: '#71717a' },
+    ])
+  })
+
+  it('keeps the "No location" bucket last even when it is the largest amount', () => {
+    const rows = [
+      row({ amount: 10, location_city: 'Jakarta' }),
+      row({ amount: 999, location_city: null }),
+    ]
+
+    expect(getSpendingByCity(rows, NO_RANGE)).toEqual([
+      { location: 'Jakarta', amount: 10, fill: expect.any(String) },
+      { location: NO_LOCATION_LABEL, amount: 999, fill: '#71717a' },
     ])
   })
 
@@ -96,6 +111,18 @@ describe('getSpendingByCountry', () => {
     expect(getSpendingByCountry(rows, NO_RANGE)).toEqual([
       { location: 'Indonesia', amount: 50, fill: expect.any(String) },
       { location: 'Singapore', amount: 25, fill: expect.any(String) },
+    ])
+  })
+
+  it('groups rows with no country under a trailing "No location" bucket', () => {
+    const rows = [
+      row({ amount: 50, location_country: 'Indonesia' }),
+      row({ amount: 30, location_country: null }),
+    ]
+
+    expect(getSpendingByCountry(rows, NO_RANGE)).toEqual([
+      { location: 'Indonesia', amount: 50, fill: expect.any(String) },
+      { location: NO_LOCATION_LABEL, amount: 30, fill: '#71717a' },
     ])
   })
 })

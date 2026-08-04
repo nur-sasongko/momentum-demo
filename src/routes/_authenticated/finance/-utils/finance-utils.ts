@@ -294,6 +294,10 @@ const LOCATION_CHART_COLORS = [
   '#14b8a6',
 ]
 
+/** Label for expenses with no city/country recorded — matches the "Other" system category's muted color convention. */
+export const NO_LOCATION_LABEL = 'No location'
+const NO_LOCATION_FILL = '#71717a'
+
 export interface LocationSpending {
   location: string
   amount: number
@@ -310,18 +314,31 @@ function getSpendingByLocationField(
   for (const row of rows) {
     if (row.type !== 'expense') continue
     if (!isInDateRange(row.date, dateRange.from, dateRange.to)) continue
-    const value = row[field]
-    if (!value) continue
+    const value = row[field] || NO_LOCATION_LABEL
     totals.set(value, (totals.get(value) ?? 0) + row.amount)
   }
 
-  return Array.from(totals.entries())
+  const noLocationAmount = totals.get(NO_LOCATION_LABEL)
+  totals.delete(NO_LOCATION_LABEL)
+
+  const known = Array.from(totals.entries())
+    .sort((a, b) => b[1] - a[1])
     .map(([location, amount], index) => ({
       location,
       amount,
       fill: LOCATION_CHART_COLORS[index % LOCATION_CHART_COLORS.length],
     }))
-    .sort((a, b) => b.amount - a.amount)
+
+  // Kept last rather than sorted in by amount, same as the "Other" category convention.
+  if (!noLocationAmount) return known
+  return [
+    ...known,
+    {
+      location: NO_LOCATION_LABEL,
+      amount: noLocationAmount,
+      fill: NO_LOCATION_FILL,
+    },
+  ]
 }
 
 export function getSpendingByCity(
@@ -346,8 +363,7 @@ export function hasLocationData(rows: AggregateRow[]): boolean {
 // Filter facets — counts shown next to each option in the transaction filters.
 // Derived from the aggregate query, which already holds every transaction
 // (unpaginated) with its category and city, so no extra request is needed.
-// Unlike the chart aggregations these count income rows too, and they do emit
-// the "no location" bucket.
+// Unlike the chart aggregations these count income rows too.
 // ---------------------------------------------------------------------------
 
 export interface FacetOption {

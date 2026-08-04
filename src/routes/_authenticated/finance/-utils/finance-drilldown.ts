@@ -1,6 +1,8 @@
 import type { DateRange } from '#/stores/finance-store'
 import type { DateKey } from '#/utils/date'
 import type { FinanceFiltersPatch } from './use-finance-filters'
+import { NO_LOCATION_LABEL } from './finance-utils'
+
 import type {
   CategorySpending,
   DailyCategorySeries,
@@ -141,23 +143,25 @@ export function selectionFromDaySegment(
 export function selectionFromCityBar(
   entry: LocationSpending,
 ): DrilldownSelection {
+  const isNoLocation = entry.location === NO_LOCATION_LABEL
   return {
     kind: 'city',
-    label: entry.location || 'No location',
+    label: entry.location,
     color: entry.fill,
     amount: entry.amount,
-    city: entry.location,
+    city: isNoLocation ? '' : entry.location,
   }
 }
 
 export function selectionFromCountryBar(
   entry: LocationSpending,
 ): DrilldownSelection {
+  const isNoLocation = entry.location === NO_LOCATION_LABEL
   return {
     kind: 'country',
     label: entry.location,
     color: entry.fill,
     amount: entry.amount,
-    country: entry.location,
+    country: isNoLocation ? '' : entry.location,
   }
 }
