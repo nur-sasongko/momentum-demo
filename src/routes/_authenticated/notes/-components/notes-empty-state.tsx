@@ -1,10 +1,25 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { Brain, Plus } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
+import {
+  buildEmptyNote,
+  seedOptimisticNote,
+  useCreateNoteMutation,
+} from '#/routes/_authenticated/notes/-utils/notes-queries'
 import { useNotesStore } from '#/stores/notes-store'
 
 export function NotesEmptyState() {
-  const addNote = useNotesStore((s) => s.addNote)
+  const queryClient = useQueryClient()
+  const selectNote = useNotesStore((s) => s.selectNote)
+  const createNote = useCreateNoteMutation()
+
+  const handleCreate = () => {
+    const note = buildEmptyNote()
+    seedOptimisticNote(queryClient, note)
+    selectNote(note.id)
+    createNote.mutate(note)
+  }
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-12 text-center">
@@ -20,7 +35,7 @@ export function NotesEmptyState() {
           automatically.
         </p>
       </div>
-      <Button onClick={addNote} className="gap-2">
+      <Button onClick={handleCreate} className="gap-2">
         <Plus className="size-4" />
         Create your first note
       </Button>

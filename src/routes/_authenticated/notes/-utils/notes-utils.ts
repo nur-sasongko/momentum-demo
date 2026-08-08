@@ -2,7 +2,6 @@ import { generateText } from '@tiptap/core'
 import type { JSONContent } from '@tiptap/core'
 
 import { createContentExtensions } from '#/routes/_authenticated/notes/-utils/tiptap-extensions'
-import type { Note, NotesSortBy, TagFilterMode } from '#/stores/notes-store'
 
 const MAX_TAG_LENGTH = 32
 
@@ -35,8 +34,8 @@ export function noteContentToPlainText(content: JSONContent): string {
   return generateText(content, contentExtensions)
 }
 
-export function getExcerpt(content: JSONContent, maxLength = 120): string {
-  const plain = noteContentToPlainText(content).replace(/\s+/g, ' ').trim()
+export function getExcerpt(plainText: string, maxLength = 120): string {
+  const plain = plainText.replace(/\s+/g, ' ').trim()
 
   if (plain.length <= maxLength) {
     return plain
@@ -55,16 +54,6 @@ export function isEmptyDoc(content: JSONContent): boolean {
     )
   }
   return false
-}
-
-export function getAllTags(notes: Note[]): string[] {
-  const tags = new Set<string>()
-  for (const note of notes) {
-    for (const tag of note.tags) {
-      tags.add(tag)
-    }
-  }
-  return Array.from(tags).sort((a, b) => a.localeCompare(b))
 }
 
 export function normalizeTag(raw: string): string {
@@ -86,69 +75,15 @@ export function addTagsCaseInsensitive(
   return [...existing, candidate]
 }
 
-export interface NotesFilterOptions {
-  query: string
-  activeTags: string[]
-  tagFilterMode: TagFilterMode
-  untaggedOnly: boolean
-  favoritesOnly: boolean
-  sortBy: NotesSortBy
-}
-
-function compareSort(a: Note, b: Note, sortBy: NotesSortBy): number {
-  switch (sortBy) {
-    case 'updated-desc':
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    case 'created-desc':
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    case 'title-asc':
-      return (a.title || 'Untitled').localeCompare(b.title || 'Untitled')
-    case 'title-desc':
-      return (b.title || 'Untitled').localeCompare(a.title || 'Untitled')
-  }
-}
-
-export function filterNotes(
-  notes: Note[],
-  options: NotesFilterOptions,
-): Note[] {
-  const {
-    query,
-    activeTags,
-    tagFilterMode,
-    untaggedOnly,
-    favoritesOnly,
-    sortBy,
-  } = options
-  const normalizedQuery = query.trim().toLowerCase()
-  const lowerActiveTags = activeTags.map((t) => t.toLowerCase())
-
-  return notes
-    .filter((note) => {
-      if (favoritesOnly && !note.isFavorite) return false
-
-      if (untaggedOnly) {
-        if (note.tags.length > 0) return false
-      } else if (lowerActiveTags.length > 0) {
-        const lowerNoteTags = note.tags.map((t) => t.toLowerCase())
-        const matches =
-          tagFilterMode === 'AND'
-            ? lowerActiveTags.every((t) => lowerNoteTags.includes(t))
-            : lowerActiveTags.some((t) => lowerNoteTags.includes(t))
-        if (!matches) return false
-      }
-
-      if (!normalizedQuery) return true
-
-      const haystack = [
-        note.title,
-        noteContentToPlainText(note.content),
-        ...note.tags,
-      ]
-        .join(' ')
-        .toLowerCase()
-
-      return haystack.includes(normalizedQuery)
-    })
-    .sort((a, b) => compareSort(a, b, sortBy))
+/**
+ * Snaps a newly typed tag to an existing tag's casing when they match
+ * case-insensitively, so stored tag values stay canonical even though tag
+ * filtering elsewhere is case-insensitive.
+ */
+export function canonicalizeTag(raw: string, knownTags: string[]): string {
+  const normalized = normalizeTag(raw)
+  const existing = knownTags.find(
+    (tag) => tag.toLowerCase() === normalized.toLowerCase(),
+  )
+  return existing ?? normalized
 }

@@ -19,8 +19,9 @@ Related architecture: `docs/architecture/feature-slices.md`.
 ## Goals
 
 - Capture ideas and long-form notes in one place with inline formatting.
-- Keep interaction fast with local-first persistence.
-- Support organization through search, tags, and list excerpts.
+- Persist notes per-user in Supabase Postgres, with autosave so typing never blocks on a save.
+- Support organization through search, tags, and list excerpts — resolved server-side so the whole
+  library never has to load into the browser at once.
 - Provide a writing flow similar to Notion: type Markdown shortcuts, use `/` for blocks, link notes with `[[`.
 
 ## Current UX at `/notes`
@@ -34,34 +35,34 @@ Related architecture: `docs/architecture/feature-slices.md`.
 
 ### Route and layout
 
-- Route entry: `src/routes/notes/index.tsx`
-- List pane: `src/routes/notes/-components/note-list.tsx`
-- List row: `src/routes/notes/-components/note-list-item.tsx`
-- Editor shell: `src/routes/notes/-components/note-editor.tsx`
-- Empty state: `src/routes/notes/-components/notes-empty-state.tsx`
+- Route entry: `src/routes/_authenticated/notes/index.tsx`
+- List pane: `src/routes/_authenticated/notes/-components/note-list.tsx`
+- List row: `src/routes/_authenticated/notes/-components/note-list-item.tsx`
+- Editor shell: `src/routes/_authenticated/notes/-components/note-editor.tsx`
+- Empty state: `src/routes/_authenticated/notes/-components/notes-empty-state.tsx`
 
 ### Store and utilities
 
 - Notes store: `src/stores/notes-store.ts`
-- List/search helpers: `src/routes/notes/-utils/notes-utils.ts`
-- Tiptap extension wiring: `src/routes/notes/-utils/tiptap-extensions.ts`
-- JSON seed/content helpers: `src/routes/notes/-utils/tiptap-content.ts`
-- Table commands: `src/routes/notes/-utils/table-utils.ts`
+- List/search helpers: `src/routes/_authenticated/notes/-utils/notes-utils.ts`
+- Tiptap extension wiring: `src/routes/_authenticated/notes/-utils/tiptap-extensions.ts`
+- JSON seed/content helpers: `src/routes/_authenticated/notes/-utils/tiptap-content.ts`
+- Table commands: `src/routes/_authenticated/notes/-utils/table-utils.ts`
 
 ### Editor components
 
-- Core editor: `src/routes/notes/-components/tiptap-editor.tsx`
-- Text selection bubble menu: `src/routes/notes/-components/bubble-menu.tsx`
-- Slash commands: `src/routes/notes/-components/slash-command-extension.ts`, `slash-command-menu.tsx`, `suggestion-menu.tsx`
-- Note links (`[[`): `src/routes/notes/-components/note-link-extension.ts`, `note-link-menu.tsx`
+- Core editor: `src/routes/_authenticated/notes/-components/tiptap-editor.tsx`
+- Text selection bubble menu: `src/routes/_authenticated/notes/-components/bubble-menu.tsx`
+- Slash commands: `src/routes/_authenticated/notes/-components/slash-command-extension.ts`, `slash-command-menu.tsx`, `suggestion-menu.tsx`
+- Note links (`[[`): `src/routes/_authenticated/notes/-components/note-link-extension.ts`, `note-link-menu.tsx`
 - Code block header: `code-block-view.tsx`, `code-block-language-selector.tsx`, `code-block-copy-button.tsx`, `code-block-extension.ts`
-- Custom callout block: `src/routes/notes/-components/callout-extension.ts`
+- Custom callout block: `src/routes/_authenticated/notes/-components/callout-extension.ts`
 
 ### Table UI
 
-- Grid picker (slash `/table`): `src/routes/notes/-components/table-grid-picker.tsx`
-- Table bubble menu: `src/routes/notes/-components/table-bubble-menu.tsx`
-- Table context menu: `src/routes/notes/-components/table-context-menu.tsx`
+- Grid picker (slash `/table`): `src/routes/_authenticated/notes/-components/table-grid-picker.tsx`
+- Table bubble menu: `src/routes/_authenticated/notes/-components/table-bubble-menu.tsx`
+- Table context menu: `src/routes/_authenticated/notes/-components/table-context-menu.tsx`
 
 ### App-wide
 
@@ -70,7 +71,7 @@ Related architecture: `docs/architecture/feature-slices.md`.
 
 ## Route and layout
 
-`createFileRoute('/notes/')` is defined in `src/routes/notes/index.tsx`.
+`createFileRoute('/_authenticated/notes/')` is defined in `src/routes/_authenticated/notes/index.tsx`, with a `loader` that prefetches the first list page and tags.
 
 - Full-height split container (`h-[calc(100dvh-3.5rem)]`) below the shared top bar.
 - Left pane: fixed width (`w-80`), scrollable.
@@ -79,52 +80,73 @@ Related architecture: `docs/architecture/feature-slices.md`.
 
 ## Data model
 
-`Note` in `src/stores/notes-store.ts`:
+Notes are persisted per-user in the `public.notes` Supabase table (see
+[`docs/specs/015-notes-supabase-integration.md`](specs/015-notes-supabase-integration.md) for the
+full migration). Client-side types in `src/stores/notes-store.ts`:
 
 ```ts
-interface Note {
+/** List-pane row — everything except the body. */
+interface NoteSummary {
   id: string
   title: string
-  content: JSONContent // Tiptap document JSON (not Markdown, not HTML)
+  excerpt: string // server-generated: left(plain_text, 200)
   tags: string[]
-  createdAt: string // ISO timestamp
-  updatedAt: string // ISO timestamp
   isFavorite: boolean
   isReadOnly: boolean // manual lock; disables editing when true
+  createdAt: string // ISO timestamp
+  updatedAt: string // ISO timestamp — bumped only when title/content change
+}
+
+/** A fully loaded note. */
+interface Note extends NoteSummary {
+  content: JSONContent // Tiptap document JSON (not Markdown, not HTML)
 }
 ```
 
-Seed notes are built with `buildSeedContent()` in `tiptap-content.ts` so demo data is valid Tiptap JSON.
+The list pane only ever fetches `NoteSummary` rows (paginated); `content` loads on demand for the
+selected note via `useNoteQuery`. New accounts start with zero rows — there is no demo seeding.
 
 ## State and persistence
 
-State is managed by Zustand with `persist` middleware (`useNotesStore`).
+`useNotesStore` (Zustand + `persist`) now holds UI-only state; note data lives in Supabase and is
+accessed through TanStack Query hooks in
+`src/routes/_authenticated/notes/-utils/notes-queries.ts`.
 
-- Storage key: `myspace-notes`
-- Persist version: `3` (adds `isReadOnly` normalization on older payloads)
-- Persisted slice: `notes` only (`partialize`)
-- In-memory UI state (not persisted): `selectedId`, `searchQuery`, `activeTag`
+- Storage key: `myspace-notes`, persist version: `5`
+- Persisted slice: `sortBy`, `favoritesOnly`, `tagFilterMode` only
+- In-memory, not persisted: `selectedId`, `searchQuery`, `activeTags`, `untaggedOnly`, and
+  `linkTargets` (the whole-library `id`/`title`/`tags` list that feeds the `[[` menu, synced from
+  `useNoteLinkTargetsQuery`)
 
-### Store actions
+### Query hooks (`notes-queries.ts`)
 
-- `addNote()` — new note with empty doc (`paragraph`), selects it.
-- `updateNote(id, patch)` — updates `title`, `content`, `tags`, `isFavorite`, `isReadOnly`; bumps `updatedAt`.
-- `deleteNote(id)` — removes note and selects a neighbor.
-- `selectNote(id)` — sets active note.
-- `setSearch(query)` / `setActiveTag(tag | null)` — list filters.
+- `useNotesListQuery(params)` — paginated (`useInfiniteQuery`), server-side search/tag/favorite
+  filtering and sorting.
+- `useNoteQuery(id)` — the selected note's full content.
+- `useNoteTagsQuery()` — tag chips + counts via the `get_note_tags()` RPC.
+- `useNoteLinkTargetsQuery()` — whole-library targets for the `[[` menu.
+- `useCreateNoteMutation()`, `useUpdateNoteContentMutation()` (debounced autosave, see below),
+  `useUpdateNoteMetaMutation()` (tags/favorite/lock, immediate), `useDeleteNoteMutation()`,
+  `useRenameTagMutation()` / `useDeleteTagMutation()` (`rename_note_tag`/`delete_note_tag` RPCs).
 
-Content changes flow from `TiptapEditor` `onUpdate` → `updateNote(id, { content })` → persist middleware → `localStorage`.
+`NoteEditor` holds a local draft (`title`, `content`), debounces it 800ms, and flushes on note
+switch, unmount, and tab hide/close — see the spec's Autosave section for the full design.
 
 ## Search, tags, and sorting
 
-Logic in `src/routes/notes/-utils/notes-utils.ts`:
+Search, tag filtering (AND/OR/untagged), favorites, and sorting are all resolved server-side by
+`useNotesListQuery` — the client never filters a local array. Helpers:
 
-- `getAllTags(notes)` — unique sorted tags for filter chips.
-- `filterNotes(notes, query, tag)` — matches `title`, plain text from `content` (via `generateText` + content extensions), and `tags`; sorts by `updatedAt` desc.
-- `getExcerpt(content)` — plain-text excerpt for list rows.
+- `buildNotesTsQuery(search)` (`notes-search.ts`) — builds the Postgres full-text prefix query fed
+  to `.textSearch('search_vector', ...)`.
+- `canonicalizeTag(raw, knownTags)` (`notes-utils.ts`) — snaps a newly typed tag to an existing
+  tag's casing.
+- `getExcerpt(plainText)` — truncates plain text for list rows (the server already computes
+  `excerpt`; this is only used where a fresh plain-text string is on hand).
 - `formatRelativeTime(iso)` — "Last edited X ago" in the editor header.
 
-Tag chips filter the list; tag editing in the editor UI is still read-only (first tag shown as label).
+Tag chips (`useNoteTagsQuery`) and tag rename/delete (`TagManagerDialog`) are fully editable from
+the UI.
 
 ## Editor architecture (Tiptap)
 
@@ -243,9 +265,7 @@ UI: `sonner` via Shadcn `Toaster` in the root layout.
 
 ## Future improvements
 
-- Tag editing UI in the editor (tags exist on the model but are not editable in the UI).
-- Favorites filter/sort using `isFavorite`.
-- Automated tests for slash commands, table menus, and read-only guards (`src/routes/notes/-components/__test__/`).
+- Automated tests for slash commands, table menus, and read-only guards (`src/routes/_authenticated/notes/-components/__test__/`).
 - Optional export/import of notes (JSON or Markdown).
-- Server sync / multi-device persistence (currently local-first only).
+- Wiring up `?note=<id>` deep links from `[[` note-link clicks.
 - Tab key navigation between table cells and auto-append row on last cell (Notion-style).

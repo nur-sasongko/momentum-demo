@@ -32,7 +32,7 @@ bunx --bun shadcn@latest add <component>
 
 ## Architecture
 
-**Static SPA** — React 19 client-rendered via `@tanstack/react-router` (no SSR — see [`docs/specs/core-remove-ssr.md`](docs/specs/core-remove-ssr.md)). Entry point is `index.html` → `src/entry-client.tsx`, which mounts `RouterProvider`. The Vite config (`vite.config.ts`) wires together the TanStack Router plugin (route generation), React, and Tailwind CSS v4 plugins. `vite build` produces a flat static `dist/` deployable to any static host (with SPA-fallback rewrites configured).
+**Static SPA** — React 19 client-rendered via `@tanstack/react-router` (no SSR — see [`docs/specs/004-core-remove-ssr.md`](docs/specs/004-core-remove-ssr.md)). Entry point is `index.html` → `src/entry-client.tsx`, which mounts `RouterProvider`. The Vite config (`vite.config.ts`) wires together the TanStack Router plugin (route generation), React, and Tailwind CSS v4 plugins. `vite build` produces a flat static `dist/` deployable to any static host (with SPA-fallback rewrites configured).
 
 ### Routing
 
@@ -71,8 +71,8 @@ Dark/light/auto theme cycling (light → dark → auto), persisted in `localStor
 ### Backend / Supabase
 
 - Env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`) are validated at import-time by `src/libs/env.ts` (`#/libs/env`) — fails fast with a clear error if missing/invalid. See `.env.example`.
-- The Supabase client factory lives at `src/libs/supabase/client.ts` (`getSupabaseBrowserClient()`, memoized per tab, `@supabase/supabase-js`'s browser client with localStorage-based sessions). Route/component code should never import `@supabase/supabase-js` directly — always go through this factory or the auth adapter to keep the app portable to a self-hosted Supabase instance or a different backend later. See [`docs/specs/core-supabase-postgres.md`](docs/specs/core-supabase-postgres.md).
-- Auth adapter — `src/libs/auth/auth-adapter.ts` (`#/libs/auth/auth-adapter`) exposes `signInWithPassword`, `signOut`, `getUser`, `getSession`; the only file (besides the client factory above) that touches Supabase auth APIs directly. Both `getUser()` and `getSession()` are client-only — there is no server-side revalidation (no SSR, no remote app data to gate; see [`docs/specs/core-remove-ssr.md`](docs/specs/core-remove-ssr.md)). See [`docs/specs/core-auth-login-logout.md`](docs/specs/core-auth-login-logout.md).
+- The Supabase client factory lives at `src/libs/supabase/client.ts` (`getSupabaseBrowserClient()`, memoized per tab, `@supabase/supabase-js`'s browser client with localStorage-based sessions). Route/component code should never import `@supabase/supabase-js` directly — always go through this factory or the auth adapter to keep the app portable to a self-hosted Supabase instance or a different backend later. See [`docs/specs/001-core-supabase-postgres.md`](docs/specs/001-core-supabase-postgres.md).
+- Auth adapter — `src/libs/auth/auth-adapter.ts` (`#/libs/auth/auth-adapter`) exposes `signInWithPassword`, `signOut`, `getUser`, `getSession`; the only file (besides the client factory above) that touches Supabase auth APIs directly. Both `getUser()` and `getSession()` are client-only — there is no server-side revalidation (no SSR, no remote app data to gate; see [`docs/specs/004-core-remove-ssr.md`](docs/specs/004-core-remove-ssr.md)). See [`docs/specs/002-core-auth-login-logout.md`](docs/specs/002-core-auth-login-logout.md).
 
 ### PWA
 

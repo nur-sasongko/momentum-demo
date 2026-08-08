@@ -35,7 +35,7 @@ export function TiptapEditor({
     () =>
       createEditorExtensions({
         currentNoteId: noteId,
-        getNotes: () => useNotesStore.getState().notes,
+        getNotes: () => useNotesStore.getState().linkTargets,
       }),
     [noteId],
   )

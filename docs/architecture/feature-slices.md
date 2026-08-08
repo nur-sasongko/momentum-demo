@@ -89,7 +89,7 @@ Feature utils stay in the route slice. Shared stores currently live in `src/stor
 
 ## Shareable filter state (URL search params)
 
-When a feature needs filters that should be bookmarkable/shareable and undoable via Back, put them in validated route search params instead of a Zustand store, and wrap read/write access in one feature hook (e.g. `useFinanceFilters`) rather than calling `useSearch`/`useNavigate` from every consumer. See `src/routes/_authenticated/finance/-utils/finance-search.ts` and `-utils/use-finance-filters.ts` for the reference implementation ([`docs/specs/finance-filters-url-state.md`](../specs/finance-filters-url-state.md)).
+When a feature needs filters that should be bookmarkable/shareable and undoable via Back, put them in validated route search params instead of a Zustand store, and wrap read/write access in one feature hook (e.g. `useFinanceFilters`) rather than calling `useSearch`/`useNavigate` from every consumer. See `src/routes/_authenticated/finance/-utils/finance-search.ts` and `-utils/use-finance-filters.ts` for the reference implementation ([`docs/specs/011-finance-filters-url-state.md`](../specs/011-finance-filters-url-state.md)).
 
 ## Route file responsibilities
 
