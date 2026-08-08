@@ -2,23 +2,23 @@
 
 All specs for the Momentum project. Newest first.
 
-| ID  | Spec                                                                                         | Feature | Status      | Created    |
-| --- | -------------------------------------------------------------------------------------------- | ------- | ----------- | ---------- |
-| 15  | [Notes Supabase Integration](./notes-supabase-integration.md)                                | notes   | draft       | 2026-08-04 |
-| 14  | [Chart Zoom, Pan & Readable Axis Labels](./finance-chart-zoom-pan.md)                        | finance | done        | 2026-08-02 |
-| 13  | [Filtered Transaction Summary](./finance-filtered-summary.md)                                | finance | done        | 2026-08-02 |
-| 12  | [Chart Click-to-Drilldown](./finance-chart-drilldown.md)                                     | finance | done        | 2026-08-01 |
-| 11  | [Finance Filters as URL Search Params](./finance-filters-url-state.md)                       | finance | done        | 2026-08-01 |
-| 10  | [Global Unsaved-Changes Guard](./core-unsaved-changes-guard.md)                              | core    | done        | 2026-07-31 |
-| 9   | [Transaction Form UX Polish](./finance-transaction-form-ux-polish.md)                        | finance | done        | 2026-07-30 |
-| 8   | [Daily Spending Chart](./finance-daily-spending-chart.md)                                    | finance | done        | 2026-07-30 |
-| 7   | [Transaction Date Time & Markdown Note](./finance-transaction-datetime-and-markdown-note.md) | finance | done        | 2026-07-29 |
-| 6   | [Location-Based Expense Tracking](./finance-location-tracking.md)                            | finance | done        | 2026-07-26 |
-| 5   | [Finance Supabase Integration](./finance-supabase-integration.md)                            | finance | done        | 2026-07-24 |
-| 1   | [Supabase Postgres Connection](./core-supabase-postgres.md)                                  | core    | done        | 2026-07-04 |
-| 2   | [Auth: Login & Logout](./core-auth-login-logout.md)                                          | core    | done        | 2026-07-04 |
-| 3   | [Tasks Management](./tasks-management.md)                                                    | tasks   | in-progress | 2026-07-04 |
-| 4   | [Remove SSR](./core-remove-ssr.md)                                                           | core    | done        | 2026-07-04 |
+| ID  | Spec                                                                                             | Feature | Status      | Created    |
+| --- | ------------------------------------------------------------------------------------------------ | ------- | ----------- | ---------- |
+| 15  | [Notes Supabase Integration](./015-notes-supabase-integration.md)                                | notes   | draft       | 2026-08-04 |
+| 14  | [Chart Zoom, Pan & Readable Axis Labels](./014-finance-chart-zoom-pan.md)                        | finance | done        | 2026-08-02 |
+| 13  | [Filtered Transaction Summary](./013-finance-filtered-summary.md)                                | finance | done        | 2026-08-02 |
+| 12  | [Chart Click-to-Drilldown](./012-finance-chart-drilldown.md)                                     | finance | done        | 2026-08-01 |
+| 11  | [Finance Filters as URL Search Params](./011-finance-filters-url-state.md)                       | finance | done        | 2026-08-01 |
+| 10  | [Global Unsaved-Changes Guard](./010-core-unsaved-changes-guard.md)                              | core    | done        | 2026-07-31 |
+| 9   | [Transaction Form UX Polish](./009-finance-transaction-form-ux-polish.md)                        | finance | done        | 2026-07-30 |
+| 8   | [Daily Spending Chart](./008-finance-daily-spending-chart.md)                                    | finance | done        | 2026-07-30 |
+| 7   | [Transaction Date Time & Markdown Note](./007-finance-transaction-datetime-and-markdown-note.md) | finance | done        | 2026-07-29 |
+| 6   | [Location-Based Expense Tracking](./006-finance-location-tracking.md)                            | finance | done        | 2026-07-26 |
+| 5   | [Finance Supabase Integration](./005-finance-supabase-integration.md)                            | finance | done        | 2026-07-24 |
+| 1   | [Supabase Postgres Connection](./001-core-supabase-postgres.md)                                  | core    | done        | 2026-07-04 |
+| 2   | [Auth: Login & Logout](./002-core-auth-login-logout.md)                                          | core    | done        | 2026-07-04 |
+| 3   | [Tasks Management](./003-tasks-management.md)                                                    | tasks   | in-progress | 2026-07-04 |
+| 4   | [Remove SSR](./004-core-remove-ssr.md)                                                           | core    | done        | 2026-07-04 |
 
 <!--
 Add a new row at the TOP of the table body when creating a spec.

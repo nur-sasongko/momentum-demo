@@ -24,16 +24,21 @@ Convert "$ARGUMENTS" to a filename slug:
 
 Examples: "habit streak freeze" → `habit-streak-freeze`, "Recurring Transactions" → `recurring-transactions`
 
-Final filename: `docs/specs/<feature>-<slug>.md`
+## Step 3: Determine the next id
 
-## Step 3: Read the template
+Read `docs/specs/_index.md` and find the current max `id` in the table. The new id is that max plus one, zero-padded to 3 digits (e.g. `016`).
+
+Final filename: `docs/specs/<id>-<feature>-<slug>.md`
+
+## Step 4: Read the template
 
 Read `docs/specs/_template.md` to use as the base content.
 
-## Step 4: Create the spec file
+## Step 5: Create the spec file
 
-Write `docs/specs/<feature>-<slug>.md` using the template content with these frontmatter values filled in:
+Write `docs/specs/<id>-<feature>-<slug>.md` using the template content with these frontmatter values filled in:
 
+- `id`: the integer from Step 3 (no zero-padding in frontmatter, e.g. `16`)
 - `title`: title-case version of "$ARGUMENTS"
 - `status`: `draft`
 - `feature`: the derived feature area
@@ -42,21 +47,21 @@ Write `docs/specs/<feature>-<slug>.md` using the template content with these fro
 
 If the feature area is unambiguous, pre-fill the `**Store:**` line in the Data Model section with the correct path (e.g. `src/stores/habits-store.ts`). Leave all other section bodies as template placeholder text.
 
-If `docs/specs/<feature>-<slug>.md` already exists, stop and report the conflict instead of overwriting.
+If `docs/specs/<id>-<feature>-<slug>.md` already exists, stop and report the conflict instead of overwriting.
 
-## Step 5: Update the spec index
+## Step 6: Update the spec index
 
 Read `docs/specs/_index.md` and add a new row at the TOP of the table body (directly below the header row):
 
 ```
-| [Title](./feature-slug.md) | feature | draft | YYYY-MM-DD |
+| <id> | [Title](./<id>-feature-slug.md) | feature | draft | YYYY-MM-DD |
 ```
 
-## Step 6: Report back
+## Step 7: Report back
 
 After creating the file and updating the index, report:
 
-1. The full path of the new spec: `docs/specs/<feature>-<slug>.md`
+1. The full path of the new spec: `docs/specs/<id>-<feature>-<slug>.md`
 2. The feature area chosen and why (one sentence)
 3. Next step: "Open the file and fill in Problem Statement, Goals, Non-Goals, and Acceptance Criteria to complete the draft."
 4. The commit message to use when ready: `docs(spec): add <feature>-<slug> spec`

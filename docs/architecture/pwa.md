@@ -1,6 +1,6 @@
 # PWA Architecture
 
-This project supports Progressive Web App (PWA) installability and offline caching on top of a static Vite SPA build (see `docs/specs/core-remove-ssr.md`).
+This project supports Progressive Web App (PWA) installability and offline caching on top of a static Vite SPA build (see `docs/specs/004-core-remove-ssr.md`).
 
 Related architecture docs:
 

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type { TransactionType } from '#/stores/finance-store'
 
-/** Active tab on the finance page. Defined here, not in the store — see docs/specs/finance-filters-url-state.md. */
+/** Active tab on the finance page. Defined here, not in the store — see docs/specs/011-finance-filters-url-state.md. */
 export type FinanceView = 'chart' | 'table'
 
 export const FINANCE_ROUTE_ID = '/_authenticated/finance/' as const

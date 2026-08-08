@@ -52,9 +52,10 @@ Update the `status` field in frontmatter and in `docs/specs/_index.md` at each t
 ## Naming convention
 
 ```
-docs/specs/<feature>-<description>.md
+docs/specs/<id>-<feature>-<description>.md
 ```
 
+- `<id>` is the same zero-padded, 3-digit sequential integer as the `id` frontmatter field and the `docs/specs/_index.md` row — this keeps the directory listing sorted in creation order and makes specs easy to reference by number
 - `<feature>` must be one of: `habits`, `finance`, `notes`, `core`
 - `<description>` is a short kebab-case summary of what is being specced
 - Use `core-` for shared infrastructure: `AppShell`, `AppSidebar`, `src/stores/` patterns, `src/utils/`, PWA, routing, or anything that touches more than one feature area
@@ -62,10 +63,10 @@ docs/specs/<feature>-<description>.md
 Examples:
 
 ```
-docs/specs/habits-streak-freeze.md
-docs/specs/finance-recurring-transactions.md
-docs/specs/notes-tag-editing-ui.md
-docs/specs/core-global-search.md
+docs/specs/016-habits-streak-freeze.md
+docs/specs/017-finance-recurring-transactions.md
+docs/specs/018-notes-tag-editing-ui.md
+docs/specs/019-core-global-search.md
 ```
 
 **Cross-feature specs:** when a spec genuinely spans two features, use `core-` as the prefix and add `related-features` to the frontmatter:
@@ -77,11 +78,12 @@ related-features: [habits, finance]
 
 ## Creating a new spec
 
-1. Copy `docs/specs/_template.md` to `docs/specs/<feature>-<description>.md`
-2. Fill in the YAML frontmatter (`id` — next sequential integer, one greater than the current max in `docs/specs/_index.md`, never reused; `title`, `status: draft`, `feature`, `created`, `updated` — both set to today in `YYYY-MM-DD`)
-3. Fill in at minimum: Problem Statement, Goals, Non-Goals, Acceptance Criteria
-4. Add a row to the top of the table in `docs/specs/_index.md`, including the same `id`
-5. Commit with the `docs(spec):` convention
+1. Determine the next sequential integer, one greater than the current max in `docs/specs/_index.md` (never reused), and zero-pad it to 3 digits (e.g. `016`)
+2. Copy `docs/specs/_template.md` to `docs/specs/<id>-<feature>-<description>.md`
+3. Fill in the YAML frontmatter (`id` — the same integer from step 1; `title`, `status: draft`, `feature`, `created`, `updated` — both set to today in `YYYY-MM-DD`)
+4. Fill in at minimum: Problem Statement, Goals, Non-Goals, Acceptance Criteria
+5. Add a row to the top of the table in `docs/specs/_index.md`, including the same `id`
+6. Commit with the `docs(spec):` convention
 
 Use the `/spec` Claude Code slash command to automate steps 1–4:
 
@@ -91,10 +93,10 @@ Use the `/spec` Claude Code slash command to automate steps 1–4:
 
 ## Relationship to feature docs
 
-| Doc type    | Location                         | Purpose                                              | When updated                 |
-| ----------- | -------------------------------- | ---------------------------------------------------- | ---------------------------- |
-| Feature doc | `docs/<feature>.md`              | Current-state reference: store, components, behavior | When a spec is marked `done` |
-| Spec        | `docs/specs/<feature>-<name>.md` | Forward-looking: problem, design, criteria           | While planning and building  |
+| Doc type    | Location                              | Purpose                                              | When updated                 |
+| ----------- | ------------------------------------- | ---------------------------------------------------- | ---------------------------- |
+| Feature doc | `docs/<feature>.md`                   | Current-state reference: store, components, behavior | When a spec is marked `done` |
+| Spec        | `docs/specs/<id>-<feature>-<name>.md` | Forward-looking: problem, design, criteria           | While planning and building  |
 
 After marking a spec `done`:
 
