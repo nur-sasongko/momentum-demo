@@ -1,12 +1,12 @@
 import { Lock, Star } from 'lucide-react'
 
-import { formatRelativeTime, getExcerpt } from '../-utils/notes-utils'
+import { formatRelativeTime } from '../-utils/notes-utils'
 import { cn } from '#/libs/utils'
-import type { Note } from '#/stores/notes-store'
+import type { NoteSummary } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'
 
 interface NoteListItemProps {
-  note: Note
+  note: NoteSummary
   isActive: boolean
   onSelect?: () => void
 }
@@ -49,7 +49,7 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
         </span>
       </div>
       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-        {getExcerpt(note.content) || 'No content yet'}
+        {note.excerpt || 'No content yet'}
       </p>
       {note.tags.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1">

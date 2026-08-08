@@ -1,25 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Note } from '#/stores/notes-store'
 import {
   addTagsCaseInsensitive,
-  filterNotes,
+  canonicalizeTag,
+  getExcerpt,
   normalizeTag,
 } from '#/routes/_authenticated/notes/-utils/notes-utils'
-
-function makeNote(overrides: Partial<Note>): Note {
-  return {
-    id: 'note',
-    title: 'Title',
-    content: { type: 'doc', content: [{ type: 'paragraph' }] },
-    tags: [],
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    isFavorite: false,
-    isReadOnly: false,
-    ...overrides,
-  }
-}
 
 describe('normalizeTag', () => {
   it('trims whitespace', () => {
@@ -60,128 +46,33 @@ describe('addTagsCaseInsensitive', () => {
   })
 })
 
-describe('filterNotes', () => {
-  const baseOpts = {
-    query: '',
-    activeTags: [] as string[],
-    tagFilterMode: 'OR' as const,
-    untaggedOnly: false,
-    favoritesOnly: false,
-    sortBy: 'updated-desc' as const,
-  }
-
-  const a = makeNote({
-    id: 'a',
-    title: 'Apple',
-    tags: ['Work', 'Reading'],
-    isFavorite: true,
-    createdAt: '2026-01-05T00:00:00.000Z',
-    updatedAt: '2026-01-10T00:00:00.000Z',
-  })
-  const b = makeNote({
-    id: 'b',
-    title: 'Banana',
-    tags: ['Personal'],
-    isFavorite: false,
-    createdAt: '2026-01-08T00:00:00.000Z',
-    updatedAt: '2026-01-09T00:00:00.000Z',
-  })
-  const c = makeNote({
-    id: 'c',
-    title: 'Cherry',
-    tags: [],
-    isFavorite: false,
-    createdAt: '2026-01-02T00:00:00.000Z',
-    updatedAt: '2026-01-11T00:00:00.000Z',
-  })
-  const d = makeNote({
-    id: 'd',
-    title: 'Date',
-    tags: ['Reading'],
-    isFavorite: true,
-    createdAt: '2026-01-04T00:00:00.000Z',
-    updatedAt: '2026-01-08T00:00:00.000Z',
-  })
-  const notes = [a, b, c, d]
-
-  it('sorts by updated-desc by default', () => {
-    const ids = filterNotes(notes, baseOpts).map((n) => n.id)
-    expect(ids).toEqual(['c', 'a', 'b', 'd'])
+describe('canonicalizeTag', () => {
+  it('returns the existing tag casing on a case-insensitive match', () => {
+    expect(canonicalizeTag('work', ['Work', 'Ideas'])).toBe('Work')
   })
 
-  it('sorts by created-desc', () => {
-    const ids = filterNotes(notes, { ...baseOpts, sortBy: 'created-desc' }).map(
-      (n) => n.id,
-    )
-    expect(ids).toEqual(['b', 'a', 'd', 'c'])
+  it('returns the normalized input when there is no match', () => {
+    expect(canonicalizeTag('#Travel  ', ['Work'])).toBe('Travel')
+  })
+})
+
+describe('getExcerpt', () => {
+  it('returns the plain text unchanged when under the max length', () => {
+    expect(getExcerpt('hello world')).toBe('hello world')
   })
 
-  it('sorts by title ascending', () => {
-    const ids = filterNotes(notes, { ...baseOpts, sortBy: 'title-asc' }).map(
-      (n) => n.id,
-    )
-    expect(ids).toEqual(['a', 'b', 'c', 'd'])
+  it('collapses whitespace and trims', () => {
+    expect(getExcerpt('  hello   world  ')).toBe('hello world')
   })
 
-  it('sorts by title descending', () => {
-    const ids = filterNotes(notes, { ...baseOpts, sortBy: 'title-desc' }).map(
-      (n) => n.id,
-    )
-    expect(ids).toEqual(['d', 'c', 'b', 'a'])
+  it('truncates at the max length with an ellipsis', () => {
+    const long = 'word '.repeat(40).trim()
+    const result = getExcerpt(long, 20)
+    expect(result.endsWith('…')).toBe(true)
+    expect(result.length).toBeLessThanOrEqual(21)
   })
 
-  it('filters by OR across multiple tags', () => {
-    const ids = filterNotes(notes, {
-      ...baseOpts,
-      activeTags: ['Work', 'Personal'],
-    }).map((n) => n.id)
-    expect(ids).toEqual(['a', 'b'])
-  })
-
-  it('filters by AND across multiple tags', () => {
-    const ids = filterNotes(notes, {
-      ...baseOpts,
-      activeTags: ['Work', 'Reading'],
-      tagFilterMode: 'AND',
-    }).map((n) => n.id)
-    expect(ids).toEqual(['a'])
-  })
-
-  it('matches tags case-insensitively', () => {
-    const ids = filterNotes(notes, {
-      ...baseOpts,
-      activeTags: ['reading'],
-    }).map((n) => n.id)
-    expect(ids).toEqual(['a', 'd'])
-  })
-
-  it('returns only untagged notes when untaggedOnly is set', () => {
-    const ids = filterNotes(notes, { ...baseOpts, untaggedOnly: true }).map(
-      (n) => n.id,
-    )
-    expect(ids).toEqual(['c'])
-  })
-
-  it('respects favoritesOnly', () => {
-    const ids = filterNotes(notes, { ...baseOpts, favoritesOnly: true }).map(
-      (n) => n.id,
-    )
-    expect(ids).toEqual(['a', 'd'])
-  })
-
-  it('combines favoritesOnly with tag filter', () => {
-    const ids = filterNotes(notes, {
-      ...baseOpts,
-      favoritesOnly: true,
-      activeTags: ['Reading'],
-    }).map((n) => n.id)
-    expect(ids).toEqual(['a', 'd'])
-  })
-
-  it('filters by query against title and tags', () => {
-    const ids = filterNotes(notes, { ...baseOpts, query: 'work' }).map(
-      (n) => n.id,
-    )
-    expect(ids).toEqual(['a'])
+  it('returns an empty string for empty plain text', () => {
+    expect(getExcerpt('')).toBe('')
   })
 })

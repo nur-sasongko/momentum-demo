@@ -7,7 +7,7 @@ import type { ComponentProps } from 'react'
 import type { NoteLinkMenuRef } from '#/routes/_authenticated/notes/-components/note-link-menu'
 import { NoteLinkMenu } from '#/routes/_authenticated/notes/-components/note-link-menu'
 import { filterSuggestionItems } from '#/routes/_authenticated/notes/-components/suggestion-menu'
-import type { Note } from '#/stores/notes-store'
+import type { NoteSummary } from '#/stores/notes-store'
 
 export interface NoteLinkItem {
   id: string
@@ -17,7 +17,7 @@ export interface NoteLinkItem {
 }
 
 export interface NoteLinkExtensionOptions {
-  getNotes: () => Note[]
+  getNotes: () => NoteSummary[]
   currentNoteId: string
 }
 

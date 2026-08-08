@@ -12,11 +12,13 @@ import TaskList from '@tiptap/extension-task-list'
 import Typography from '@tiptap/extension-typography'
 import StarterKit from '@tiptap/starter-kit'
 import { common, createLowlight } from 'lowlight'
+import { Markdown } from 'tiptap-markdown'
 
 import { Callout } from '#/routes/_authenticated/notes/-components/callout-extension'
+import { MarkdownPasteFallback } from '#/routes/_authenticated/notes/-components/markdown-paste-extension'
 import { NoteLinkExtension } from '#/routes/_authenticated/notes/-components/note-link-extension'
 import { SlashCommandExtension } from '#/routes/_authenticated/notes/-components/slash-command-extension'
-import type { Note } from '#/stores/notes-store'
+import type { NoteSummary } from '#/stores/notes-store'
 
 const lowlight = createLowlight(common)
 
@@ -86,12 +88,25 @@ export function createContentExtensions() {
 
 export interface EditorExtensionOptions {
   currentNoteId: string
-  getNotes: () => Note[]
+  getNotes: () => NoteSummary[]
 }
 
 export function createEditorExtensions(options: EditorExtensionOptions) {
   return [
     ...createContentExtensions(),
+    // Parses pasted plain text as Markdown (headings, lists, blockquotes,
+    // etc.) instead of dropping it in as one literal blob — input rules only
+    // run on typed keystrokes, never on paste, so this is what makes `##`,
+    // `1. `, `- ` and blank-line paragraph breaks work when pasting text
+    // copied from elsewhere.
+    Markdown.configure({
+      transformPastedText: true,
+    }),
+    // …but `transformPastedText` above is dead weight whenever the clipboard
+    // also carries a `text/html` flavour (Notepad, VS Code, and friends add a
+    // formatting-free one), because ProseMirror then never asks the Markdown
+    // parser. This covers that case.
+    MarkdownPasteFallback,
     Placeholder.configure({
       placeholder: 'Type / for commands…',
     }),

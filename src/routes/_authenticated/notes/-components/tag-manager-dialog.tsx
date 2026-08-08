@@ -1,5 +1,5 @@
 import { Check, Pencil, Trash2, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
@@ -11,8 +11,12 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
-import { useNotesStore } from '#/stores/notes-store'
-import { getAllTags, normalizeTag } from '../-utils/notes-utils'
+import {
+  useDeleteTagMutation,
+  useNoteTagsQuery,
+  useRenameTagMutation,
+} from '#/routes/_authenticated/notes/-utils/notes-queries'
+import { normalizeTag } from '../-utils/notes-utils'
 
 interface TagManagerDialogProps {
   open: boolean
@@ -23,23 +27,15 @@ export function TagManagerDialog({
   open,
   onOpenChange,
 }: TagManagerDialogProps) {
-  const notes = useNotesStore((s) => s.notes)
-  const renameTag = useNotesStore((s) => s.renameTag)
-  const deleteTag = useNotesStore((s) => s.deleteTag)
+  const tagsQuery = useNoteTagsQuery()
+  const renameTag = useRenameTagMutation()
+  const deleteTag = useDeleteTagMutation()
 
   const [editing, setEditing] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
-  const tagsWithCounts = useMemo(() => {
-    const tags = getAllTags(notes)
-    return tags.map((tag) => {
-      const count = notes.filter((note) =>
-        note.tags.some((t) => t.toLowerCase() === tag.toLowerCase()),
-      ).length
-      return { tag, count }
-    })
-  }, [notes])
+  const tagsWithCounts = tagsQuery.data ?? []
 
   const resetEdit = () => {
     setEditing(null)
@@ -63,15 +59,20 @@ export function TagManagerDialog({
       resetEdit()
       return
     }
-    renameTag(editing, next)
-    toast.success(`Renamed “${editing}” to “${next}”`)
+    renameTag.mutate(
+      { oldTag: editing, newTag: next },
+      {
+        onSuccess: () => toast.success(`Renamed “${editing}” to “${next}”`),
+      },
+    )
     resetEdit()
   }
 
   const handleDelete = (tag: string) => {
     if (confirmDelete === tag) {
-      deleteTag(tag)
-      toast.success(`Deleted tag “${tag}”`)
+      deleteTag.mutate(tag, {
+        onSuccess: () => toast.success(`Deleted tag “${tag}”`),
+      })
       setConfirmDelete(null)
     } else {
       setConfirmDelete(tag)
@@ -103,7 +104,7 @@ export function TagManagerDialog({
           </p>
         ) : (
           <ul className="max-h-80 divide-y divide-border overflow-y-auto">
-            {tagsWithCounts.map(({ tag, count }) => (
+            {tagsWithCounts.map(({ tag, noteCount }) => (
               <li
                 key={tag}
                 className="flex items-center gap-2 py-2 first:pt-0 last:pb-0"
@@ -150,7 +151,7 @@ export function TagManagerDialog({
                         {tag}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {count} {count === 1 ? 'note' : 'notes'}
+                        {noteCount} {noteCount === 1 ? 'note' : 'notes'}
                       </span>
                     </div>
                     <Button

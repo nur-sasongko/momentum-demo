@@ -4,7 +4,7 @@ title: 'Notes Supabase Integration'
 status: draft
 feature: notes
 created: 2026-08-04
-updated: 2026-08-04
+updated: 2026-08-08
 ---
 
 # Notes Supabase Integration
@@ -352,6 +352,9 @@ hrefs, no editor remount.
     typed as `() => NoteSummary[]`.
 16. `docs/second-brain.md` — replace the "local-first persistence" and store sections; fix the stale
     `src/routes/notes/*` paths while there (they are all `src/routes/_authenticated/notes/*` now).
+17. `src/routes/_authenticated/notes/-components/markdown-paste-extension.ts` (new) — Markdown paste
+    fallback for clipboards that carry a formatting-free `text/html` flavour; registered in
+    `tiptap-extensions.ts` after `Markdown`. See **Addendum: Markdown paste** below.
 
 ## Test Plan
 
@@ -377,6 +380,11 @@ hrefs, no editor remount.
 - [ ] `<TagManagerDialog>` renders counts from the tags query and calls the rename/delete mutations
 - [ ] `<NoteList>` shows skeletons while fetching and "No notes match your filters." on an empty
       settled result
+- [x] `markdown-paste-extension` — `hasRichHtmlFormatting` separates real markup from `div`/`span`
+      wrappers; `looksLikeMarkdown` recognises each block/inline signal and rejects plain prose; a
+      dispatched paste event applies Markdown for a plain-text-only clipboard, applies it for
+      plain-text **plus** formatting-free HTML, keeps the HTML for a rich clipboard, and leaves
+      non-Markdown text verbatim
 
 **Manual verification:**
 
@@ -399,6 +407,98 @@ hrefs, no editor remount.
       under `myspace-notes` (no `notes` array)
 - [ ] Log in as a second user → sees only their own notes and tags
 - [ ] Go offline, type → error toast; go back online, type again → save succeeds
+
+## Addendum: Markdown paste (2026-08-08)
+
+Adjacent to the persistence work, not caused by it: pasting Markdown into the editor applied its
+styling only for some clipboard sources. Copying a ChatGPT answer straight into the editor produced
+real headings, lists, and rules; routing the same text through Windows Notepad first and copying it
+out again produced literal `## Heading` and `- item` text.
+
+### Root cause
+
+`tiptap-markdown` was already configured with `transformPastedText: true`, which hooks ProseMirror's
+**`clipboardTextParser`**. ProseMirror consults that parser only when the clipboard has **no
+`text/html` flavour at all** — `prosemirror-view/dist/index.js:2824`:
+
+```js
+let asText = !!text && (plainText || inCode || !html) // ← the `!html`
+if (asText) {
+  /* clipboardTextParser → Markdown */
+} else {
+  /* readHTML(html) → Markdown never seen */
+}
+```
+
+So the two paths diverge on clipboard _flavours_, never on the text itself:
+
+| Clipboard source           | Flavours                                       | Old result                                  |
+| -------------------------- | ---------------------------------------------- | ------------------------------------------- |
+| ChatGPT → editor           | rich `text/html` (`<h2>`, `<ul>`, `<strong>`)  | ✅ styled — via the HTML path, not Markdown |
+| ChatGPT → Notepad → editor | `text/plain` **+** formatting-free `text/html` | ❌ literal `##` / `- ` text                 |
+| plain-text-only clipboard  | `text/plain`                                   | ✅ styled — via `clipboardTextParser`       |
+
+A round-trip through a plain-text editor destroys the _rich_ HTML but those apps still put an HTML
+flavour on the clipboard — `<div><span>## Heading</span></div>`, wrappers around the raw characters.
+Non-empty `html` means `asText === false`, so the Markdown parser is skipped entirely. The same
+applies to VS Code, Notepad++, and Sublime, which all attach syntax-coloured `<span>` markup.
+
+### Fix
+
+`MarkdownPasteFallback` (`-components/markdown-paste-extension.ts`) adds a `transformPastedHTML` hook
+that catches exactly that case and substitutes HTML rendered from the plain-text flavour:
+
+```ts
+transformPastedHTML: (html) => {
+  const text = lastPastedText
+  if (hasRichHtmlFormatting(html) || !looksLikeMarkdown(text)) {
+    return html // rich source, or ordinary prose → untouched
+  }
+  return markdown.parser?.parse(text) ?? html
+}
+```
+
+- **`hasRichHtmlFormatting`** — does the HTML contain `h1`–`h6`, `ul`/`ol`/`li`, `blockquote`,
+  `pre`/`code`, `table`, `hr`, `img`, `strong`/`em`/`a`? If so it is a genuine rich paste and is left
+  to ProseMirror. `pre`/`code` count as rich so pasted source code is never re-read as Markdown.
+- **`looksLikeMarkdown`** — line-level signals (`#`, `-`/`*`/`+`, `1.`, `>`, ` ``` `, `---`, `|`,
+  `- [ ]`) and inline ones (`**bold**`, `[text](url)`), so plain prose still pastes verbatim.
+- The plain-text flavour is stashed by a `handleDOMEvents.paste` listener (returning `false`, so the
+  event is not consumed), because `transformPastedHTML` is handed only the HTML.
+- **Why `transformPastedHTML` and not `handlePaste`:** ProseMirror skips the HTML path entirely for a
+  forced plain paste, so Shift+paste keeps working as the literal-text escape hatch for free — no
+  need to reach into `view.input.shiftKey`.
+- `tiptap-markdown` exposes the parser on `editor.storage.markdown` at runtime but omits it from its
+  published `MarkdownStorage` type, hence the local type widening. Without the `Markdown` extension
+  the hook returns the HTML unchanged.
+
+`transformPastedText: true` stays — it still covers clipboards with no HTML flavour at all.
+
+### Verification
+
+`-components/__test__/markdown-paste-extension.test.ts` dispatches paste events with synthesised
+`clipboardData` flavours, including the exact Notepad-shaped payload (CRLF line endings plus a
+`<!--StartFragment-->` `<div>` fragment), and asserts the document becomes
+`paragraph, heading, paragraph, bulletList, horizontalRule, orderedList` with no literal `## 1 Start`
+left behind. All notes suites pass; typecheck and lint are clean on the touched files.
+
+To confirm what a given app puts on the clipboard, run this in DevTools and paste into the editor:
+
+```js
+document.addEventListener(
+  'paste',
+  (e) =>
+    console.log(
+      [...e.clipboardData.types],
+      JSON.stringify(e.clipboardData.getData('text/html')),
+    ),
+  true,
+)
+```
+
+`<div>`/`<span>` wrappers around raw characters are the case this fix handles. (Windows 11 Notepad
+with its Markdown formatting mode enabled may instead emit real `<h2>`/`<ul>`, which already worked
+through the rich HTML path.)
 
 ## Open Questions
 

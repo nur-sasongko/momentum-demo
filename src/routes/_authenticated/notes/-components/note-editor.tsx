@@ -1,4 +1,5 @@
-import type { Editor } from '@tiptap/core'
+import type { Editor, JSONContent } from '@tiptap/core'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft,
   Lock,
@@ -9,7 +10,7 @@ import {
   Undo2,
   Unlock,
 } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
@@ -21,10 +22,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
-import { formatRelativeTime, getAllTags } from '../-utils/notes-utils'
+import {
+  formatRelativeTime,
+  noteContentToPlainText,
+} from '../-utils/notes-utils'
 import { TagInput } from '#/routes/_authenticated/notes/-components/tag-input'
 import { TiptapEditor } from '#/routes/_authenticated/notes/-components/tiptap-editor'
+import type { NotesListPage } from '#/routes/_authenticated/notes/-utils/notes-queries'
+import {
+  NOTES_KEYS,
+  useDeleteNoteMutation,
+  useNoteTagsQuery,
+  useNotesListParams,
+  useUpdateNoteContentMutation,
+  useUpdateNoteMetaMutation,
+} from '#/routes/_authenticated/notes/-utils/notes-queries'
 import type { Note } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'
 
@@ -33,15 +47,111 @@ interface NoteEditorProps {
   onBack?: () => void
 }
 
+interface Draft {
+  title: string
+  content: JSONContent
+}
+
+function draftsEqual(a: Draft, b: Draft): boolean {
+  return (
+    a.title === b.title &&
+    JSON.stringify(a.content) === JSON.stringify(b.content)
+  )
+}
+
 export function NoteEditor({ note, onBack }: NoteEditorProps) {
-  const allNotes = useNotesStore((s) => s.notes)
-  const updateNote = useNotesStore((s) => s.updateNote)
-  const deleteNote = useNotesStore((s) => s.deleteNote)
-  const toggleFavorite = useNotesStore((s) => s.toggleFavorite)
+  const selectNote = useNotesStore((s) => s.selectNote)
+  const tagsQuery = useNoteTagsQuery()
+  const tagSuggestions = (tagsQuery.data ?? []).map((t) => t.tag)
+
+  const queryClient = useQueryClient()
+  const listParams = useNotesListParams()
+
+  const updateContent = useUpdateNoteContentMutation()
+  const updateMeta = useUpdateNoteMetaMutation()
+  const deleteNote = useDeleteNoteMutation()
+
   const [confirmOpen, setConfirmOpen] = useState(false)
   const editorRef = useRef<Editor | null>(null)
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>(
+    'idle',
+  )
+
+  const [draft, setDraft] = useState<Draft>({
+    title: note.title,
+    content: note.content,
+  })
+  const draftRef = useRef(draft)
+  draftRef.current = draft
+  const lastSavedRef = useRef<Draft>({
+    title: note.title,
+    content: note.content,
+  })
+
+  const flush = useCallback(
+    (current: Draft) => {
+      if (draftsEqual(current, lastSavedRef.current)) return
+      lastSavedRef.current = current
+      setSaveState('saving')
+      const plainText = noteContentToPlainText(current.content)
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      updateContent.mutate(
+        {
+          id: note.id,
+          title: current.title,
+          content: current.content,
+          plainText,
+        },
+        {
+          onSuccess: () => {
+            setSaveState('saved')
+            window.setTimeout(() => {
+              setSaveState((s) => (s === 'saved' ? 'idle' : s))
+            }, 2000)
+          },
+          onError: () => setSaveState('idle'),
+        },
+      )
+    },
+    [note.id, updateContent],
+  )
+
+  // Re-seed the local draft whenever the selected note changes.
+  useEffect(() => {
+    setDraft({ title: note.title, content: note.content })
+    lastSavedRef.current = { title: note.title, content: note.content }
+    setSaveState('idle')
+  }, [note.id])
+
+  const debouncedDraft = useDebouncedValue(draft, 800)
+  useEffect(() => {
+    flush(debouncedDraft)
+    // Only re-run when the debounced value itself changes — `flush` closing
+    // over a stale-but-functionally-equivalent `updateContent` is fine since
+    // `.mutate` is a stable reference across renders.
+  }, [debouncedDraft])
+
+  // Flush a pending save when switching notes, unmounting, or the tab is
+  // backgrounded/closed — never lose the last few keystrokes.
+  useEffect(() => {
+    const handlePageHide = () => flush(draftRef.current)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') flush(draftRef.current)
+    }
+    window.addEventListener('pagehide', handlePageHide)
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      flush(draftRef.current)
+      window.removeEventListener('pagehide', handlePageHide)
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+    // Keyed only to `note.id` — cleanup must fire exactly on note switch or
+    // unmount, using the `flush` closure captured for that note.
+  }, [note.id])
 
   const handleHistoryChange = useCallback((undo: boolean, redo: boolean) => {
     setCanUndo(undo)
@@ -51,19 +161,44 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
   const undoDisabled = note.isReadOnly || !canUndo
   const redoDisabled = note.isReadOnly || !canRedo
 
-  const tagSuggestions = getAllTags(allNotes)
-
   const handleDelete = () => {
-    deleteNote(note.id)
+    const cached = queryClient.getQueryData<{ pages: NotesListPage[] }>(
+      NOTES_KEYS.list(listParams),
+    )
+    const notes = cached?.pages.flatMap((page) => page.data) ?? []
+    const remaining = notes.filter((n) => n.id !== note.id)
+    const deletedIndex = notes.findIndex((n) => n.id === note.id)
+    const nextId =
+      remaining.length > 0
+        ? (remaining[Math.min(deletedIndex, remaining.length - 1)]?.id ?? null)
+        : null
+
+    deleteNote.mutate(note.id)
+    selectNote(nextId)
     setConfirmOpen(false)
     toast.success('Note deleted')
   }
 
   const handleToggleReadOnly = () => {
     const nextReadOnly = !note.isReadOnly
-    updateNote(note.id, { isReadOnly: nextReadOnly })
+    updateMeta.mutate({ id: note.id, patch: { isReadOnly: nextReadOnly } })
     toast.success(nextReadOnly ? 'Note locked' : 'Note unlocked')
   }
+
+  const handleToggleFavorite = () => {
+    updateMeta.mutate({ id: note.id, patch: { isFavorite: !note.isFavorite } })
+  }
+
+  const handleTagsChange = (tags: string[]) => {
+    updateMeta.mutate({ id: note.id, patch: { tags } })
+  }
+
+  const saveIndicator =
+    saveState === 'saving'
+      ? ' · Saving…'
+      : saveState === 'saved'
+        ? ' · Saved'
+        : ''
 
   return (
     <section className="flex min-w-0 flex-1 flex-col">
@@ -83,7 +218,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           <Tag className="size-4 shrink-0" />
           <TagInput
             value={note.tags}
-            onChange={(tags) => updateNote(note.id, { tags })}
+            onChange={handleTagsChange}
             suggestions={tagSuggestions}
             disabled={note.isReadOnly}
           />
@@ -118,7 +253,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => toggleFavorite(note.id)}
+            onClick={handleToggleFavorite}
             aria-label={
               note.isFavorite ? 'Remove from favorites' : 'Add to favorites'
             }
@@ -158,10 +293,10 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
       <div className="flex flex-1 flex-col overflow-y-auto px-6 py-5">
         <input
           type="text"
-          value={note.title}
+          value={draft.title}
           readOnly={note.isReadOnly}
           onChange={(event) =>
-            updateNote(note.id, { title: event.target.value })
+            setDraft((d) => ({ ...d, title: event.target.value }))
           }
           placeholder="Untitled"
           className={cn(
@@ -172,17 +307,18 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         />
         <p className="mt-1 text-xs text-muted-foreground">
           Last edited {formatRelativeTime(note.updatedAt)} ago
+          {saveIndicator}
         </p>
 
         <div className="mt-6 flex-1">
           <TiptapEditor
             key={note.id}
             noteId={note.id}
-            content={note.content}
+            content={draft.content}
             isReadOnly={note.isReadOnly}
             editorRef={editorRef}
             onHistoryChange={handleHistoryChange}
-            onChange={(content) => updateNote(note.id, { content })}
+            onChange={(content) => setDraft((d) => ({ ...d, content }))}
           />
         </div>
       </div>

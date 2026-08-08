@@ -1,5 +1,6 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { Plus, Search, Settings2, Star } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -11,10 +12,18 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 import { Skeleton } from '#/components/ui/skeleton'
-import { filterNotes, getAllTags, isEmptyDoc } from '../-utils/notes-utils'
+import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
 import { NoteListItem } from '#/routes/_authenticated/notes/-components/note-list-item'
 import { TagManagerDialog } from '#/routes/_authenticated/notes/-components/tag-manager-dialog'
+import {
+  buildEmptyNote,
+  seedOptimisticNote,
+  useCreateNoteMutation,
+  useNoteTagsQuery,
+  useNotesListParams,
+  useNotesListQuery,
+} from '#/routes/_authenticated/notes/-utils/notes-queries'
 import type { NotesSortBy, TagFilterMode } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'
 
@@ -43,15 +52,14 @@ interface NoteListProps {
 }
 
 export function NoteList({ onNoteSelect }: NoteListProps) {
-  const notes = useNotesStore((s) => s.notes)
   const selectedId = useNotesStore((s) => s.selectedId)
+  const selectNote = useNotesStore((s) => s.selectNote)
   const searchQuery = useNotesStore((s) => s.searchQuery)
   const activeTags = useNotesStore((s) => s.activeTags)
   const tagFilterMode = useNotesStore((s) => s.tagFilterMode)
   const untaggedOnly = useNotesStore((s) => s.untaggedOnly)
   const favoritesOnly = useNotesStore((s) => s.favoritesOnly)
   const sortBy = useNotesStore((s) => s.sortBy)
-  const addNote = useNotesStore((s) => s.addNote)
   const setSearch = useNotesStore((s) => s.setSearch)
   const setActiveTags = useNotesStore((s) => s.setActiveTags)
   const toggleActiveTag = useNotesStore((s) => s.toggleActiveTag)
@@ -62,27 +70,47 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
 
   const [inputValue, setInputValue] = useState(searchQuery)
   const [managerOpen, setManagerOpen] = useState(false)
+  const debouncedInput = useDebouncedValue(inputValue, 300)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const selectedNote = notes.find((n) => n.id === selectedId)
-  const isNewNoteActive =
-    selectedNote?.title === 'Untitled' && isEmptyDoc(selectedNote.content)
+  const queryClient = useQueryClient()
+  const createNote = useCreateNoteMutation()
+  const params = useNotesListParams()
+  const listQuery = useNotesListQuery(params)
+  const tagsQuery = useNoteTagsQuery()
 
   useEffect(() => {
-    const timer = setTimeout(() => setSearch(inputValue), 300)
-    return () => clearTimeout(timer)
-  }, [inputValue, setSearch])
+    setSearch(debouncedInput)
+  }, [debouncedInput, setSearch])
 
-  const isSearching = inputValue !== searchQuery
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
+  useEffect(() => {
+    const node = sentinelRef.current
+    if (!node) return
 
-  const tags = getAllTags(notes)
-  const filteredNotes = filterNotes(notes, {
-    query: searchQuery,
-    activeTags,
-    tagFilterMode,
-    untaggedOnly,
-    favoritesOnly,
-    sortBy,
-  })
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage()
+      }
+    })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const notes = listQuery.data?.pages.flatMap((page) => page.data) ?? []
+  const tags = tagsQuery.data ?? []
+  const selectedNote = notes.find((n) => n.id === selectedId)
+  const isNewNoteActive =
+    selectedNote?.title === 'Untitled' && selectedNote.excerpt === ''
+  const isInitialLoading = listQuery.isPending
+
+  const handleCreate = () => {
+    const note = buildEmptyNote()
+    seedOptimisticNote(queryClient, note)
+    selectNote(note.id)
+    createNote.mutate(note)
+    onNoteSelect?.()
+  }
 
   const handleClearAll = () => {
     setActiveTags([])
@@ -107,10 +135,7 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
         <Button
           variant="ghost"
           size="icon-sm"
-          onClick={() => {
-            addNote()
-            onNoteSelect?.()
-          }}
+          onClick={handleCreate}
           aria-label="New note"
           disabled={isNewNoteActive}
         >
@@ -145,7 +170,7 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
           >
             Untagged
           </button>
-          {tags.map((tag) => (
+          {tags.map(({ tag }) => (
             <button
               key={tag}
               type="button"
@@ -234,21 +259,29 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {isSearching ? (
+        {isInitialLoading ? (
           Array.from({ length: 5 }, (_, i) => <NoteListItemSkeleton key={i} />)
-        ) : filteredNotes.length === 0 ? (
+        ) : notes.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">
             No notes match your filters.
           </p>
         ) : (
-          filteredNotes.map((note) => (
-            <NoteListItem
-              key={note.id}
-              note={note}
-              isActive={note.id === selectedId}
-              onSelect={onNoteSelect}
-            />
-          ))
+          <>
+            {notes.map((note) => (
+              <NoteListItem
+                key={note.id}
+                note={note}
+                isActive={note.id === selectedId}
+                onSelect={onNoteSelect}
+              />
+            ))}
+            <div ref={sentinelRef} />
+            {isFetchingNextPage
+              ? Array.from({ length: 3 }, (_, i) => (
+                  <NoteListItemSkeleton key={`next-${i}`} />
+                ))
+              : null}
+          </>
         )}
       </div>
 

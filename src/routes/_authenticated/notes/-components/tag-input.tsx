@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Badge } from '#/components/ui/badge'
 import { cn } from '#/libs/utils'
-import { addTagsCaseInsensitive, normalizeTag } from '../-utils/notes-utils'
+import { addTagsCaseInsensitive, canonicalizeTag } from '../-utils/notes-utils'
 
 interface TagInputProps {
   value: string[]
@@ -51,9 +51,9 @@ export function TagInput({
   }, [focused])
 
   const commitTag = (raw: string) => {
-    const normalized = normalizeTag(raw)
-    if (!normalized) return
-    const next = addTagsCaseInsensitive(value, normalized)
+    const canonical = canonicalizeTag(raw, suggestions)
+    if (!canonical) return
+    const next = addTagsCaseInsensitive(value, canonical)
     if (next !== value) onChange(next)
     setInputValue('')
   }

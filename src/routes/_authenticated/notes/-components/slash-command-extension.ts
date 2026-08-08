@@ -8,7 +8,7 @@ import type { SlashCommandMenuRef } from '#/routes/_authenticated/notes/-compone
 import { SlashCommandMenu } from '#/routes/_authenticated/notes/-components/slash-command-menu'
 import { filterSuggestionItems } from '#/routes/_authenticated/notes/-components/suggestion-menu'
 import { insertTableAtRange } from '#/routes/_authenticated/notes/-utils/table-utils'
-import type { Note } from '#/stores/notes-store'
+import type { NoteSummary } from '#/stores/notes-store'
 
 export interface SlashCommandItem {
   id: string
@@ -72,7 +72,7 @@ function insertImageFromFile(editor: Editor, range: Range) {
 }
 
 export function buildSlashCommands(
-  getNotes: () => Note[],
+  getNotes: () => NoteSummary[],
   currentNoteId: string,
 ): SlashCommandItem[] {
   return [
@@ -307,7 +307,7 @@ export function buildSlashCommands(
 }
 
 export interface SlashCommandExtensionOptions {
-  getNotes: () => Note[]
+  getNotes: () => NoteSummary[]
   currentNoteId: string
 }
 
