@@ -11,18 +11,17 @@ import { useMemo } from 'react'
 import { toast } from 'sonner'
 
 import { getSupabaseBrowserClient } from '#/libs/supabase/client'
-import type {
-  Note,
-  NoteSummary,
-  NotesSortBy,
-  TagFilterMode,
-} from '#/stores/notes-store'
+import type { Note, NoteSummary } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'
 import { buildNotesTsQuery } from './notes-search'
+import type { NotesSortBy, TagFilterMode } from './notes-route-search'
+import { useNotesFilters } from './use-notes-filters'
 
 export const PAGE_SIZE = 30
 
-const EMPTY_DOC: JSONContent = { type: 'doc', content: [{ type: 'paragraph' }] }
+function buildEmptyDoc(): JSONContent {
+  return { type: 'doc', content: [{ type: 'paragraph' }] }
+}
 
 export function buildEmptyNote(): Note {
   const now = new Date().toISOString()
@@ -35,29 +34,58 @@ export function buildEmptyNote(): Note {
     isReadOnly: false,
     createdAt: now,
     updatedAt: now,
-    content: EMPTY_DOC,
+    content: buildEmptyDoc(),
   }
 }
 
-/** Reads the store's filter/sort UI state into a `NotesListParams` cache key. */
+/** Normalizes raw filter/sort values into a `NotesListParams` cache key. */
+export function toNotesListParams(input: {
+  searchQuery: string
+  activeTags: string[]
+  tagFilterMode: TagFilterMode
+  untaggedOnly: boolean
+  favoritesOnly: boolean
+  sortBy: NotesSortBy
+}): NotesListParams {
+  return {
+    search: input.searchQuery.trim() ? input.searchQuery.trim() : null,
+    activeTags: [...input.activeTags].sort(),
+    tagFilterMode: input.tagFilterMode,
+    untaggedOnly: input.untaggedOnly,
+    favoritesOnly: input.favoritesOnly,
+    sortBy: input.sortBy,
+  }
+}
+
+/** Reads the URL's filter/sort state into a `NotesListParams` cache key. */
 export function useNotesListParams(): NotesListParams {
-  const search = useNotesStore((s) => s.searchQuery)
-  const activeTags = useNotesStore((s) => s.activeTags)
-  const tagFilterMode = useNotesStore((s) => s.tagFilterMode)
-  const untaggedOnly = useNotesStore((s) => s.untaggedOnly)
-  const favoritesOnly = useNotesStore((s) => s.favoritesOnly)
-  const sortBy = useNotesStore((s) => s.sortBy)
+  const {
+    searchQuery,
+    activeTags,
+    tagFilterMode,
+    untaggedOnly,
+    favoritesOnly,
+    sortBy,
+  } = useNotesFilters()
 
   return useMemo(
-    () => ({
-      search: search.trim() ? search.trim() : null,
-      activeTags: [...activeTags].sort(),
+    () =>
+      toNotesListParams({
+        searchQuery,
+        activeTags,
+        tagFilterMode,
+        untaggedOnly,
+        favoritesOnly,
+        sortBy,
+      }),
+    [
+      searchQuery,
+      activeTags,
       tagFilterMode,
       untaggedOnly,
       favoritesOnly,
       sortBy,
-    }),
-    [search, activeTags, tagFilterMode, untaggedOnly, favoritesOnly, sortBy],
+    ],
   )
 }
 
@@ -295,7 +323,7 @@ export function useNoteLinkTargetsQuery() {
 }
 
 // ---------------------------------------------------------------------------
-// Cache-patch helpers for the autosave mutation
+// Cache-patch helpers for the content-save mutation
 // ---------------------------------------------------------------------------
 
 function patchListCaches(
@@ -379,8 +407,12 @@ function invalidateTagsAndList(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: NOTES_KEYS.tags })
 }
 
-function replaceActiveTag(oldTag: string, newTag: string | null) {
-  const { activeTags, setActiveTags } = useNotesStore.getState()
+function replaceActiveTag(
+  activeTags: string[],
+  setActiveTags: (tags: string[]) => void,
+  oldTag: string,
+  newTag: string | null,
+) {
   const lowerOld = oldTag.toLowerCase()
   if (!activeTags.some((t) => t.toLowerCase() === lowerOld)) return
 
@@ -470,19 +502,19 @@ export function useUpdateNoteContentMutation() {
       } = data
       return row
     },
-    onSuccess: (row) => {
-      const patch = {
+    onSuccess: (row, variables) => {
+      const summaryPatch = {
         title: row.title,
         excerpt: row.excerpt,
         updatedAt: row.updated_at,
       }
-      patchListCaches(queryClient, row.id, patch)
+      patchListCaches(queryClient, row.id, summaryPatch)
       queryClient.setQueryData<Note>(NOTES_KEYS.detail(row.id), (old) =>
-        old ? { ...old, ...patch } : old,
+        old ? { ...old, ...summaryPatch, content: variables.content } : old,
       )
     },
     onError: () => {
-      toast.error('Failed to save note. It will retry as you keep typing.')
+      toast.error('Failed to save note. Your changes are kept — try again.')
     },
   })
 }
@@ -550,6 +582,7 @@ export function useDeleteNoteMutation() {
 
 export function useRenameTagMutation() {
   const queryClient = useQueryClient()
+  const { activeTags, setActiveTags } = useNotesFilters()
 
   return useMutation({
     mutationFn: async (input: { oldTag: string; newTag: string }) => {
@@ -563,7 +596,7 @@ export function useRenameTagMutation() {
     },
     onSuccess: ({ oldTag, newTag }) => {
       invalidateTagsAndList(queryClient)
-      replaceActiveTag(oldTag, newTag)
+      replaceActiveTag(activeTags, setActiveTags, oldTag, newTag)
     },
     onError: () => {
       toast.error('Failed to rename tag.')
@@ -573,6 +606,7 @@ export function useRenameTagMutation() {
 
 export function useDeleteTagMutation() {
   const queryClient = useQueryClient()
+  const { activeTags, setActiveTags } = useNotesFilters()
 
   return useMutation({
     mutationFn: async (targetTag: string) => {
@@ -585,7 +619,7 @@ export function useDeleteTagMutation() {
     },
     onSuccess: (targetTag) => {
       invalidateTagsAndList(queryClient)
-      replaceActiveTag(targetTag, null)
+      replaceActiveTag(activeTags, setActiveTags, targetTag, null)
     },
     onError: () => {
       toast.error('Failed to delete tag.')

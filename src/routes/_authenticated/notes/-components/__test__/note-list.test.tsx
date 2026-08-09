@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useNotesStore } from '#/stores/notes-store'
+import { useNotesFilters } from '../../-utils/use-notes-filters'
 import { NoteList } from '../note-list'
 import {
   useCreateNoteMutation,
@@ -31,6 +31,31 @@ vi.mock('../../-utils/notes-queries', () => ({
   useDeleteTagMutation: vi.fn(),
 }))
 
+vi.mock('../../-utils/use-notes-filters', () => ({
+  useNotesFilters: vi.fn(),
+}))
+
+function mockNotesFilters(overrides: Record<string, unknown> = {}) {
+  vi.mocked(useNotesFilters).mockReturnValue({
+    selectedId: null,
+    searchQuery: '',
+    activeTags: [],
+    tagFilterMode: 'OR',
+    untaggedOnly: false,
+    favoritesOnly: false,
+    sortBy: 'updated-desc',
+    selectNote: vi.fn(),
+    setSearch: vi.fn(),
+    setActiveTags: vi.fn(),
+    toggleActiveTag: vi.fn(),
+    setTagFilterMode: vi.fn(),
+    setUntaggedOnly: vi.fn(),
+    setFavoritesOnly: vi.fn(),
+    setSortBy: vi.fn(),
+    ...overrides,
+  } as unknown as ReturnType<typeof useNotesFilters>)
+}
+
 class IntersectionObserverStub {
   observe() {}
   unobserve() {}
@@ -39,15 +64,7 @@ class IntersectionObserverStub {
 
 beforeEach(() => {
   vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
-  useNotesStore.setState({
-    selectedId: null,
-    searchQuery: '',
-    activeTags: [],
-    tagFilterMode: 'OR',
-    untaggedOnly: false,
-    favoritesOnly: false,
-    sortBy: 'updated-desc',
-  })
+  mockNotesFilters()
 
   vi.mocked(useNotesListParams).mockReturnValue(
     {} as unknown as ReturnType<typeof useNotesListParams>,

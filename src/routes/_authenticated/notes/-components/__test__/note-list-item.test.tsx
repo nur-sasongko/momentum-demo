@@ -1,9 +1,13 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { NoteListItem } from '../note-list-item'
 
 import type { NoteSummary } from '#/stores/notes-store'
+
+vi.mock('../../-utils/use-notes-filters', () => ({
+  useNotesFilters: () => ({ selectNote: vi.fn() }),
+}))
 
 function makeSummary(overrides: Partial<NoteSummary> = {}): NoteSummary {
   return {

@@ -7,11 +7,11 @@ import {
   seedOptimisticNote,
   useCreateNoteMutation,
 } from '#/routes/_authenticated/notes/-utils/notes-queries'
-import { useNotesStore } from '#/stores/notes-store'
+import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 
 export function NotesEmptyState() {
   const queryClient = useQueryClient()
-  const selectNote = useNotesStore((s) => s.selectNote)
+  const { selectNote } = useNotesFilters()
   const createNote = useCreateNoteMutation()
 
   const handleCreate = () => {

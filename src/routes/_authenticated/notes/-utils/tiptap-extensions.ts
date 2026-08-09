@@ -34,6 +34,7 @@ export function createContentExtensions() {
     StarterKit.configure({
       codeBlock: false,
       link: false,
+      trailingNode: false,
     }),
     NoteCodeBlock.configure({
       lowlight,

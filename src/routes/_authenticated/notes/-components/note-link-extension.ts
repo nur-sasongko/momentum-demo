@@ -106,6 +106,7 @@ export const NoteLinkExtension = Extension.create<NoteLinkExtensionOptions>({
                 props,
               })
               component = renderer
+              renderer.element.setAttribute('data-note-editor-portal', '')
               document.body.appendChild(renderer.element)
             },
             onUpdate: (props) => {
