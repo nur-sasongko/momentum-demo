@@ -83,3 +83,7 @@ Dark/light/auto theme cycling (light → dark → auto), persisted in `localStor
 ## Specs
 
 Use `/spec "description"` to scaffold a new spec file from the template. See [`docs/architecture/spec-workflow.md`](docs/architecture/spec-workflow.md) for when to write a spec, the lifecycle, naming convention, and commit conventions.
+
+## Changelog
+
+User-facing `feat`/`fix` changes get an entry under `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md), in the same commit/PR as the change. See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md) for the category mapping and release-cutting steps.
