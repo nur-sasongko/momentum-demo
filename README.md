@@ -71,3 +71,7 @@ Full guidance for contributing with Claude Code lives in [`CLAUDE.md`](CLAUDE.md
 ## Specs
 
 Feature work is documented as specs under `docs/specs/`. Use `/spec "description"` to scaffold a new one — see [`docs/architecture/spec-workflow.md`](docs/architecture/spec-workflow.md) for the lifecycle and conventions.
+
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md) for release history — see [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md) for how it's maintained.
