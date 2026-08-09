@@ -88,6 +88,7 @@ function NotesPage() {
       )}
       {(!isMobile || mobileView === 'editor') && noteQuery.data ? (
         <NoteEditor
+          key={noteQuery.data.id}
           note={noteQuery.data}
           onBack={isMobile ? () => setMobileView('list') : undefined}
         />
