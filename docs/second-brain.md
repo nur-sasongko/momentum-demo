@@ -19,7 +19,8 @@ Related architecture: `docs/architecture/feature-slices.md`.
 ## Goals
 
 - Capture ideas and long-form notes in one place with inline formatting.
-- Persist notes per-user in Supabase Postgres, with autosave so typing never blocks on a save.
+- Persist notes per-user in Supabase Postgres, saved explicitly (no autosave) so a note is never
+  written until the user actually means to save it.
 - Support organization through search, tags, and list excerpts — resolved server-side so the whole
   library never has to load into the browser at once.
 - Provide a writing flow similar to Notion: type Markdown shortcuts, use `/` for blocks, link notes with `[[`.
@@ -39,6 +40,7 @@ Related architecture: `docs/architecture/feature-slices.md`.
 - List pane: `src/routes/_authenticated/notes/-components/note-list.tsx`
 - List row: `src/routes/_authenticated/notes/-components/note-list-item.tsx`
 - Editor shell: `src/routes/_authenticated/notes/-components/note-editor.tsx`
+- Save-state bar: `src/routes/_authenticated/notes/-components/unsaved-changes-bar.tsx`
 - Empty state: `src/routes/_authenticated/notes/-components/notes-empty-state.tsx`
 
 ### Store and utilities
@@ -125,12 +127,19 @@ accessed through TanStack Query hooks in
 - `useNoteQuery(id)` — the selected note's full content.
 - `useNoteTagsQuery()` — tag chips + counts via the `get_note_tags()` RPC.
 - `useNoteLinkTargetsQuery()` — whole-library targets for the `[[` menu.
-- `useCreateNoteMutation()`, `useUpdateNoteContentMutation()` (debounced autosave, see below),
+- `useCreateNoteMutation()`, `useUpdateNoteContentMutation()` (explicit save, see below),
   `useUpdateNoteMetaMutation()` (tags/favorite/lock, immediate), `useDeleteNoteMutation()`,
   `useRenameTagMutation()` / `useDeleteTagMutation()` (`rename_note_tag`/`delete_note_tag` RPCs).
 
-`NoteEditor` holds a local draft (`title`, `content`), debounces it 800ms, and flushes on note
-switch, unmount, and tab hide/close — see the spec's Autosave section for the full design.
+`NoteEditor` holds a local draft (`title`, `content`) and a last-saved snapshot, both seeded from
+the editor's own post-init JSON so ProseMirror's parse-time attribute normalization is never
+mistaken for an edit. There is no autosave — a save fires only when the user leaves the editor pane
+(blur, note switch, route change, unmount), presses `Ctrl`/`Cmd`+`S`, or clicks **Save** on the
+floating "Unsaved changes" bar that appears at the bottom-center of the pane while the draft is
+dirty. Reloading or closing the tab with unsaved changes triggers the browser's native confirmation
+via `useBeforeUnloadGuard`. See
+[`docs/specs/017-notes-editor-explicit-save.md`](specs/017-notes-editor-explicit-save.md) for the
+full design.
 
 ## Search, tags, and sorting
 

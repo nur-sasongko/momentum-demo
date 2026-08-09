@@ -14,6 +14,7 @@ interface TiptapEditorProps {
   noteId: string
   content: JSONContent
   onChange: (content: JSONContent) => void
+  onReady?: (content: JSONContent) => void
   editorRef?: RefObject<Editor | null>
   onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void
   isReadOnly?: boolean
@@ -24,6 +25,7 @@ export function TiptapEditor({
   noteId,
   content,
   onChange,
+  onReady,
   editorRef,
   onHistoryChange,
   isReadOnly = false,
@@ -62,6 +64,9 @@ export function TiptapEditor({
           return
         }
         onChange(currentEditor.getJSON())
+      },
+      onCreate: ({ editor: currentEditor }) => {
+        onReady?.(currentEditor.getJSON())
       },
     },
     [noteId],
@@ -108,19 +113,6 @@ export function TiptapEditor({
 
     editor.setEditable(!isReadOnly)
   }, [editor, isReadOnly])
-
-  useEffect(() => {
-    if (editor === null) {
-      return
-    }
-
-    const current = JSON.stringify(editor.getJSON())
-    const next = JSON.stringify(content)
-
-    if (current !== next) {
-      editor.commands.setContent(content, { emitUpdate: false })
-    }
-  }, [content, editor, noteId])
 
   if (editor === null) {
     return null

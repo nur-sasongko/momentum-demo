@@ -190,6 +190,7 @@ export function TableContextMenu({
 
   return createPortal(
     <div
+      data-note-editor-portal=""
       className="fixed z-50 min-w-48 rounded-lg border border-border bg-popover p-1 shadow-lg"
       style={{ top: menu.y, left: menu.x }}
       onMouseDown={(event) => event.stopPropagation()}

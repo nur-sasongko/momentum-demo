@@ -24,8 +24,11 @@ import {
   useNotesListParams,
   useNotesListQuery,
 } from '#/routes/_authenticated/notes/-utils/notes-queries'
-import type { NotesSortBy, TagFilterMode } from '#/stores/notes-store'
-import { useNotesStore } from '#/stores/notes-store'
+import type {
+  NotesSortBy,
+  TagFilterMode,
+} from '#/routes/_authenticated/notes/-utils/notes-route-search'
+import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 
 function NoteListItemSkeleton() {
   return (
@@ -52,21 +55,23 @@ interface NoteListProps {
 }
 
 export function NoteList({ onNoteSelect }: NoteListProps) {
-  const selectedId = useNotesStore((s) => s.selectedId)
-  const selectNote = useNotesStore((s) => s.selectNote)
-  const searchQuery = useNotesStore((s) => s.searchQuery)
-  const activeTags = useNotesStore((s) => s.activeTags)
-  const tagFilterMode = useNotesStore((s) => s.tagFilterMode)
-  const untaggedOnly = useNotesStore((s) => s.untaggedOnly)
-  const favoritesOnly = useNotesStore((s) => s.favoritesOnly)
-  const sortBy = useNotesStore((s) => s.sortBy)
-  const setSearch = useNotesStore((s) => s.setSearch)
-  const setActiveTags = useNotesStore((s) => s.setActiveTags)
-  const toggleActiveTag = useNotesStore((s) => s.toggleActiveTag)
-  const setTagFilterMode = useNotesStore((s) => s.setTagFilterMode)
-  const setUntaggedOnly = useNotesStore((s) => s.setUntaggedOnly)
-  const setFavoritesOnly = useNotesStore((s) => s.setFavoritesOnly)
-  const setSortBy = useNotesStore((s) => s.setSortBy)
+  const {
+    selectedId,
+    selectNote,
+    searchQuery,
+    activeTags,
+    tagFilterMode,
+    untaggedOnly,
+    favoritesOnly,
+    sortBy,
+    setSearch,
+    setActiveTags,
+    toggleActiveTag,
+    setTagFilterMode,
+    setUntaggedOnly,
+    setFavoritesOnly,
+    setSortBy,
+  } = useNotesFilters()
 
   const [inputValue, setInputValue] = useState(searchQuery)
   const [managerOpen, setManagerOpen] = useState(false)
@@ -80,8 +85,11 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
   const tagsQuery = useNoteTagsQuery()
 
   useEffect(() => {
+    // Skip the no-op write on mount (and after the URL already caught up) —
+    // navigating to an unchanged URL makes the router re-run the loader.
+    if (debouncedInput === searchQuery) return
     setSearch(debouncedInput)
-  }, [debouncedInput, setSearch])
+  }, [debouncedInput, searchQuery, setSearch])
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = listQuery
   useEffect(() => {

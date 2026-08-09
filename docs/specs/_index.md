@@ -4,6 +4,8 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                             | Feature | Status      | Created    |
 | --- | ------------------------------------------------------------------------------------------------ | ------- | ----------- | ---------- |
+| 17  | [Notes Editor: Explicit Save & No Phantom Writes](./017-notes-editor-explicit-save.md)           | notes   | in-progress | 2026-08-10 |
+| 16  | [Notes Filters, Sort & Selected Note as URL Search Params](./016-notes-filters-url-state.md)     | notes   | in-progress | 2026-08-09 |
 | 15  | [Notes Supabase Integration](./015-notes-supabase-integration.md)                                | notes   | draft       | 2026-08-04 |
 | 14  | [Chart Zoom, Pan & Readable Axis Labels](./014-finance-chart-zoom-pan.md)                        | finance | done        | 2026-08-02 |
 | 13  | [Filtered Transaction Summary](./013-finance-filtered-summary.md)                                | finance | done        | 2026-08-02 |

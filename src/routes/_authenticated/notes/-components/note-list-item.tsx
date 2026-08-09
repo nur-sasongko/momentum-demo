@@ -2,8 +2,8 @@ import { Lock, Star } from 'lucide-react'
 
 import { formatRelativeTime } from '../-utils/notes-utils'
 import { cn } from '#/libs/utils'
+import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 import type { NoteSummary } from '#/stores/notes-store'
-import { useNotesStore } from '#/stores/notes-store'
 
 interface NoteListItemProps {
   note: NoteSummary
@@ -12,7 +12,7 @@ interface NoteListItemProps {
 }
 
 export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
-  const selectNote = useNotesStore((s) => s.selectNote)
+  const { selectNote } = useNotesFilters()
 
   return (
     <button

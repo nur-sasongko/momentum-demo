@@ -10,6 +10,7 @@ import {
   Undo2,
   Unlock,
 } from 'lucide-react'
+import type { FocusEvent, KeyboardEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -22,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
-import { useDebouncedValue } from '#/hooks/use-debounced-value'
+import { useBeforeUnloadGuard } from '#/hooks/use-beforeunload-guard'
 import { cn } from '#/libs/utils'
 import {
   formatRelativeTime,
@@ -30,6 +31,7 @@ import {
 } from '../-utils/notes-utils'
 import { TagInput } from '#/routes/_authenticated/notes/-components/tag-input'
 import { TiptapEditor } from '#/routes/_authenticated/notes/-components/tiptap-editor'
+import { UnsavedChangesBar } from '#/routes/_authenticated/notes/-components/unsaved-changes-bar'
 import type { NotesListPage } from '#/routes/_authenticated/notes/-utils/notes-queries'
 import {
   NOTES_KEYS,
@@ -39,8 +41,8 @@ import {
   useUpdateNoteContentMutation,
   useUpdateNoteMetaMutation,
 } from '#/routes/_authenticated/notes/-utils/notes-queries'
+import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 import type { Note } from '#/stores/notes-store'
-import { useNotesStore } from '#/stores/notes-store'
 
 interface NoteEditorProps {
   note: Note
@@ -59,8 +61,22 @@ function draftsEqual(a: Draft, b: Draft): boolean {
   )
 }
 
+// Portals owned by the editor (slash menu, `[[` link menu, table context
+// menu) render outside the pane's DOM subtree, and the delete dialog is a
+// Radix portal too — blurring into any of them must not read as "left the
+// pane".
+const EDITOR_PORTAL_SELECTOR =
+  '[data-note-editor-portal], [data-slot="dialog-content"]'
+
+function isWithinEditorSurface(pane: HTMLElement, target: Node): boolean {
+  if (pane.contains(target)) return true
+  return target instanceof HTMLElement
+    ? target.closest(EDITOR_PORTAL_SELECTOR) !== null
+    : false
+}
+
 export function NoteEditor({ note, onBack }: NoteEditorProps) {
-  const selectNote = useNotesStore((s) => s.selectNote)
+  const { selectNote } = useNotesFilters()
   const tagsQuery = useNoteTagsQuery()
   const tagSuggestions = (tagsQuery.data ?? []).map((t) => t.tag)
 
@@ -73,6 +89,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const editorRef = useRef<Editor | null>(null)
+  const paneRef = useRef<HTMLElement>(null)
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>(
@@ -85,15 +102,36 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
   })
   const draftRef = useRef(draft)
   draftRef.current = draft
-  const lastSavedRef = useRef<Draft>({
+
+  const [savedSnapshot, setSavedSnapshot] = useState<Draft>({
     title: note.title,
     content: note.content,
   })
+  const savedSnapshotRef = useRef(savedSnapshot)
+  savedSnapshotRef.current = savedSnapshot
+
+  const inFlightRef = useRef<Draft | null>(null)
+  const deletedRef = useRef(false)
+
+  const isDirty = !note.isReadOnly && !draftsEqual(draft, savedSnapshot)
+
+  // Baseline both the draft and the saved snapshot against the editor's own
+  // post-init JSON, so ProseMirror's parse-time attribute defaults are never
+  // mistaken for an edit.
+  const handleEditorReady = useCallback((content: JSONContent) => {
+    setDraft((d) => ({ ...d, content }))
+    setSavedSnapshot((s) => ({ ...s, content }))
+  }, [])
 
   const flush = useCallback(
     (current: Draft) => {
-      if (draftsEqual(current, lastSavedRef.current)) return
-      lastSavedRef.current = current
+      if (deletedRef.current) return
+      if (draftsEqual(current, savedSnapshotRef.current)) return
+      if (inFlightRef.current && draftsEqual(current, inFlightRef.current)) {
+        return
+      }
+
+      inFlightRef.current = current
       setSaveState('saving')
       const plainText = noteContentToPlainText(current.content)
         .replace(/\s+/g, ' ')
@@ -108,46 +146,74 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         },
         {
           onSuccess: () => {
+            inFlightRef.current = null
+            setSavedSnapshot(current)
             setSaveState('saved')
             window.setTimeout(() => {
               setSaveState((s) => (s === 'saved' ? 'idle' : s))
             }, 2000)
+            if (!draftsEqual(draftRef.current, current)) {
+              flush(draftRef.current)
+            }
           },
-          onError: () => setSaveState('idle'),
+          onError: () => {
+            inFlightRef.current = null
+            setSaveState('idle')
+          },
         },
       )
     },
     [note.id, updateContent],
   )
 
-  // Re-seed the local draft whenever the selected note changes.
-  useEffect(() => {
-    setDraft({ title: note.title, content: note.content })
-    lastSavedRef.current = { title: note.title, content: note.content }
-    setSaveState('idle')
-  }, [note.id])
+  const handleSaveClick = () => {
+    flush(draftRef.current)
+    editorRef.current?.commands.focus()
+  }
 
-  const debouncedDraft = useDebouncedValue(draft, 800)
-  useEffect(() => {
-    flush(debouncedDraft)
-    // Only re-run when the debounced value itself changes — `flush` closing
-    // over a stale-but-functionally-equivalent `updateContent` is fine since
-    // `.mutate` is a stable reference across renders.
-  }, [debouncedDraft])
+  const handlePaneBlur = (event: FocusEvent<HTMLElement>) => {
+    const pane = paneRef.current
+    if (!pane) return
+    const relatedTarget = event.relatedTarget
+
+    if (relatedTarget !== null) {
+      if (
+        !(relatedTarget instanceof Node) ||
+        !isWithinEditorSurface(pane, relatedTarget)
+      ) {
+        flush(draftRef.current)
+      }
+      return
+    }
+
+    // `relatedTarget` is null for a click on a non-focusable region or the
+    // window itself losing focus — defer and check `document.activeElement`
+    // instead of assuming the pane was left.
+    window.setTimeout(() => {
+      const active = document.activeElement
+      if (active && isWithinEditorSurface(pane, active)) return
+      flush(draftRef.current)
+    }, 0)
+  }
+
+  const handlePaneKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    const isSaveShortcut =
+      (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's'
+    if (!isSaveShortcut) return
+    event.preventDefault()
+    flush(draftRef.current)
+  }
+
+  useBeforeUnloadGuard(isDirty)
 
   // Flush a pending save when switching notes, unmounting, or the tab is
-  // backgrounded/closed — never lose the last few keystrokes.
+  // closing — never lose the last few keystrokes.
   useEffect(() => {
     const handlePageHide = () => flush(draftRef.current)
-    const handleVisibility = () => {
-      if (document.visibilityState === 'hidden') flush(draftRef.current)
-    }
     window.addEventListener('pagehide', handlePageHide)
-    document.addEventListener('visibilitychange', handleVisibility)
     return () => {
       flush(draftRef.current)
       window.removeEventListener('pagehide', handlePageHide)
-      document.removeEventListener('visibilitychange', handleVisibility)
     }
     // Keyed only to `note.id` — cleanup must fire exactly on note switch or
     // unmount, using the `flush` closure captured for that note.
@@ -173,6 +239,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         ? (remaining[Math.min(deletedIndex, remaining.length - 1)]?.id ?? null)
         : null
 
+    deletedRef.current = true
     deleteNote.mutate(note.id)
     selectNote(nextId)
     setConfirmOpen(false)
@@ -198,10 +265,19 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
       ? ' · Saving…'
       : saveState === 'saved'
         ? ' · Saved'
-        : ''
+        : isDirty
+          ? ' · Unsaved changes'
+          : ''
+
+  const showSaveBar = !note.isReadOnly && (isDirty || saveState === 'saving')
 
   return (
-    <section className="flex min-w-0 flex-1 flex-col">
+    <section
+      ref={paneRef}
+      onBlur={handlePaneBlur}
+      onKeyDown={handlePaneKeyDown}
+      className="relative flex min-w-0 flex-1 flex-col"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-3 md:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
           {onBack ? (
@@ -290,7 +366,12 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col overflow-y-auto px-6 py-5">
+      <div
+        className={cn(
+          'flex flex-1 flex-col overflow-y-auto px-6 py-5',
+          showSaveBar && 'pb-20',
+        )}
+      >
         <input
           type="text"
           value={draft.title}
@@ -319,6 +400,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
             editorRef={editorRef}
             onHistoryChange={handleHistoryChange}
             onChange={(content) => setDraft((d) => ({ ...d, content }))}
+            onReady={handleEditorReady}
           />
         </div>
       </div>
@@ -342,6 +424,13 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {showSaveBar ? (
+        <UnsavedChangesBar
+          state={saveState === 'saving' ? 'saving' : 'dirty'}
+          onSave={handleSaveClick}
+        />
+      ) : null}
     </section>
   )
 }

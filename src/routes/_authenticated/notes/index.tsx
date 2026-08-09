@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { NoteEditor } from '#/routes/_authenticated/notes/-components/note-editor'
@@ -8,34 +8,43 @@ import { useIsMobile } from '#/hooks/use-mobile'
 import {
   noteListQueryOptions,
   noteTagsQueryOptions,
+  toNotesListParams,
   useNoteLinkTargetsQuery,
   useNoteQuery,
   useNotesListParams,
   useNotesListQuery,
 } from '#/routes/_authenticated/notes/-utils/notes-queries'
-import { useNotesStore } from '#/stores/notes-store'
-
-const DEFAULT_LIST_PARAMS = {
-  search: null,
-  activeTags: [],
-  tagFilterMode: 'OR' as const,
-  untaggedOnly: false,
-  favoritesOnly: false,
-  sortBy: 'updated-desc' as const,
-}
+import {
+  NOTES_SEARCH_DEFAULTS,
+  notesSearchSchema,
+} from '#/routes/_authenticated/notes/-utils/notes-route-search'
+import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 
 export const Route = createFileRoute('/_authenticated/notes/')({
   head: () => ({
     meta: [{ title: 'Second Brain — Momentum' }],
   }),
-  loader: async ({ context: { queryClient } }) => {
-    const { sortBy, favoritesOnly, tagFilterMode } = useNotesStore.getState()
-    const params = {
-      ...DEFAULT_LIST_PARAMS,
-      sortBy,
-      favoritesOnly,
-      tagFilterMode,
-    }
+  validateSearch: notesSearchSchema,
+  search: {
+    middlewares: [stripSearchParams(NOTES_SEARCH_DEFAULTS)],
+  },
+  loaderDeps: ({ search }) => ({
+    q: search.q,
+    tags: search.tags,
+    tagMode: search.tagMode,
+    untagged: search.untagged,
+    fav: search.fav,
+    sort: search.sort,
+  }),
+  loader: async ({ context: { queryClient }, deps }) => {
+    const params = toNotesListParams({
+      searchQuery: deps.q,
+      activeTags: deps.tags,
+      tagFilterMode: deps.tagMode,
+      untaggedOnly: deps.untagged,
+      favoritesOnly: deps.fav,
+      sortBy: deps.sort,
+    })
     await Promise.all([
       queryClient.ensureInfiniteQueryData(noteListQueryOptions(params)),
       queryClient.ensureQueryData(noteTagsQueryOptions()),
@@ -45,8 +54,7 @@ export const Route = createFileRoute('/_authenticated/notes/')({
 })
 
 function NotesPage() {
-  const selectedId = useNotesStore((s) => s.selectedId)
-  const selectNote = useNotesStore((s) => s.selectNote)
+  const { selectedId, selectNote } = useNotesFilters()
   const isMobile = useIsMobile()
   const [mobileView, setMobileView] = useState<'list' | 'editor'>('list')
 
@@ -59,7 +67,7 @@ function NotesPage() {
 
   useEffect(() => {
     if (!selectedId && firstNoteId) {
-      selectNote(firstNoteId)
+      selectNote(firstNoteId, { replace: true })
     }
   }, [selectedId, firstNoteId, selectNote])
 
