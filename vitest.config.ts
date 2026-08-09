@@ -4,6 +4,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '#': new URL('./src', import.meta.url).pathname,
+      zod: new URL('./node_modules/zod/index.cjs', import.meta.url).pathname,
     },
   },
   test: {
