@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { formatNumberWithSeparators } from '#/utils/currency'
 import { AngledCategoryTick } from './chart-axis-tick'
 import {
   ANGLED_AXIS_HEIGHT,
@@ -28,7 +29,6 @@ import {
 } from './chart-card'
 import { useFinanceAggregateQuery } from '../-utils/finance-queries'
 import {
-  formatCurrency,
   formatDateRangeLabel,
   getSpendingByCity,
   getSpendingByCountry,
@@ -39,8 +39,10 @@ import {
   selectionFromCountryBar,
 } from '../-utils/finance-drilldown'
 
-import type { LocationSpending } from '../-utils/finance-utils'
-import type { DrilldownSelection } from '../-utils/finance-drilldown'
+import type {
+  DrilldownSelection,
+  LocationSpending,
+} from '../-types/finance-chart'
 
 type LocationGrouping = 'city' | 'country'
 
@@ -52,7 +54,9 @@ function LocationTooltip({ active, payload, label }: TooltipContentProps) {
     <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-md">
       <p className="text-sm font-semibold text-popover-foreground">{label}</p>
       <p className="text-sm text-muted-foreground">
-        {formatCurrency(typeof value === 'number' ? value : Number(value))}
+        {formatNumberWithSeparators(
+          typeof value === 'number' ? value : Number(value),
+        )}
       </p>
     </div>
   )

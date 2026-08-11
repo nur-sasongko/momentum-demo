@@ -18,6 +18,8 @@ export default defineConfig({
         'src/**/*.test.{ts,tsx}',
         'src/**/__tests__/**',
         'src/routeTree.gen.ts',
+        'src/**/-types/**',
+        'src/types/**',
       ],
     },
   },

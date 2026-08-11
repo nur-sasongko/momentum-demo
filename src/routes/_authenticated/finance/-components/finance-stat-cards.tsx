@@ -8,9 +8,9 @@ import {
 } from '#/components/ui/card'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
+import { formatNumberWithSeparators } from '#/utils/currency'
 import { useFinanceAggregateQuery } from '../-utils/finance-queries'
 import {
-  formatCurrency,
   formatDateRangeLabel,
   getDateRangeTotals,
   getTotalBalance,
@@ -37,7 +37,7 @@ export function FinanceStatCards() {
   const { income, expense } = getDateRangeTotals(aggregateRows, dateRange)
 
   const display = (value: number) =>
-    isBalanceHidden ? MASKED_AMOUNT : formatCurrency(value)
+    isBalanceHidden ? MASKED_AMOUNT : formatNumberWithSeparators(value)
 
   const toggleBalance = () => setBalanceHidden(!isBalanceHidden)
 

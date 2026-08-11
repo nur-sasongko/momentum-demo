@@ -2,11 +2,7 @@ import { Loader2 } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { cn } from '#/libs/utils'
-
-export const SAVE_SHORTCUT_LABEL =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
-    ? '⌘S'
-    : 'Ctrl+S'
+import { getSaveShortcutLabel } from '#/utils/platform'
 
 interface UnsavedChangesBarProps {
   state: 'dirty' | 'saving'
@@ -37,7 +33,7 @@ export function UnsavedChangesBar({ state, onSave }: UnsavedChangesBarProps) {
         {isSaving ? 'Saving…' : 'Unsaved changes'}
       </span>
       <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-        {SAVE_SHORTCUT_LABEL}
+        {getSaveShortcutLabel()}
       </span>
       <Button size="sm" onClick={onSave} disabled={isSaving}>
         Save

@@ -1,10 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  Link,
-  useNavigate,
-  useRouteContext,
-  useRouterState,
-} from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { Check, LogOut, Monitor, Moon, Sun } from 'lucide-react'
 
 import {
@@ -25,8 +20,9 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { SidebarTrigger, useSidebar } from '#/components/ui/sidebar'
-import { signOut } from '#/libs/auth/auth-adapter'
+import { useCurrentUser } from '#/hooks/use-current-user'
 import { useTheme } from '#/hooks/use-theme'
+import { signOut } from '#/libs/auth/auth-adapter'
 
 import type { Theme } from '#/hooks/use-theme'
 
@@ -55,7 +51,7 @@ export function TopBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const { isMobile, openMobile } = useSidebar()
   const { theme, setTheme } = useTheme()
-  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
+  const user = useCurrentUser()
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? '?'
   const navigate = useNavigate()
   const queryClient = useQueryClient()

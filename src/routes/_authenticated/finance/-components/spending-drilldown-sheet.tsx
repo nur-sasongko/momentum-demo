@@ -13,6 +13,7 @@ import {
 import { Skeleton } from '#/components/ui/skeleton'
 import { useIsMobile } from '#/hooks/use-mobile'
 import { cn } from '#/libs/utils'
+import { formatNumberWithSeparators } from '#/utils/currency'
 import { formatDateTimeLabel } from '#/utils/date'
 import {
   isCommittable,
@@ -24,15 +25,14 @@ import {
   useTransactionsQuery,
 } from '../-utils/finance-queries'
 import {
-  formatCurrency,
   formatDateRangeLabel,
   getDateRangeTotals,
 } from '../-utils/finance-utils'
 import { StatBlock } from './stat-block'
 
 import type { DateRange } from '#/stores/finance-store'
-import type { DrilldownSelection } from '../-utils/finance-drilldown'
-import type { FinanceFiltersPatch } from '../-utils/use-finance-filters'
+import type { DrilldownSelection } from '../-types/finance-chart'
+import type { FinanceFiltersPatch } from '../-types/finance-query'
 
 const RECENT_LIMIT = 8
 
@@ -109,7 +109,10 @@ function DrilldownSheetBody({
       </SheetHeader>
 
       <div className="grid grid-cols-3 gap-2 px-4">
-        <StatBlock label="Total" value={formatCurrency(selection.amount)} />
+        <StatBlock
+          label="Total"
+          value={formatNumberWithSeparators(selection.amount)}
+        />
         <StatBlock label="Share" value={`${Math.round(share * 100)}%`} />
         <StatBlock
           label="Transactions"
@@ -153,7 +156,7 @@ function DrilldownSheetBody({
                     {tx.note ? ` · ${tx.note}` : ''}
                   </span>
                   <span className="shrink-0 font-medium tabular-nums">
-                    {formatCurrency(tx.amount)}
+                    {formatNumberWithSeparators(tx.amount)}
                   </span>
                 </li>
               ))}

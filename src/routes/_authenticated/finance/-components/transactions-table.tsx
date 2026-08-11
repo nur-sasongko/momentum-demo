@@ -13,7 +13,10 @@ import { EditableCell } from '#/components/ui/editable-cell'
 import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
 import { useFinanceStore } from '#/stores/finance-store'
-import { parseFormattedNumber } from '#/utils/currency'
+import {
+  formatNumberWithSeparators,
+  parseFormattedNumber,
+} from '#/utils/currency'
 import { formatDateTimeLabel } from '#/utils/date'
 import { CategoryManager } from './category-manager'
 import { FilteredSummaryBar } from './filtered-summary-bar'
@@ -27,7 +30,6 @@ import {
   useTransactionsQuery,
   useUpdateTransactionMutation,
 } from '../-utils/finance-queries'
-import { formatCurrency } from '../-utils/finance-utils'
 import { useFinanceFilters } from '../-utils/use-finance-filters'
 
 import type {
@@ -203,7 +205,7 @@ function buildColumns(
                 )}
               >
                 {isIncome ? '+' : '−'}
-                {formatCurrency(row.amount)}
+                {formatNumberWithSeparators(row.amount)}
               </span>
             }
             renderInput={({

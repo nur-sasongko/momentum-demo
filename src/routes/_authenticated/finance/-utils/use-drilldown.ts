@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import type { DrilldownSelection } from './finance-drilldown'
+import type { DrilldownSelection } from '../-types/finance-chart'
 
 /** Local, ephemeral state for the currently open drilldown sheet — never persisted. */
 export function useDrilldown() {

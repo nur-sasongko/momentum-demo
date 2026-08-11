@@ -23,16 +23,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
+import { UnsavedChangesBar } from '#/components/unsaved-changes-bar'
 import { useBeforeUnloadGuard } from '#/hooks/use-beforeunload-guard'
 import { cn } from '#/libs/utils'
-import {
-  formatRelativeTime,
-  noteContentToPlainText,
-} from '../-utils/notes-utils'
+import { formatTimeSince } from '#/utils/date'
+import { noteContentToPlainText } from '../-utils/notes-utils'
 import { TagInput } from '#/routes/_authenticated/notes/-components/tag-input'
 import { TiptapEditor } from '#/routes/_authenticated/notes/-components/tiptap-editor'
-import { UnsavedChangesBar } from '#/routes/_authenticated/notes/-components/unsaved-changes-bar'
-import type { NotesListPage } from '#/routes/_authenticated/notes/-utils/notes-queries'
+import type { NotesListPage } from '#/routes/_authenticated/notes/-types/notes-query'
 import {
   NOTES_KEYS,
   useDeleteNoteMutation,
@@ -387,7 +385,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           aria-label="Note title"
         />
         <p className="mt-1 text-xs text-muted-foreground">
-          Last edited {formatRelativeTime(note.updatedAt)} ago
+          Last edited {formatTimeSince(note.updatedAt)} ago
           {saveIndicator}
         </p>
 

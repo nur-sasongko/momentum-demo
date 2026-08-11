@@ -3,7 +3,6 @@ import type {
   FinanceCategory,
   TransactionType,
 } from '#/stores/finance-store'
-import { formatNumberWithSeparators } from '#/utils/currency'
 import {
   endOfDayIso,
   formatTransactionDate,
@@ -12,6 +11,15 @@ import {
   toDayKey,
 } from '#/utils/date'
 
+import type { AggregateRow } from '../-types/finance-api'
+import type {
+  CategorySpending,
+  DailyCategorySeries,
+  DailySpendingPoint,
+  FacetOption,
+  FilteredSummary,
+  LocationSpending,
+} from '../-types/finance-chart'
 import type { DateKey } from '#/utils/date'
 
 export const DEFAULT_CATEGORY_CONFIGS: Array<{
@@ -32,20 +40,6 @@ export const DEFAULT_CATEGORY_CONFIGS: Array<{
   { name: 'Investment', type: 'income', color: '#6366f1', isSystem: false },
   { name: 'Other', type: 'income', color: '#71717a', isSystem: true },
 ]
-
-// Lightweight row used by aggregate query (charts + stat cards)
-export interface AggregateRow {
-  amount: number
-  type: 'income' | 'expense'
-  date: string
-  category_id: string
-  location_city: string | null
-  location_country: string | null
-}
-
-export function formatCurrency(amount: number): string {
-  return formatNumberWithSeparators(amount)
-}
 
 export function formatDateRangeLabel(
   from: string | null,
@@ -98,24 +92,6 @@ export function getDateRangeTotals(
   return { income, expense }
 }
 
-export interface FilteredSummary {
-  /** Expense total within the filtered set. */
-  expense: number
-  /** Income total within the filtered set. */
-  income: number
-  /** `income - expense`. */
-  net: number
-  count: number
-  /**
-   * Filtered total as a fraction of the same date range's total for that
-   * type. `null` when no single `type` is active, the filtered count is 0,
-   * or the denominator is 0 — never a silent 0 or NaN.
-   */
-  share: number | null
-  /** Mean amount per matching transaction. `null` when `count === 0`. */
-  average: number | null
-}
-
 /**
  * Mirrors the filter semantics of `useTransactionsQuery`: `type` equality,
  * `categoryIds` membership, and `cities` membership where `''` matches a
@@ -157,13 +133,6 @@ export function getFilteredSummary(
   return { income, expense, net, count, share, average }
 }
 
-export interface CategorySpending {
-  category: string
-  categoryId: string
-  amount: number
-  fill: string
-}
-
 // Grouped by category_id, not display name — a deleted category (falling
 // back to "Other") and a category actually named "Other" must not merge.
 export function getSpendingByCategory(
@@ -199,20 +168,6 @@ export function getSpendingByCategory(
       fill,
     }))
     .sort((a, b) => b.amount - a.amount)
-}
-
-export interface DailyCategorySeries {
-  /** Category id — also the corresponding key on each `DailySpendingPoint`. */
-  key: string
-  name: string
-  color: string
-}
-
-export interface DailySpendingPoint {
-  date: DateKey
-  dateLabel: string
-  total: number
-  [seriesKey: string]: string | number
 }
 
 export function getDailySpendingByCategory(
@@ -298,12 +253,6 @@ const LOCATION_CHART_COLORS = [
 export const NO_LOCATION_LABEL = 'No location'
 const NO_LOCATION_FILL = '#71717a'
 
-export interface LocationSpending {
-  location: string
-  amount: number
-  fill: string
-}
-
 function getSpendingByLocationField(
   rows: AggregateRow[],
   dateRange: DateRange,
@@ -365,11 +314,6 @@ export function hasLocationData(rows: AggregateRow[]): boolean {
 // (unpaginated) with its category and city, so no extra request is needed.
 // Unlike the chart aggregations these count income rows too.
 // ---------------------------------------------------------------------------
-
-export interface FacetOption {
-  value: string
-  count: number
-}
 
 /** Transaction count per category id, within `dateRange` and `type`. */
 export function getCategoryFacetCounts(

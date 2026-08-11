@@ -6,7 +6,7 @@ import { useFinanceAggregateQuery } from '../../-utils/finance-queries'
 import { useFinanceFilters } from '../../-utils/use-finance-filters'
 import { SpendingByDailyChart } from '../spending-by-daily-chart'
 
-import type { AggregateRow } from '../../-utils/finance-utils'
+import type { AggregateRow } from '../../-types/finance-api'
 import type { Mock } from 'vitest'
 
 vi.mock('../../-utils/finance-queries', () => ({

@@ -186,6 +186,42 @@ export function formatDateTimeLabel(isoDate: string): string {
 }
 
 /**
+ * Returns how long ago an ISO date/datetime string was, as a bare duration.
+ *
+ * Returns just the magnitude — e.g. `"5 minutes"`, not `"5 minutes ago"` —
+ * so callers control the surrounding phrasing (e.g. "Last edited 5 minutes
+ * ago" vs. a bare "5 minutes" in a compact list row).
+ *
+ * @param isoDate - ISO date/datetime string in the past.
+ * @returns A duration label such as `"just now"`, `"5 minutes"`, `"3 hours"`, or `"2 days"`.
+ *
+ * @example
+ * formatTimeSince("2026-05-30T12:00:00.000Z") // "5 minutes" (no "ago" suffix)
+ */
+export function formatTimeSince(isoDate: string): string {
+  const diffMs = Date.now() - new Date(isoDate).getTime()
+  const diffMinutes = Math.floor(diffMs / 60000)
+
+  if (diffMinutes < 1) {
+    return 'just now'
+  }
+  if (diffMinutes < 60) {
+    return diffMinutes === 1 ? '1 minute' : `${diffMinutes} minutes`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) {
+    return diffHours === 1 ? '1 hour' : `${diffHours} hours`
+  }
+
+  const diffDays = Math.floor(diffHours / 24)
+  if (diffDays === 1) {
+    return '1 day'
+  }
+  return `${diffDays} days`
+}
+
+/**
  * Returns the end of the local day for a date key, for use as an inclusive
  * upper bound when comparing against timestamps that may carry time-of-day.
  *

@@ -4,15 +4,24 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useRouteContext } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
+import { useCurrentUser } from '#/hooks/use-current-user'
 import { getSupabaseBrowserClient } from '#/libs/supabase/client'
 import { useFinanceStore } from '#/stores/finance-store'
 import { endOfDayIso, startOfDayIso } from '#/utils/date'
 import { DEFAULT_CATEGORY_CONFIGS } from './finance-utils'
 
-import type { AggregateRow } from './finance-utils'
+import type {
+  AggregateRow,
+  FinanceCategoryRow,
+  TransactionRow,
+} from '../-types/finance-api'
+import type {
+  CityFilter,
+  TransactionPage,
+  TransactionQueryParams,
+} from '../-types/finance-query'
 import type {
   FinanceCategory,
   Transaction,
@@ -34,53 +43,57 @@ export const FINANCE_KEYS = {
 // Transformers
 // ---------------------------------------------------------------------------
 
-function transformCategory(row: Record<string, unknown>): FinanceCategory {
+function transformCategory(row: FinanceCategoryRow): FinanceCategory {
   return {
-    id: row.id as string,
-    name: row.name as string,
-    type: row.type as 'income' | 'expense',
-    color: row.color as string,
-    isSystem: row.is_system as boolean,
-    createdAt: row.created_at as string,
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    color: row.color,
+    isSystem: row.is_system,
+    createdAt: row.created_at,
   }
 }
 
 function transformTransactionLocation(
-  row: Record<string, unknown>,
+  row: TransactionRow,
 ): Transaction['location'] {
-  const placeName = row.location_place_name as string | null
-  const address = row.location_address as string | null
-  const city = row.location_city as string | null
-  const country = row.location_country as string | null
-  const mapsUrl = row.location_maps_url as string | null
+  const { location_place_name, location_address, location_city } = row
+  const { location_country, location_maps_url } = row
 
-  if (!placeName && !address && !city && !country && !mapsUrl) return null
+  if (
+    !location_place_name &&
+    !location_address &&
+    !location_city &&
+    !location_country &&
+    !location_maps_url
+  )
+    return null
 
   return {
-    placeName: placeName ?? '',
-    address: address ?? '',
-    city: city ?? '',
-    country: country ?? '',
-    mapsUrl: mapsUrl ?? '',
+    placeName: location_place_name ?? '',
+    address: location_address ?? '',
+    city: location_city ?? '',
+    country: location_country ?? '',
+    mapsUrl: location_maps_url ?? '',
   }
 }
 
 function transformTransaction(
-  row: Record<string, unknown>,
+  row: TransactionRow,
   categories: FinanceCategory[],
 ): Transaction {
   const category = categories.find((c) => c.id === row.category_id)
   return {
-    id: row.id as string,
-    type: row.type as 'income' | 'expense',
+    id: row.id,
+    type: row.type,
     amount: Number(row.amount),
-    date: row.date as string,
-    note: (row.note as string | null) ?? '',
-    categoryId: row.category_id as string,
+    date: row.date,
+    note: row.note ?? '',
+    categoryId: row.category_id,
     category,
     location: transformTransactionLocation(row),
-    createdAt: row.created_at as string,
-    updatedAt: row.updated_at as string,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }
 }
 
@@ -90,7 +103,7 @@ function transformTransaction(
 
 export function useFinanceCategoriesQuery() {
   const setCategories = useFinanceStore((s) => s.setCategories)
-  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
+  const user = useCurrentUser()
 
   return useQuery({
     queryKey: FINANCE_KEYS.categories,
@@ -160,34 +173,9 @@ export function useFinanceAggregateQuery() {
 // 3. Paginated transactions query  (for the table)
 // ---------------------------------------------------------------------------
 
-export interface TransactionQueryParams {
-  page: number
-  pageSize: number
-  dateFrom: string | null
-  dateTo: string | null
-  type: 'income' | 'expense' | null
-  /** Empty means "all categories". Sort before passing — this is a cache key. */
-  categoryIds: string[]
-  /** Empty means "all locations". `''` selects rows with no city recorded. */
-  cities: string[]
-  /** Empty means "all countries". `''` selects rows with no country recorded. */
-  countries: string[]
-  search: string | null
-}
-
-export interface TransactionPage {
-  data: Transaction[]
-  count: number
-}
-
 function quoteLocationValue(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
 }
-
-export type CityFilter =
-  | { kind: 'none' }
-  | { kind: 'in'; values: string[] }
-  | { kind: 'or'; expression: string }
 
 /**
  * Translates selected values for a location column into a PostgREST
@@ -257,8 +245,8 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
       if (error) throw error
 
       const categories = useFinanceStore.getState().categories
-      const transactions = data.map((row) =>
-        transformTransaction(row as Record<string, unknown>, categories),
+      const transactions = (data as TransactionRow[]).map((row) =>
+        transformTransaction(row, categories),
       )
 
       return { data: transactions, count: count ?? 0 }
@@ -289,7 +277,7 @@ function invalidateAll(queryClient: ReturnType<typeof useQueryClient>) {
 
 export function useCreateTransactionMutation() {
   const queryClient = useQueryClient()
-  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
+  const user = useCurrentUser()
 
   return useMutation({
     mutationFn: async (input: {
@@ -397,7 +385,7 @@ export function useDeleteTransactionMutation() {
 export function useCreateCategoryMutation() {
   const queryClient = useQueryClient()
   const addCategory = useFinanceStore((s) => s.addCategory)
-  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
+  const user = useCurrentUser()
 
   return useMutation({
     mutationFn: async (input: {
@@ -423,7 +411,7 @@ export function useCreateCategoryMutation() {
         .single()
 
       if (error) throw error
-      return transformCategory(data as Record<string, unknown>)
+      return transformCategory(data as FinanceCategoryRow)
     },
     onSuccess: (newCat) => {
       addCategory(newCat)
@@ -456,7 +444,7 @@ export function useUpdateCategoryMutation() {
         .single()
 
       if (error) throw error
-      return transformCategory(data as Record<string, unknown>)
+      return transformCategory(data as FinanceCategoryRow)
     },
     onSuccess: (updated) => {
       updateCategory(updated.id, updated)

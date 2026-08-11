@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { FinanceCategory } from '#/stores/finance-store'
 import { startOfDayIso } from '#/utils/date'
-import type { AggregateRow } from '../finance-utils'
+import type { AggregateRow } from '../../-types/finance-api'
 import {
   getCategoryFacetCounts,
   getCityFacetOptions,

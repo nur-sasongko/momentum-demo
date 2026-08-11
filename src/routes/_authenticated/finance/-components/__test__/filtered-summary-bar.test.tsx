@@ -7,7 +7,7 @@ import { useFinanceFilters } from '../../-utils/use-finance-filters'
 import { FilteredSummaryBar } from '../filtered-summary-bar'
 
 import type { FinanceCategory } from '#/stores/finance-store'
-import type { AggregateRow } from '../../-utils/finance-utils'
+import type { AggregateRow } from '../../-types/finance-api'
 import type { Mock } from 'vitest'
 
 vi.mock('../../-utils/finance-queries', () => ({

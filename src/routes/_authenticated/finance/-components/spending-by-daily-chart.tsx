@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 
 import { useFinanceStore } from '#/stores/finance-store'
+import { formatNumberWithSeparators } from '#/utils/currency'
 import { AngledCategoryTick } from './chart-axis-tick'
 import {
   ANGLED_AXIS_HEIGHT,
@@ -22,7 +23,6 @@ import {
 } from './chart-card'
 import { useFinanceAggregateQuery } from '../-utils/finance-queries'
 import {
-  formatCurrency,
   formatDateRangeLabel,
   getDailySpendingByCategory,
 } from '../-utils/finance-utils'
@@ -34,8 +34,10 @@ import type {
   TooltipPayloadEntry,
   TooltipProps,
 } from 'recharts'
-import type { DailySpendingPoint } from '../-utils/finance-utils'
-import type { DrilldownSelection } from '../-utils/finance-drilldown'
+import type {
+  DailySpendingPoint,
+  DrilldownSelection,
+} from '../-types/finance-chart'
 
 function DailyTooltip({
   active,
@@ -56,12 +58,12 @@ function DailyTooltip({
           key={entry.dataKey as string}
           className="text-sm text-muted-foreground"
         >
-          {entry.name}: {formatCurrency(entry.value as number)}
+          {entry.name}: {formatNumberWithSeparators(entry.value as number)}
         </p>
       ))}
       {point && (
         <p className="mt-1 text-sm font-semibold text-popover-foreground">
-          Total: {formatCurrency(point.total)}
+          Total: {formatNumberWithSeparators(point.total)}
         </p>
       )}
     </div>

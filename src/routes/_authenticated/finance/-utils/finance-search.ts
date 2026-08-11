@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { stringArrayParam } from '#/utils/search-params'
+
 import type { TransactionType } from '#/stores/finance-store'
 
 /** Active tab on the finance page. Defined here, not in the store — see docs/specs/011-finance-filters-url-state.md. */
@@ -8,18 +10,6 @@ export type FinanceView = 'chart' | 'table'
 export const FINANCE_ROUTE_ID = '/_authenticated/finance/' as const
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-
-/**
- * Normalizes a search value that should be a string array. A bare scalar
- * (produced by a hand-typed URL, e.g. `?cat=a`) is wrapped into a
- * single-element array rather than rejected.
- */
-const stringArrayParam = z
-  .preprocess((val) => {
-    if (val === undefined) return undefined
-    return Array.isArray(val) ? val : [val]
-  }, z.array(z.string()))
-  .catch([])
 
 export const financeSearchSchema = z.object({
   view: z.enum(['chart', 'table']).catch('chart'),

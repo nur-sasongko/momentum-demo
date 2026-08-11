@@ -48,8 +48,6 @@ Feature-first layout: vertical slices (`-components/`, `-utils/`, `-queries/`, e
 - **Feature helpers** — `src/routes/<feature>/-utils/` for route-scoped logic (e.g. `finance-utils.ts`).
 - **Framework / styling** — `src/libs/` for TanStack Query wiring and Shadcn `cn()` (`#/libs/utils`).
 
-> Legacy: `src/utlis/` was a typo; use `src/utils/` for all new global utilities.
-
 ### Data & State
 
 - **TanStack Query** — `QueryClient` is created in `src/libs/tanstack-query/root-provider.tsx`, injected into the router context, and provided to the tree via the router's `Wrap` option (`src/router.tsx`), which renders `QueryClientProvider`.

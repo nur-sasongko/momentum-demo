@@ -1,8 +1,8 @@
 import { Lock, Star } from 'lucide-react'
 
-import { formatRelativeTime } from '../-utils/notes-utils'
 import { cn } from '#/libs/utils'
 import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
+import { formatTimeSince } from '#/utils/date'
 import type { NoteSummary } from '#/stores/notes-store'
 
 interface NoteListItemProps {
@@ -45,7 +45,7 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
           </h3>
         </div>
         <span className="shrink-0 text-xs text-muted-foreground">
-          {formatRelativeTime(note.updatedAt)}
+          {formatTimeSince(note.updatedAt)}
         </span>
       </div>
       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">

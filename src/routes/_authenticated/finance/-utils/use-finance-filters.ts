@@ -1,21 +1,14 @@
 import { getRouteApi } from '@tanstack/react-router'
 
 import { useFinanceStore } from '#/stores/finance-store'
+import { toggleArrayValue } from '#/utils/search-params'
 import { FINANCE_ROUTE_ID } from './finance-search'
 
 import type { DateRange, TransactionType } from '#/stores/finance-store'
 import type { FinanceSearch, FinanceView } from './finance-search'
+import type { FinanceFiltersPatch } from '../-types/finance-query'
 
 const routeApi = getRouteApi(FINANCE_ROUTE_ID)
-
-/** Batched patch applied in a single navigation — see `setFilters`. */
-export interface FinanceFiltersPatch {
-  view?: FinanceView
-  dateRange?: DateRange
-  selectedType?: TransactionType | null
-  selectedCategories?: string[]
-  selectedCities?: string[]
-}
 
 function toSearchPatch(patch: FinanceFiltersPatch): Partial<FinanceSearch> {
   const next: Partial<FinanceSearch> = {}
@@ -79,18 +72,15 @@ export function useFinanceFilters() {
   }
 
   function toggleCategory(categoryId: string) {
-    const next = selectedCategories.includes(categoryId)
-      ? selectedCategories.filter((id) => id !== categoryId)
-      : [...selectedCategories, categoryId]
-    const isBoundary = selectedCategories.length === 0 || next.length === 0
+    const { next, isBoundary } = toggleArrayValue(
+      selectedCategories,
+      categoryId,
+    )
     apply({ cat: next }, { replace: !isBoundary })
   }
 
   function toggleCity(city: string) {
-    const next = selectedCities.includes(city)
-      ? selectedCities.filter((c) => c !== city)
-      : [...selectedCities, city]
-    const isBoundary = selectedCities.length === 0 || next.length === 0
+    const { next, isBoundary } = toggleArrayValue(selectedCities, city)
     apply({ city: next }, { replace: !isBoundary })
   }
 

@@ -4,6 +4,8 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                             | Feature | Status      | Created    |
 | --- | ------------------------------------------------------------------------------------------------ | ------- | ----------- | ---------- |
+| 19  | [Feature `-types/` Folders and Real API Response Types](./019-core-feature-types-folders.md)     | core    | done        | 2026-08-11 |
+| 18  | [Promote Shared Primitives to the Global Layer](./018-core-shared-primitives.md)                 | core    | done        | 2026-08-11 |
 | 17  | [Notes Editor: Explicit Save & No Phantom Writes](./017-notes-editor-explicit-save.md)           | notes   | in-progress | 2026-08-10 |
 | 16  | [Notes Filters, Sort & Selected Note as URL Search Params](./016-notes-filters-url-state.md)     | notes   | in-progress | 2026-08-09 |
 | 15  | [Notes Supabase Integration](./015-notes-supabase-integration.md)                                | notes   | draft       | 2026-08-04 |
@@ -30,5 +32,5 @@ Row format:
 | N | [Title](./feature-description.md) | habits | draft | YYYY-MM-DD |
 
 Status values: draft | in-progress | done | cancelled
-Feature values: habits | finance | notes | core
+Feature values: habits | finance | notes | tasks | core
 -->
