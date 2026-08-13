@@ -96,6 +96,8 @@ function buildColumns(
   return [
     columnHelper.accessor('date', {
       header: 'Date',
+      size: 150,
+      minSize: 120,
       cell: (info) => {
         const row = info.row.original
         return (
@@ -120,6 +122,8 @@ function buildColumns(
     columnHelper.accessor((row) => row.category?.name ?? 'Other', {
       id: 'category',
       header: 'Category',
+      size: 160,
+      minSize: 120,
       meta: { headerFilter: <CategoryHeaderFilter /> },
       cell: (info) => {
         const row = info.row.original
@@ -155,6 +159,12 @@ function buildColumns(
     }),
     columnHelper.accessor('note', {
       header: 'Note',
+      size: 280,
+      minSize: 140,
+      // `MarkdownEditorCell` already 2-line-clamps its own preview — the
+      // cell must stay `whitespace-normal` (not `truncate`'s `nowrap`,
+      // which would cascade down and collapse the clamp to one line).
+      meta: { overflow: 'wrap' },
       cell: (info) => {
         const row = info.row.original
         return (
@@ -172,7 +182,9 @@ function buildColumns(
       {
         id: 'location',
         header: 'Location',
-        meta: { headerFilter: <LocationHeaderFilter /> },
+        size: 180,
+        minSize: 120,
+        meta: { headerFilter: <LocationHeaderFilter />, overflow: 'truncate' },
         cell: (info) => {
           const row = info.row.original
           return (
@@ -189,6 +201,9 @@ function buildColumns(
     ),
     columnHelper.accessor('amount', {
       header: 'Amount',
+      size: 150,
+      minSize: 100,
+      meta: { align: 'right' },
       cell: (info) => {
         const row = info.row.original
         const isIncome = row.type === 'income'
@@ -244,6 +259,10 @@ function buildColumns(
     }),
     columnHelper.display({
       id: 'actions',
+      size: 90,
+      minSize: 90,
+      enableResizing: false,
+      meta: { align: 'right' },
       cell: (info) => <RowActions row={info.row.original} />,
       enableSorting: false,
     }),
@@ -281,7 +300,7 @@ export function TransactionsTable() {
     debouncedSearch,
   ])
 
-  const { data, isFetching } = useTransactionsQuery({
+  const { data, isFetching, isLoading } = useTransactionsQuery({
     page: pageIndex,
     pageSize,
     dateFrom: dateRange.from,
@@ -327,16 +346,21 @@ export function TransactionsTable() {
     </div>
   )
 
+  const emptyAction =
+    total === 0 ? (
+      <Button
+        size="sm"
+        className="gap-1.5"
+        onClick={() => setAddTransactionOpen(true)}
+      >
+        <Plus className="size-3.5" />
+        Add Transaction
+      </Button>
+    ) : undefined
+
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-medium">
-        Transactions
-        {isFetching && (
-          <span className="ml-2 text-xs font-normal text-muted-foreground">
-            Loading…
-          </span>
-        )}
-      </h2>
+      <h2 className="text-sm font-medium">Transactions</h2>
       <FilteredSummaryBar isSearchActive={Boolean(debouncedSearch)} />
       <DataTable
         columns={columns}
@@ -345,6 +369,13 @@ export function TransactionsTable() {
         searchValue={searchInput}
         onSearchChange={setSearchInput}
         toolbar={toolbar}
+        tableId="finance.transactions"
+        resizable
+        stickyHeader
+        showDensityControl
+        isLoading={isLoading}
+        isFetching={isFetching}
+        emptyAction={emptyAction}
         emptyMessage={
           total === 0
             ? 'No transactions match your filters.'

@@ -2,11 +2,25 @@ import * as React from 'react'
 
 import { cn } from '#/libs/utils.ts'
 
-function Table({ className, ...props }: React.ComponentProps<'table'>) {
+function Table({
+  className,
+  containerClassName,
+  containerStyle,
+  ...props
+}: React.ComponentProps<'table'> & {
+  /** Classes for the scrolling wrapper — e.g. `overflow-auto` + a max-height for `stickyHeader`. */
+  containerClassName?: string
+  /** Style for the scrolling wrapper — e.g. `{ maxHeight }` for `stickyHeader`. */
+  containerStyle?: React.CSSProperties
+}) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn(
+        'relative w-full overflow-auto scroll-shadow-x',
+        containerClassName,
+      )}
+      style={containerStyle}
     >
       <table
         data-slot="table"
@@ -55,7 +69,7 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     <tr
       data-slot="table-row"
       className={cn(
-        'border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted',
+        'border-b transition-colors odd:data-[striped=true]:bg-muted/30 hover:bg-accent/60 has-aria-expanded:bg-accent/60 data-[state=selected]:bg-accent',
         className,
       )}
       {...props}
@@ -68,7 +82,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot="table-head"
       className={cn(
-        'h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'h-10 px-3 text-left align-middle font-medium whitespace-nowrap text-foreground first:pl-4 last:pr-4 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       {...props}
@@ -81,7 +95,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
     <td
       data-slot="table-cell"
       className={cn(
-        'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
+        'px-3 align-middle first:pl-4 last:pr-4 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
         className,
       )}
       {...props}

@@ -10,8 +10,34 @@ for how and when entries are added.
 
 ## [Unreleased]
 
+### Added
+
+- Data table: optional column resizing (drag or keyboard — arrow keys,
+  `Shift` for a bigger step, `Home`/double-click to reset), persisted per
+  table. Opt-in via `resizable`/`tableId` on `DataTable`; enabled on the
+  Finance transactions table, with a "Reset widths" control once any column
+  is customized.
+- Data table: a density control (compact/default/comfortable), persisted
+  per table.
+- Data table: an optional sticky header for long pages of rows, enabled on
+  the Finance transactions table.
+
 ### Changed
 
+- Data table: switched to a fixed column-width layout so widths no longer
+  jitter when paging, sorting, or filtering. Long content in the Note and
+  Location columns now truncates/wraps in place instead of silently
+  widening the table.
+- Data table: hover and selected row states now use the violet-tinted
+  `--accent` token instead of `--muted`, so they read clearly against a
+  striped row (previously both were the same token ten opacity points
+  apart).
+- Data table: amounts and row actions are right-aligned; alignment and
+  overflow behavior are now declared per column (`meta.align`/
+  `meta.overflow`) instead of hardcoded into cell markup.
+- Data table: first load now shows skeleton rows and a background refetch
+  dims the existing rows in place, replacing a "Loading…" label next to the
+  Transactions heading.
 - Design system: dark mode lifted off near-black (`#010101`) onto a legible
   three-step surface ladder (background/card/popover) with comfortable
   (not maximal) text contrast; light mode neutrals now carry a warm paper

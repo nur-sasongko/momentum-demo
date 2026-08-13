@@ -250,6 +250,34 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
   letter-spacing: -0.02em;
 }
 
+/**
+ * CSS-only horizontal scroll shadows: two solid layers matching the
+ * surface color scroll *with* the content (masking the edge until it's
+ * reached), two border-tinted layers stay fixed to the viewport
+ * (`background-attachment: scroll`) so a hint of shadow is always visible
+ * behind the mask until there's nothing left to scroll toward. No JS,
+ * no scroll listener.
+ */
+@utility scroll-shadow-x {
+  background-repeat: no-repeat;
+  background-size:
+    24px 100%,
+    24px 100%,
+    8px 100%,
+    8px 100%;
+  background-position:
+    0 0,
+    100% 0,
+    0 0,
+    100% 0;
+  background-attachment: local, local, scroll, scroll;
+  background-image:
+    linear-gradient(to right, var(--card) 50%, transparent),
+    linear-gradient(to left, var(--card) 50%, transparent),
+    linear-gradient(to right, var(--border), transparent),
+    linear-gradient(to left, var(--border), transparent);
+}
+
 .note-tiptap {
   @apply text-foreground;
 }

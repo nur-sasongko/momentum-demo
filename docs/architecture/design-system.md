@@ -108,6 +108,50 @@ components' own `focus-visible:ring-*` box-shadow rings (defined per
 component in `src/components/ui/`) are additive on top of this and are not
 touched by this rule.
 
+## Tables
+
+`src/components/ui/data-table.tsx` and `table.tsx` are the only place a
+table's layout, density, or interaction model should be decided — feature
+code declares intent through column `meta`, never through ad-hoc cell
+classes. See
+[`docs/specs/021-core-data-table-refinement.md`](../specs/021-core-data-table-refinement.md)
+for the full rationale.
+
+**Layout is fixed, not auto.** Every `DataTable` uses `table-layout: fixed`
+with widths driven by TanStack's column-sizing state, published as
+`--col-<id>-size` CSS custom properties on the `<table>` element rather than
+inline pixel values per cell — this is what lets a column resize live
+without re-rendering every row. A column without an explicit `size` falls
+back to TanStack's default (150px), which is rarely the right width; declare
+`size`/`minSize` per column.
+
+**Alignment is declared, not styled.** Set `meta.align: 'right'` on a
+column, not `className="text-right"` on its cells — this keeps the header
+label and every cell aligned together by construction. **Numerics are
+right-aligned.** A column carrying `.tabular` figures (see above) should
+also carry `meta.align: 'right'` — tabular figures only pay off when the
+digits share a right edge; left-aligned, a 4-digit and a 7-digit amount
+still start at the same x but the magnitude isn't readable from shape.
+
+**Overflow is declared per column** via `meta.overflow`: `'nowrap'`
+(default — dates, amounts, badges), `'truncate'` (single-line ellipsis with
+the full value in `title` — plain text that has no other overflow
+strategy), or `'wrap'` (lets the row grow). **Don't reach for `'truncate'`
+on a column whose cell renderer already manages its own overflow** (e.g. a
+`line-clamp-2` preview) — `truncate`'s `white-space: nowrap` cascades down
+and collapses a multi-line clamp to one line. Use `'wrap'` there instead, as
+`transactions-table.tsx`'s Note column does for `MarkdownEditorCell`.
+
+**Striping and hover must differ by hue, not opacity.** A stripe and a
+hover state that are the same token at different opacities become
+indistinguishable on the rows where they overlap. Hover and selected use
+`--accent` (violet-tinted in both themes); stripe uses a quieter
+`--muted`.
+
+**Density** (`compact` / `default` / `comfortable`) is a fixed set of
+height/padding classes per row, not ad-hoc padding at each call site — see
+`DENSITY_HEADER_ROW_CLASSES`/`DENSITY_CELL_CLASSES` in `data-table.tsx`.
+
 ## Known gap
 
 `LOCATION_CHART_COLORS` in

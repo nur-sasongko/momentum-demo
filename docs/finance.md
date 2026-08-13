@@ -134,10 +134,18 @@ Every category/location/day gets a labelled X-axis tick — no Recharts `interva
 Each row shows:
 
 - Date
-- Note/description
 - Color-coded category badge
-- Amount (green `+` for income, red `-` for expense)
-- Delete action
+- Note/description (2-line clamp preview, opens the markdown editor in a popover)
+- Location (opens a picker; blank shows "Add location")
+- Amount, right-aligned, tabular figures (`+` money-in / `−` money-out)
+- Edit/Delete actions
+
+Built on `<DataTable tableId="finance.transactions" resizable stickyHeader showDensityControl>` (`#/components/ui/data-table`, spec 21):
+
+- **Column widths persist** per browser (`src/stores/table-preferences-store.ts`), keyed by `tableId` — dragging or keyboard-resizing (`ArrowLeft`/`ArrowRight`, `Shift` for a bigger step, `Home`/double-click to reset a column) survives reload. A "Reset widths" control appears in the pagination bar once any column has been customized.
+- **Density** (compact/default/comfortable) is a per-table, persisted preference from the same control group.
+- **Header stays pinned** while scrolling a full page of rows.
+- Loading is a skeleton on first load; a background refetch dims the existing rows instead of replacing them with a spinner.
 
 ### Add Transaction Sheet
 
