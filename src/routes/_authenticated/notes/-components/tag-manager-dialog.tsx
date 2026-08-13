@@ -151,7 +151,8 @@ export function TagManagerDialog({
                         {tag}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
-                        {noteCount} {noteCount === 1 ? 'note' : 'notes'}
+                        <span className="tabular">{noteCount}</span>{' '}
+                        {noteCount === 1 ? 'note' : 'notes'}
                       </span>
                     </div>
                     <Button

@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [Unreleased]
+
+### Changed
+
+- Design system: dark mode lifted off near-black (`#010101`) onto a legible
+  three-step surface ladder (background/card/popover) with comfortable
+  (not maximal) text contrast; light mode neutrals now carry a warm paper
+  tint instead of pure grey.
+- Design system: added `--success`, `--warning`, `--money-in`,
+  `--money-out`, and `--favorite` tokens; Finance and Second Brain no longer
+  hardcode `emerald`/`rose`/`amber` Tailwind literals for income, expenses,
+  and favorites.
+- Design system: quantities (balances, transaction amounts, chart values,
+  streaks, timestamps, deadlines, counts) now render in a dedicated
+  tabular-figure numeric face across Finance, Second Brain, Habits, and
+  Tasks.
+- Design system: Inter and IBM Plex Mono are now self-hosted instead of
+  loaded from the Google Fonts CDN, so the installed PWA renders correctly
+  offline.
+- Design system: the finance chart categorical palette (`--chart-1..5`) was
+  redefined with colorblind-safe, contrast-validated values for both
+  themes.
+
 ## [0.0.2] - 2026-08-10
 
 ### Added

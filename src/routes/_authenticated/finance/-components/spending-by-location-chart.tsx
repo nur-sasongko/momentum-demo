@@ -53,7 +53,7 @@ function LocationTooltip({ active, payload, label }: TooltipContentProps) {
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-md">
       <p className="text-sm font-semibold text-popover-foreground">{label}</p>
-      <p className="text-sm text-muted-foreground">
+      <p className="tabular text-sm text-muted-foreground">
         {formatNumberWithSeparators(
           typeof value === 'number' ? value : Number(value),
         )}

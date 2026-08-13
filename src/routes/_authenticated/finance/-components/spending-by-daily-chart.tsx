@@ -58,12 +58,18 @@ function DailyTooltip({
           key={entry.dataKey as string}
           className="text-sm text-muted-foreground"
         >
-          {entry.name}: {formatNumberWithSeparators(entry.value as number)}
+          {entry.name}:{' '}
+          <span className="tabular">
+            {formatNumberWithSeparators(entry.value as number)}
+          </span>
         </p>
       ))}
       {point && (
         <p className="mt-1 text-sm font-semibold text-popover-foreground">
-          Total: {formatNumberWithSeparators(point.total)}
+          Total:{' '}
+          <span className="tabular">
+            {formatNumberWithSeparators(point.total)}
+          </span>
         </p>
       )}
     </div>

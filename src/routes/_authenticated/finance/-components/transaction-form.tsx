@@ -198,8 +198,8 @@ export function TransactionFormSheet() {
                       'flex-1 rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors',
                       selectedType === type
                         ? type === 'income'
-                          ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                          : 'border-rose-500/50 bg-rose-500/10 text-rose-700 dark:text-rose-400'
+                          ? 'border-money-in/50 bg-money-in/10 text-money-in'
+                          : 'border-money-out/50 bg-money-out/10 text-money-out'
                         : 'border-border text-muted-foreground hover:text-foreground',
                     )}
                   >

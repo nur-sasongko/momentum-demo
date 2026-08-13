@@ -25,7 +25,7 @@ export function UnsavedChangesBar({ state, onSave }: UnsavedChangesBarProps) {
         <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
       ) : (
         <span
-          className="size-2 shrink-0 rounded-full bg-amber-500"
+          className="size-2 shrink-0 rounded-full bg-warning"
           aria-hidden="true"
         />
       )}

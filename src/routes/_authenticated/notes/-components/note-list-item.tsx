@@ -36,7 +36,7 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
           ) : null}
           {note.isFavorite ? (
             <Star
-              className="size-3 shrink-0 fill-current text-amber-500"
+              className="size-3 shrink-0 fill-current text-favorite"
               aria-label="Favorited"
             />
           ) : null}
@@ -44,7 +44,7 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
             {note.title || 'Untitled'}
           </h3>
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">
+        <span className="tabular shrink-0 text-xs text-muted-foreground">
           {formatTimeSince(note.updatedAt)}
         </span>
       </div>

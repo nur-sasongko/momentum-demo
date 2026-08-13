@@ -334,7 +334,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
             aria-pressed={note.isFavorite}
             className={cn(
               'text-muted-foreground',
-              note.isFavorite && 'text-amber-500 hover:text-amber-500',
+              note.isFavorite && 'text-favorite hover:text-favorite',
             )}
           >
             <Star className={cn('size-4', note.isFavorite && 'fill-current')} />
@@ -385,7 +385,8 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           aria-label="Note title"
         />
         <p className="mt-1 text-xs text-muted-foreground">
-          Last edited {formatTimeSince(note.updatedAt)} ago
+          Last edited{' '}
+          <span className="tabular">{formatTimeSince(note.updatedAt)}</span> ago
           {saveIndicator}
         </p>
 

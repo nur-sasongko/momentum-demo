@@ -13,7 +13,7 @@ export function HabitSummary() {
     <section className="rounded-xl border border-border bg-card p-5 md:p-6">
       <p className="text-sm text-muted-foreground">
         You&apos;ve completed{' '}
-        <span className="font-semibold text-foreground">
+        <span className="tabular font-semibold text-foreground">
           {completed} of {total}
         </span>{' '}
         habits today

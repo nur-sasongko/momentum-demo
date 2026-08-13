@@ -198,10 +198,8 @@ function buildColumns(
             display={
               <span
                 className={cn(
-                  'font-semibold tabular-nums whitespace-nowrap',
-                  isIncome
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-rose-600 dark:text-rose-400',
+                  'tabular font-semibold whitespace-nowrap',
+                  isIncome ? 'text-money-in' : 'text-money-out',
                 )}
               >
                 {isIncome ? '+' : '−'}

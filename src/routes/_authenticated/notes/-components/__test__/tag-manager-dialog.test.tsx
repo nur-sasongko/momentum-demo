@@ -44,9 +44,13 @@ describe('TagManagerDialog', () => {
     render(<TagManagerDialog open onOpenChange={() => {}} />)
 
     expect(screen.getByText('Work')).toBeTruthy()
-    expect(screen.getByText('3 notes')).toBeTruthy()
+    expect(
+      screen.getByText((_, node) => node?.textContent === '3 notes'),
+    ).toBeTruthy()
     expect(screen.getByText('Ideas')).toBeTruthy()
-    expect(screen.getByText('1 note')).toBeTruthy()
+    expect(
+      screen.getByText((_, node) => node?.textContent === '1 note'),
+    ).toBeTruthy()
   })
 
   it('calls the rename mutation when a rename is committed', () => {

@@ -246,7 +246,7 @@ export function TaskRow({ task, disableDrag, list }: TaskRowProps) {
         {task.deadline && (
           <span
             className={cn(
-              'flex items-center gap-1 whitespace-nowrap text-xs',
+              'tabular flex items-center gap-1 whitespace-nowrap text-xs',
               colorState && DEADLINE_COLOR_CLASSES[colorState],
             )}
           >
