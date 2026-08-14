@@ -22,8 +22,8 @@
   --secondary-foreground: oklch(0.28 0.012 75);
   --muted: oklch(0.945 0.008 82);
   --muted-foreground: oklch(0.505 0.014 75);
-  --accent: oklch(0.955 0.018 285);
-  --accent-foreground: oklch(0.26 0.03 285);
+  --accent: oklch(0.945 0.008 82);
+  --accent-foreground: oklch(0.28 0.012 75);
   --destructive: oklch(0.52 0.19 25);
   --destructive-foreground: oklch(0.99 0.005 85);
   --success: oklch(0.52 0.13 150);
@@ -47,8 +47,10 @@
   --sidebar-foreground: oklch(0.28 0.012 75);
   --sidebar-primary: oklch(0.52 0.17 285);
   --sidebar-primary-foreground: oklch(0.99 0.005 85);
-  --sidebar-accent: oklch(0.955 0.018 285);
-  --sidebar-accent-foreground: oklch(0.26 0.03 285);
+  --sidebar-accent: oklch(0.945 0.008 82);
+  --sidebar-accent-foreground: oklch(0.28 0.012 75);
+  --sidebar-active: oklch(0.995 0.004 85);
+  --sidebar-active-foreground: oklch(0.52 0.17 285);
   --sidebar-border: oklch(0.895 0.009 80);
   --sidebar-ring: oklch(0.52 0.17 285);
 }
@@ -66,8 +68,8 @@
   --secondary-foreground: oklch(0.88 0.006 85);
   --muted: oklch(0.255 0.009 275);
   --muted-foreground: oklch(0.695 0.01 278);
-  --accent: oklch(0.285 0.032 285);
-  --accent-foreground: oklch(0.9 0.02 285);
+  --accent: oklch(0.285 0.01 275);
+  --accent-foreground: oklch(0.905 0.006 85);
   --destructive: oklch(0.68 0.17 25);
   --destructive-foreground: oklch(0.17 0.02 25);
   --success: oklch(0.76 0.13 152);
@@ -89,8 +91,10 @@
   --sidebar-foreground: oklch(0.88 0.006 85);
   --sidebar-primary: oklch(0.72 0.13 285);
   --sidebar-primary-foreground: oklch(0.17 0.02 285);
-  --sidebar-accent: oklch(0.285 0.032 285);
-  --sidebar-accent-foreground: oklch(0.9 0.02 285);
+  --sidebar-accent: oklch(0.225 0.009 275);
+  --sidebar-accent-foreground: oklch(0.88 0.006 85);
+  --sidebar-active: oklch(0.272 0.01 275);
+  --sidebar-active-foreground: oklch(0.72 0.13 285);
   --sidebar-border: oklch(0.325 0.011 275);
   --sidebar-ring: oklch(0.75 0.15 285);
 }
@@ -140,6 +144,8 @@
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
@@ -475,8 +481,8 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
 }
 
 .note-tiptap .selectedCell {
-  background-color: color-mix(in srgb, var(--accent) 15%, transparent);
-  outline: 2px solid var(--accent);
+  background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+  outline: 2px solid var(--ring);
   outline-offset: -2px;
 }
 
@@ -486,7 +492,7 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
   top: 0;
   bottom: 0;
   width: 4px;
-  background-color: var(--accent);
+  background-color: var(--primary);
   cursor: col-resize;
   opacity: 0;
   transition: opacity 0.15s;

@@ -28,10 +28,9 @@ for how and when entries are added.
   jitter when paging, sorting, or filtering. Long content in the Note and
   Location columns now truncates/wraps in place instead of silently
   widening the table.
-- Data table: hover and selected row states now use the violet-tinted
-  `--accent` token instead of `--muted`, so they read clearly against a
-  striped row (previously both were the same token ten opacity points
-  apart).
+- Data table: hover and selected row states now use the `--accent` token
+  instead of `--muted`, so they read clearly against a striped row
+  (previously both were the same token ten opacity points apart).
 - Data table: amounts and row actions are right-aligned; alignment and
   overflow behavior are now declared per column (`meta.align`/
   `meta.overflow`) instead of hardcoded into cell markup.
@@ -56,6 +55,16 @@ for how and when entries are added.
 - Design system: the finance chart categorical palette (`--chart-1..5`) was
   redefined with colorblind-safe, contrast-validated values for both
   themes.
+
+### Fixed
+
+- Sidebar: the active/hovered item no longer renders as a violet tint with
+  almost no lightness separation from the sidebar field (a decal effect
+  rather than a state change). Hover and selected are now distinct
+  neutral-surface steps — hover sinks, selected rises with a hairline
+  border — with brand color moved to the icon/label instead of the
+  background. The same fix applies to the global `--accent` token used by
+  dropdown menus, selects, and table rows, which had the identical defect.
 
 ## [0.0.2] - 2026-08-10
 

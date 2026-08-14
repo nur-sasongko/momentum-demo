@@ -26,6 +26,28 @@ different lightness values, never the same token declared twice.
 elevates with surface lightness (`dark:shadow-none`, relying on the ladder).
 Shadows are invisible on dark surfaces.
 
+## Interaction states are made of the field, not painted onto it
+
+**Rule: a hover or selected state is a step in the surface ladder, not a
+hue.** `--accent` and `--sidebar-accent` are warm/cool-neutral steps within
+the surface's own hue family — not a tinted wash of `--primary`. Brand color
+belongs in the **foreground** (icon/label text, e.g. `--sidebar-active-foreground`),
+where its chroma is legible against the surface instead of competing with
+it. A background wash at the brand hue on a surface with a different hue
+has near-zero lightness separation from the field and reads as a decal
+rather than a state — this was a real defect in the shipped sidebar (see
+[the spec's derivation](../specs/020-core-design-system-refresh.md#interaction-states-are-made-of-the-field-not-painted-onto-it)).
+
+**Rule: hover and selected are different tokens.** They communicate
+different things — transient pointer feedback vs. persistent selection —
+and sharing a token makes it impossible to tell which item is selected while
+pointing at another one. The sidebar has `--sidebar-accent` (hover) and
+`--sidebar-active` (selected); direction of the step follows the elevation
+rule above — light mode selected _rises_ (to `--card`, with a hairline and
+`shadow-xs`) while hover _sinks_ (to the muted step), so the two states are
+different gestures and can never collide. Dark mode has no shadow cue, so
+both rise, selected further than hover.
+
 ## Semantic tokens
 
 | Token           | Use                                                                                                    |
@@ -145,7 +167,8 @@ and collapses a multi-line clamp to one line. Use `'wrap'` there instead, as
 **Striping and hover must differ by hue, not opacity.** A stripe and a
 hover state that are the same token at different opacities become
 indistinguishable on the rows where they overlap. Hover and selected use
-`--accent` (violet-tinted in both themes); stripe uses a quieter
+`--accent` (a warm/cool-neutral surface step in both themes — see
+"Interaction states" above, not a brand tint); stripe uses a quieter
 `--muted`.
 
 **Density** (`compact` / `default` / `comfortable`) is a fixed set of

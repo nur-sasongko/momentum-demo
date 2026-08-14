@@ -5,7 +5,7 @@ status: in-progress
 feature: core
 related-features: [finance, notes]
 created: 2026-08-11
-updated: 2026-08-11
+updated: 2026-08-13
 ---
 
 # Design System Refresh: Warm Light, Readable Dark, Semantic Tokens
@@ -26,6 +26,7 @@ Separately, the token system has gaps that force feature code to invent its own 
 - Give quantities their own typographic voice: a dedicated numeric face with true tabular figures, applied wherever a number appears.
 - Self-host fonts so the installed PWA renders correctly offline.
 - Keep every color decision verifiable — each value in this spec has a computed contrast ratio, and the chart palette passes the `dataviz` validator.
+- _(added 2026-08-13)_ Make hover and selected states belong to the surface they sit on, and make them distinguishable from each other.
 
 ## Non-Goals
 
@@ -51,32 +52,59 @@ Momentum is an instrument — balances, expenses, streaks, timestamps, tag count
 
 **IBM Plex Mono** becomes `--font-numeric`, applied system-wide to every quantity, and simultaneously fills the missing `--font-mono` role for code blocks. One family, two roles, one font payload — it is a humanist mono with genuinely characterful figures (flat-topped `1`, open `4`), so it reads as a considered readout rather than as generic code. Body copy, labels, and headings stay in Inter; the contrast between the two is what makes data legible at a glance.
 
+### Interaction states are made of the field, not painted onto it
+
+_Added 2026-08-13, after reviewing the shipped light sidebar._
+
+The first implementation of this spec inherited Shadcn's default assumption that a hovered or selected row is a **tint** — a wash of the brand hue laid over whatever surface it lands on. That assumption is safe only when the surface is achromatic. It is not safe here, because the whole point of "two materials, not one inverted theme" is that light-mode surfaces are warm. Measured against the shipped tokens:
+
+|                                           | value                    | hex       |
+| ----------------------------------------- | ------------------------ | --------- |
+| `--sidebar`                               | `oklch(0.962 0.008 82)`  | `#f5f2ed` |
+| `--sidebar-accent` (hover **and** active) | `oklch(0.955 0.018 285)` | `#eeeffc` |
+
+The active chip is **1.02:1** against its own field — no lightness separation at all — while sitting **203° away in hue** at more than double the chroma. Every bit of the shape is carried by hue. That is precisely the signature of a decal: the eye reads two different materials touching, rather than one material in two states. It is also why the defect is invisible in dark mode, where field (hue 275) and accent (hue 285) are 10° apart and the same wash reads as a normal highlight.
+
+Two rules follow, and they generalize past the sidebar:
+
+1. **A state is a step in the surface ladder, not a hue.** Hover and active move along L within the field's own hue. Brand color moves to the **foreground** — icon and label in `--primary` — where chroma is legible against a light background instead of competing with it.
+2. **Hover and selected must be different tokens.** `sidebar.tsx:395` currently maps `hover:`, `active:`, and `data-[active=true]:` all to `bg-sidebar-accent`, so pointing at one item makes it indistinguishable from the selected one. Selection is persistent state and hover is transient feedback; they cannot share a value.
+
+Direction of the step is per-theme, following the elevation rule already established above (light elevates with shadow, dark elevates with lightness):
+
+- **Light** — selected item _rises_ to `--card` (`#fffdfa`) with a `shadow-xs` and a `--sidebar-border` hairline; hover _sinks_ to the warm muted step (`#efece7`). Rise and sink read as different gestures, so the two states never collide.
+- **Dark** — shadow does not exist as a cue, so both states rise: hover to `#1a1b20`, selected to `#25272c`, which is a 1.27:1 step off the sidebar and lands on the existing `--secondary` value.
+
+The same defect exists in the global `--accent` (`#eeeffc` on the warm `--popover` `#fffefc`), which is the hover/focus wash for dropdown items, select items, table rows, and the command palette — 29 occurrences across 16 files. It is fixed the same way: `--accent` becomes the warm neutral step, and the brand hue stays in text and rings.
+
+**This does not remove violet from the UI.** It relocates it. `--primary`, `--ring`, `--chart-1`, links, and solid brand fills are unchanged; what goes away is violet used as a _background wash on a warm surface_, which is the only place it was fighting the material.
+
 ## Token Specification
 
 All values below are computed, not estimated. Contrast ratios are WCAG 2.x against the stated surface.
 
 ### Light — "warm paper"
 
-| Token                    | Value                    | Hex       | Note                              |
-| ------------------------ | ------------------------ | --------- | --------------------------------- |
-| `--background`           | `oklch(0.978 0.006 85)`  | `#faf7f3` |                                   |
-| `--foreground`           | `oklch(0.24 0.012 75)`   | `#231f19` | 15.45:1 on bg                     |
-| `--card`                 | `oklch(0.995 0.004 85)`  | `#fffdfa` | raised above bg                   |
-| `--card-foreground`      | `oklch(0.24 0.012 75)`   | `#231f19` | 16.23:1 on card                   |
-| `--popover`              | `oklch(0.998 0.003 85)`  | `#fffefc` |                                   |
-| `--popover-foreground`   | `oklch(0.24 0.012 75)`   | `#231f19` |                                   |
-| `--muted`                | `oklch(0.945 0.008 82)`  | `#efece7` | sunken                            |
-| `--muted-foreground`     | `oklch(0.505 0.014 75)`  | `#69645c` | 5.80:1 on card                    |
-| `--secondary`            | `oklch(0.955 0.008 82)`  | `#f3f0ea` | now distinct from muted           |
-| `--secondary-foreground` | `oklch(0.28 0.012 75)`   |           |                                   |
-| `--accent`               | `oklch(0.955 0.018 285)` | `#eeeffc` | violet tint                       |
-| `--accent-foreground`    | `oklch(0.26 0.03 285)`   |           |                                   |
-| `--border`               | `oklch(0.895 0.009 80)`  | `#dfdcd6` | dividers                          |
-| `--input`                | `oklch(0.64 0.014 80)`   | `#918b83` | **3.32:1** — interactive boundary |
-| `--ring`                 | `oklch(0.52 0.17 285)`   | `#6353c5` | 5.79:1 on card                    |
-| `--primary`              | `oklch(0.52 0.17 285)`   | `#6353c5` | 5.51:1 on bg                      |
-| `--primary-foreground`   | `oklch(0.99 0.005 85)`   | `#fdfcf8` | 5.70:1 on primary                 |
-| `--sidebar`              | `oklch(0.962 0.008 82)`  | `#f5f2ed` |                                   |
+| Token                    | Value                   | Hex       | Note                                          |
+| ------------------------ | ----------------------- | --------- | --------------------------------------------- |
+| `--background`           | `oklch(0.978 0.006 85)` | `#faf7f3` |                                               |
+| `--foreground`           | `oklch(0.24 0.012 75)`  | `#231f19` | 15.45:1 on bg                                 |
+| `--card`                 | `oklch(0.995 0.004 85)` | `#fffdfa` | raised above bg                               |
+| `--card-foreground`      | `oklch(0.24 0.012 75)`  | `#231f19` | 16.23:1 on card                               |
+| `--popover`              | `oklch(0.998 0.003 85)` | `#fffefc` |                                               |
+| `--popover-foreground`   | `oklch(0.24 0.012 75)`  | `#231f19` |                                               |
+| `--muted`                | `oklch(0.945 0.008 82)` | `#efece7` | sunken                                        |
+| `--muted-foreground`     | `oklch(0.505 0.014 75)` | `#69645c` | 5.80:1 on card                                |
+| `--secondary`            | `oklch(0.955 0.008 82)` | `#f3f0ea` | now distinct from muted                       |
+| `--secondary-foreground` | `oklch(0.28 0.012 75)`  |           |                                               |
+| `--accent`               | `oklch(0.945 0.008 82)` | `#efece7` | **revised** — warm step, was `#eeeffc` violet |
+| `--accent-foreground`    | `oklch(0.28 0.012 75)`  | `#2c2822` | **revised** — 12.43:1 on accent               |
+| `--border`               | `oklch(0.895 0.009 80)` | `#dfdcd6` | dividers                                      |
+| `--input`                | `oklch(0.64 0.014 80)`  | `#918b83` | **3.32:1** — interactive boundary             |
+| `--ring`                 | `oklch(0.52 0.17 285)`  | `#6353c5` | 5.79:1 on card                                |
+| `--primary`              | `oklch(0.52 0.17 285)`  | `#6353c5` | 5.51:1 on bg                                  |
+| `--primary-foreground`   | `oklch(0.99 0.005 85)`  | `#fdfcf8` | 5.70:1 on primary                             |
+| `--sidebar`              | `oklch(0.962 0.008 82)` | `#f5f2ed` |                                               |
 
 ### Dark — "deep ink"
 
@@ -92,14 +120,43 @@ All values below are computed, not estimated. Contrast ratios are WCAG 2.x again
 | `--muted-foreground`     | `oklch(0.695 0.010 278)` | `#9b9ca3` | 6.23:1 on card (was 4.87:1)       |
 | `--secondary`            | `oklch(0.272 0.010 275)` | `#25272c` | no longer identical to muted      |
 | `--secondary-foreground` | `oklch(0.88 0.006 85)`   |           |                                   |
-| `--accent`               | `oklch(0.285 0.032 285)` | `#282839` |                                   |
-| `--accent-foreground`    | `oklch(0.90 0.02 285)`   |           |                                   |
+| `--accent`               | `oklch(0.285 0.010 275)` | `#282a2f` | **revised** — chroma to neutral   |
+| `--accent-foreground`    | `oklch(0.905 0.006 85)`  | `#e1dfdb` | **revised**                       |
 | `--border`               | `oklch(0.325 0.011 275)` | `#32343a` | dividers                          |
 | `--input`                | `oklch(0.54 0.014 275)`  | `#6c6e77` | **3.35:1** — interactive boundary |
 | `--ring`                 | `oklch(0.75 0.15 285)`   | `#a59eff` | 7.25:1 on card                    |
 | `--primary`              | `oklch(0.72 0.13 285)`   | `#9d98f2` | 6.63:1 on card                    |
 | `--primary-foreground`   | `oklch(0.17 0.02 285)`   | `#0e0e18` | **must flip to ink** — see below  |
 | `--sidebar`              | `oklch(0.172 0.008 275)` | `#0f1013` | recedes behind content            |
+
+### Sidebar interaction states (revised 2026-08-13)
+
+Shadcn ships four sidebar state tokens and expects hover and selected to share `--sidebar-accent`. Selected needs its own pair, so two tokens are added: `--sidebar-active` and `--sidebar-active-foreground`, registered in `@theme inline` as `--color-sidebar-active` / `--color-sidebar-active-foreground`.
+
+**Light**
+
+| Token                         | Value                   | Hex       | Note                                     |
+| ----------------------------- | ----------------------- | --------- | ---------------------------------------- |
+| `--sidebar`                   | `oklch(0.962 0.008 82)` | `#f5f2ed` | unchanged — the field                    |
+| `--sidebar-accent` (hover)    | `oklch(0.945 0.008 82)` | `#efece7` | **revised** — sinks; 1.06:1 off field    |
+| `--sidebar-accent-foreground` | `oklch(0.28 0.012 75)`  | `#2c2822` | **revised** — 12.43:1 on hover           |
+| `--sidebar-active` (selected) | `oklch(0.995 0.004 85)` | `#fffdfa` | **new** — rises; 1.10:1 off field        |
+| `--sidebar-active-foreground` | `oklch(0.52 0.17 285)`  | `#6353c5` | **new** — brand; 5.79:1 on the chip      |
+| `--sidebar-border` (hairline) | `oklch(0.895 0.009 80)` | `#dfdcd6` | unchanged — 1.35:1, edges the risen chip |
+
+**Dark**
+
+| Token                         | Value                    | Hex       | Note                                  |
+| ----------------------------- | ------------------------ | --------- | ------------------------------------- |
+| `--sidebar`                   | `oklch(0.172 0.008 275)` | `#0f1013` | unchanged — the field                 |
+| `--sidebar-accent` (hover)    | `oklch(0.225 0.009 275)` | `#1a1b20` | **revised** — rises; 1.11:1 off field |
+| `--sidebar-accent-foreground` | `oklch(0.88 0.006 85)`   | `#d9d7d3` | **revised** — 11.96:1 on hover        |
+| `--sidebar-active`            | `oklch(0.272 0.010 275)` | `#25272c` | **new** — 1.27:1 off field            |
+| `--sidebar-active-foreground` | `oklch(0.72 0.13 285)`   | `#9d98f2` | **new** — brand; 5.84:1 on the chip   |
+
+The selected chip carries `font-medium` (already present) and tints its icon along with its label, since `[&>svg]` inherits `currentColor`. Light mode adds `shadow-xs` and the hairline; dark mode adds neither — `dark:shadow-none`, per the elevation rule.
+
+Both `--sidebar-active-foreground` values are just `--primary`. They are still declared as their own tokens rather than aliased inline, so a future sidebar-specific brand shift has a seam to change.
 
 > **`--primary-foreground` in dark mode is currently a latent bug.** It is declared as `oklch(0.98 0 0)` — near-white text on the violet primary. Against the new `#9d98f2` that is **2.42:1**, a clear AA failure for button labels; even against today's `#7673fd` it is marginal. It must become dark ink (`#0e0e18`, **7.48:1**). This affects every `variant="default"` Button, `SidebarMenuButton` in its active state, and the active tag chips in `note-list.tsx`.
 
@@ -221,6 +278,16 @@ None. No store, query, schema, or type changes.
 - [x] Given a finance chart with a category filter applied, when a category is removed, then the remaining categories keep their original colors. (True by construction: `getSpendingByCategory` in `finance-utils.ts` colors each bar from the category's own persisted `color` field, not an index into a shared array.)
 - [ ] Given the theme is switched, then the `theme-color` meta content updates to match the active background. (Implemented in `applyTheme()`; not yet confirmed in a running browser.)
 - [ ] Keyboard focus is visible on every interactive element in both themes at full ring opacity. (Implemented as a global `*:focus-visible` rule; not yet confirmed in a running browser.)
+      **Interaction states (added 2026-08-13):**
+
+- [ ] Given light mode, when the sidebar renders, then no interaction-state background on the warm field carries a hue outside 75–85 — `--sidebar-accent` and `--sidebar-active` are both warm neutrals, and the only violet in the sidebar is foreground (`--sidebar-active-foreground`, `--sidebar-ring`).
+- [ ] Given either theme, when one item is selected and a different item is hovered, then the two are visually distinguishable — `--sidebar-accent` and `--sidebar-active` resolve to different values, and the selected item additionally carries brand-colored text and `font-medium`.
+- [ ] Given light mode, when an item is selected, then its chip is lighter than the sidebar field (rises) while a hovered item is darker (sinks); in dark mode both rise, selected further than hover.
+- [ ] Given a selected sidebar item, then its icon and label are both `--primary` at ≥4.5:1 against the chip (light 5.79:1, dark 5.84:1, computed).
+- [ ] Given the collapsed rail, when an item is selected, then the icon-only button still reads as selected (surface step plus brand icon color, no rail bar to crop).
+- [ ] `grep -n "0.018 285\|0.032 285" src/styles.css` returns no matches — the cool-tint accent values are gone from both themes.
+- [ ] Given a dropdown menu, select menu, or table row in light mode, when an item is hovered or focused, then the wash is the warm `--accent` step, not a violet tint.
+- [ ] Given the notes editor, when a table cell is selected or a column-resize handle is shown, then it is still clearly visible after `--accent` becomes a neutral (both were re-pointed at `--primary`/`--ring`).
 - [x] Every use of `--money-in`/`--money-out` is accompanied by an icon or a sign. (Stat cards: `TrendingUp`/`TrendingDown` icons. Transactions table: `+`/`−` sign. Transaction form type toggle: the button text itself reads "income"/"expense".)
 
 ## Edge Cases
@@ -231,6 +298,11 @@ None. No store, query, schema, or type changes.
 - **Selection**: `body` carries `selection:bg-primary/30`. Against the lighter dark primary this needs verification for selected-text legibility.
 - **Recharts**: `CHART_TOOLTIP_CURSOR` uses the raw `var(--muted)` at 0.4 opacity — it was calibrated against a near-black background and will be far more visible on `#131417`. Retune the opacity.
 - **Existing users**: theme choice persists in `localStorage`; the default remains `dark`, so most users see the dark change immediately on first load.
+- **`--accent` as a brand affordance, not a wash**: three sites in `styles.css` use `var(--accent)` as a deliberate _selection_ color rather than a hover wash, and neutralizing `--accent` would erase them. `.note-tiptap .selectedCell` (background `color-mix(… 15%)` + a 2px outline) and `.note-tiptap .column-resize-handle` (solid fill) must both re-point at `--primary`/`--ring`. Audit for any other `var(--accent)` in `styles.css` before flipping the token.
+- **`sidebarMenuButtonVariants` outline variant**: its hover ring is `shadow-[0_0_0_1px_var(--sidebar-accent)]`, which becomes a near-invisible neutral once `--sidebar-accent` is warm. Point that ring at `--sidebar-border` or `--ring` instead.
+- **Collapsed rail**: at `group-data-[state=collapsed]:size-8!` the button is icon-only. The chosen "no rail, color the icon" treatment survives this for free; a left rail bar would have needed a separate collapsed rule. This is why the rail was rejected.
+- **Selected + hovered simultaneously**: hovering the already-selected item must not knock it down to the hover surface. Class order in the `cva` string has `hover:` before `data-[active=true]:`, but Tailwind emits by utility order, not string order — the active rules need to win explicitly (scope the hover rule with `not-data-[active=true]:` or re-assert active after it) and this must be checked in the browser, not assumed.
+- **Dark mode is not visibly broken today** (field and accent are 10° apart in hue), so the dark changes here are for token consistency and hover/selected separation, not to fix a visual defect. Confirm the dark sidebar does not lose contrast against `--background` `#131417` once `--sidebar-active` lands at `#25272c`.
 
 ## Implementation Notes
 
@@ -258,6 +330,20 @@ Rough order — token layer first so every consumer inherits the change.
 11. `docs/finance.md`, `docs/second-brain.md` — update once shipped.
 12. `CHANGELOG.md` — entry under `## [Unreleased]`.
 
+**Interaction-state revision (added 2026-08-13)** — token layer first again, then the one component that needs new classes:
+
+13. `src/styles.css` `:root` — `--accent` → `oklch(0.945 0.008 82)`, `--accent-foreground` → `oklch(0.28 0.012 75)`; `--sidebar-accent` → `oklch(0.945 0.008 82)`, `--sidebar-accent-foreground` → `oklch(0.28 0.012 75)`; add `--sidebar-active: oklch(0.995 0.004 85)` and `--sidebar-active-foreground: oklch(0.52 0.17 285)`.
+14. `src/styles.css` `.dark` — `--accent` → `oklch(0.285 0.010 275)`, `--accent-foreground` → `oklch(0.905 0.006 85)`; `--sidebar-accent` → `oklch(0.225 0.009 275)`, `--sidebar-accent-foreground` → `oklch(0.88 0.006 85)`; add `--sidebar-active: oklch(0.272 0.010 275)` and `--sidebar-active-foreground: oklch(0.72 0.13 285)`.
+15. `src/styles.css` `@theme inline` — register `--color-sidebar-active` and `--color-sidebar-active-foreground`.
+16. `src/styles.css` `.note-tiptap` rules — `.selectedCell` background/outline and `.column-resize-handle` fill move from `var(--accent)` to `var(--primary)` (see Edge Cases).
+17. `src/components/ui/sidebar.tsx:395` (`sidebarMenuButtonVariants` base) — split the three collapsed states:
+    - `data-[active=true]:` → `bg-sidebar-active text-sidebar-active-foreground font-medium shadow-xs dark:shadow-none` plus the light-mode hairline (`shadow-[0_0_0_1px_var(--sidebar-border)]` composed with the elevation shadow, or a `ring-1 ring-sidebar-border dark:ring-0`).
+    - `hover:` / `active:` / `data-[state=open]:hover:` stay on `bg-sidebar-accent`, but must not override the selected item — see the Edge Cases note on specificity.
+18. `src/components/ui/sidebar.tsx:401` — `outline` variant hover ring off `--sidebar-accent` (see Edge Cases).
+19. `src/components/ui/sidebar.tsx:490,508,607,608` — `SidebarMenuAction`, `SidebarMenuBadge`, and `SidebarMenuSubButton` read `peer-data-[active=true]/menu-button:text-sidebar-accent-foreground` and `data-[active=true]:bg-sidebar-accent`; repoint the active-state ones at the new `-active` tokens so sub-items and badges track the parent's selected treatment.
+20. `src/components/AppSidebar.tsx` — no change expected (it only passes `isActive`); verify.
+21. `docs/architecture/design-system.md` — document the two rules from "Interaction states are made of the field": states step along L within the field's hue, and hover ≠ selected.
+
 ## Test Plan
 
 **Unit tests:** none required — this is a token and class-name change with no logic.
@@ -276,9 +362,16 @@ Rough order — token layer first so every consumer inherits the change.
 - [ ] Open the transactions table and confirm amount digits align vertically.
 - [ ] Build, then serve `dist/` offline and confirm Inter and IBM Plex Mono still render.
 - [ ] View the three finance charts through a CVD simulator (deuteranopia and protanopia) and confirm segments stay distinguishable.
+- [ ] In light mode, select one sidebar item and hover a different one — confirm both states are legible at the same time and neither reads as a colored decal.
+- [ ] Hover the already-selected item and confirm it does not drop to the hover surface (the specificity trap in Edge Cases).
+- [ ] Collapse the sidebar and confirm the selected item still reads as selected at icon-only width.
+- [ ] Open a dropdown, a select, and the transactions table in light mode; confirm hover/focus rows are warm, not violet.
+- [ ] In the notes editor, select a table cell and drag a column-resize handle; confirm both are still visible after the `--accent` change.
 
 ## Open Questions
 
-- [x] Should `--sidebar` recede (darker than background, as specced) or advance (lighter)? **Resolved: recede.** Implemented as specced — `--sidebar` is a touch darker than `--background` in both themes (dark: `#0f1013` vs `#131417`; light: `#f5f2ed` vs `#faf7f3`).
+- [x] Should `--sidebar` recede (darker than background, as specced) or advance (lighter)? **Resolved: recede.** Implemented as specced — `--sidebar` is a touch darker than `--background` in both themes (dark: `#0f1013` vs `#131417`; light: `#f5f2ed` vs `#faf7f3`). The 2026-08-13 revision keeps this and depends on it: the field must sit below `--card` for the selected chip to have room to rise.
+- [x] Should the fix be a different sidebar background, or a different active-state treatment? **Resolved: the active state, not the field.** The sidebar background is not the problem — a warm paper rail is correct and stays. The problem is a cool tint painted on it. Changing the field to accommodate the tint would trade a good decision for a bad one.
+- [x] Should the selected item carry a left brand rail? **Resolved: no.** Brand rides on the icon and label instead. A rail would be a second brand element per row and would need its own rule for the collapsed icon-only rail.
 - [x] Do the `--code-*` syntax tokens need a full re-derivation against `#1b1c21`, or does a uniform lightness nudge suffice? **Resolved: no change needed.** Computed contrast against the new dark card: `--code-fg` 11.81:1, `--code-comment` 3.95:1 (intentionally dim, italic), all syntax colors 6.7–9.5:1. All comfortably legible as-is.
 - [ ] IBM Plex Mono at `text-2xl` for the balance figure — confirm it reads as an instrument rather than as code once rendered at size. Not yet checked in the running app; do this on the next `bun --bun run dev` session.
