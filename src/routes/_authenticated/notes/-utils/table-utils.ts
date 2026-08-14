@@ -3,7 +3,7 @@ import { findParentNode } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { CellSelection, TableMap } from 'prosemirror-tables'
 
-export type TableAlign = 'left' | 'center' | 'right'
+import type { TableAlign } from '../-types/notes-table'
 
 export function insertTableAtRange(
   editor: Editor,

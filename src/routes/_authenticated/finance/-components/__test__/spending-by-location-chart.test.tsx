@@ -1,21 +1,21 @@
 import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { useFinanceStore } from '#/stores/finance-store'
 import { useFinanceAggregateQuery } from '../../-utils/finance-queries'
+import { useFinanceFilters } from '../../-utils/use-finance-filters'
 import { SpendingByLocationChart } from '../spending-by-location-chart'
 
-import type { AggregateRow } from '../../-utils/finance-utils'
+import type { AggregateRow } from '../../-types/finance-api'
 import type { Mock } from 'vitest'
 
 vi.mock('../../-utils/finance-queries', () => ({
   useFinanceAggregateQuery: vi.fn(),
 }))
-vi.mock('#/stores/finance-store', () => ({
-  useFinanceStore: vi.fn(),
+vi.mock('../../-utils/use-finance-filters', () => ({
+  useFinanceFilters: vi.fn(),
 }))
 
-const useFinanceStoreMock = useFinanceStore as unknown as Mock
+const useFinanceFiltersMock = useFinanceFilters as unknown as Mock
 const useFinanceAggregateQueryMock = useFinanceAggregateQuery as unknown as Mock
 
 function row(overrides: Partial<AggregateRow> = {}): AggregateRow {
@@ -43,10 +43,9 @@ beforeEach(() => {
       disconnect() {}
     },
   )
-  useFinanceStoreMock.mockImplementation(
-    (selector: (state: { dateRange: unknown }) => unknown) =>
-      selector({ dateRange: { from: null, to: null } }),
-  )
+  useFinanceFiltersMock.mockReturnValue({
+    dateRange: { from: null, to: null },
+  })
 })
 
 afterEach(() => {
@@ -55,14 +54,27 @@ afterEach(() => {
 })
 
 describe('SpendingByLocationChart', () => {
-  it('shows an empty state when no transaction has location data', () => {
-    mockAggregateRows([row(), row({ amount: 50 })])
+  it('shows an empty state when no expenses fall in range', () => {
+    mockAggregateRows([])
 
     render(<SpendingByLocationChart />)
 
     expect(
       screen.getByText('No expenses with a location recorded for this period.'),
     ).toBeTruthy()
+  })
+
+  it('groups transactions without a location under "No location" instead of the empty state', () => {
+    mockAggregateRows([row(), row({ amount: 50 })])
+
+    render(<SpendingByLocationChart />)
+
+    expect(screen.getByText('Spending by location')).toBeTruthy()
+    expect(
+      screen.queryByText(
+        'No expenses with a location recorded for this period.',
+      ),
+    ).toBeNull()
   })
 
   it('renders the chart card without the empty state when city data exists', () => {

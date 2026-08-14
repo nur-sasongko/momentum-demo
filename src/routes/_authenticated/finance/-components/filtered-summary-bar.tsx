@@ -3,9 +3,9 @@ import { X } from 'lucide-react'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { useFinanceStore } from '#/stores/finance-store'
+import { formatNumberWithSeparators } from '#/utils/currency'
 import { useFinanceAggregateQuery } from '../-utils/finance-queries'
 import {
-  formatCurrency,
   formatDateRangeLabel,
   getFilteredSummary,
 } from '../-utils/finance-utils'
@@ -129,7 +129,7 @@ export function FilteredSummaryBar({
             <>
               <StatBlock
                 label="Total"
-                value={formatCurrency(
+                value={formatNumberWithSeparators(
                   selectedType === 'income' ? summary.income : summary.expense,
                 )}
               />
@@ -144,7 +144,7 @@ export function FilteredSummaryBar({
                 label="Average"
                 value={
                   summary.average !== null
-                    ? formatCurrency(summary.average)
+                    ? formatNumberWithSeparators(summary.average)
                     : '—'
                 }
               />
@@ -153,13 +153,16 @@ export function FilteredSummaryBar({
             <>
               <StatBlock
                 label="Income"
-                value={formatCurrency(summary.income)}
+                value={formatNumberWithSeparators(summary.income)}
               />
               <StatBlock
                 label="Expenses"
-                value={formatCurrency(summary.expense)}
+                value={formatNumberWithSeparators(summary.expense)}
               />
-              <StatBlock label="Net" value={formatCurrency(summary.net)} />
+              <StatBlock
+                label="Net"
+                value={formatNumberWithSeparators(summary.net)}
+              />
               <StatBlock label="Transactions" value={String(summary.count)} />
             </>
           )}

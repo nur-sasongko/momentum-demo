@@ -3,19 +3,24 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useFinanceStore } from '#/stores/finance-store'
 import { useFinanceAggregateQuery } from '../../-utils/finance-queries'
+import { useFinanceFilters } from '../../-utils/use-finance-filters'
 import { SpendingByDailyChart } from '../spending-by-daily-chart'
 
-import type { AggregateRow } from '../../-utils/finance-utils'
+import type { AggregateRow } from '../../-types/finance-api'
 import type { Mock } from 'vitest'
 
 vi.mock('../../-utils/finance-queries', () => ({
   useFinanceAggregateQuery: vi.fn(),
+}))
+vi.mock('../../-utils/use-finance-filters', () => ({
+  useFinanceFilters: vi.fn(),
 }))
 vi.mock('#/stores/finance-store', () => ({
   useFinanceStore: vi.fn(),
 }))
 
 const useFinanceStoreMock = useFinanceStore as unknown as Mock
+const useFinanceFiltersMock = useFinanceFilters as unknown as Mock
 const useFinanceAggregateQueryMock = useFinanceAggregateQuery as unknown as Mock
 
 function row(overrides: Partial<AggregateRow> = {}): AggregateRow {
@@ -31,13 +36,10 @@ function row(overrides: Partial<AggregateRow> = {}): AggregateRow {
 }
 
 function mockStore(dateRange: { from: string | null; to: string | null }) {
+  useFinanceFiltersMock.mockReturnValue({ dateRange })
   useFinanceStoreMock.mockImplementation(
-    (
-      selector: (state: {
-        dateRange: unknown
-        categories: unknown[]
-      }) => unknown,
-    ) => selector({ dateRange, categories: [] }),
+    (selector: (state: { categories: unknown[] }) => unknown) =>
+      selector({ categories: [] }),
   )
 }
 

@@ -201,7 +201,7 @@ export function TaskColumn({ list, lists, tasks, activeId }: TaskColumnProps) {
                         transition: 'transform 0.2s',
                       }}
                     />
-                    {completedCount} completed
+                    <span className="tabular">{completedCount}</span> completed
                   </Button>
 
                   {showCompleted && (

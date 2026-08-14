@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 
 import { useFinanceStore } from '#/stores/finance-store'
+import { formatNumberWithSeparators } from '#/utils/currency'
 import { AngledCategoryTick } from './chart-axis-tick'
 import {
   ANGLED_AXIS_HEIGHT,
@@ -23,15 +24,16 @@ import {
 } from './chart-card'
 import { useFinanceAggregateQuery } from '../-utils/finance-queries'
 import {
-  formatCurrency,
   formatDateRangeLabel,
   getSpendingByCategory,
 } from '../-utils/finance-utils'
 import { useFinanceFilters } from '../-utils/use-finance-filters'
 import { selectionFromCategoryBar } from '../-utils/finance-drilldown'
 
-import type { CategorySpending } from '../-utils/finance-utils'
-import type { DrilldownSelection } from '../-utils/finance-drilldown'
+import type {
+  CategorySpending,
+  DrilldownSelection,
+} from '../-types/finance-chart'
 
 function CategoryTooltip({
   active,
@@ -42,8 +44,8 @@ function CategoryTooltip({
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-md">
       <p className="text-sm font-semibold text-popover-foreground">{label}</p>
-      <p className="text-sm text-muted-foreground">
-        {formatCurrency(payload[0].value ?? 0)}
+      <p className="tabular text-sm text-muted-foreground">
+        {formatNumberWithSeparators(payload[0].value ?? 0)}
       </p>
     </div>
   )

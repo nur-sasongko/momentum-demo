@@ -7,29 +7,6 @@ const MAX_TAG_LENGTH = 32
 
 const contentExtensions = createContentExtensions()
 
-export function formatRelativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime()
-  const diffMinutes = Math.floor(diffMs / 60000)
-
-  if (diffMinutes < 1) {
-    return 'just now'
-  }
-  if (diffMinutes < 60) {
-    return diffMinutes === 1 ? '1 minute' : `${diffMinutes} minutes`
-  }
-
-  const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) {
-    return diffHours === 1 ? '1 hour' : `${diffHours} hours`
-  }
-
-  const diffDays = Math.floor(diffHours / 24)
-  if (diffDays === 1) {
-    return '1 day'
-  }
-  return `${diffDays} days`
-}
-
 export function noteContentToPlainText(content: JSONContent): string {
   return generateText(content, contentExtensions)
 }

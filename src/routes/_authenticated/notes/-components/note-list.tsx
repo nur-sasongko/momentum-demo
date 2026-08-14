@@ -228,7 +228,7 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
             aria-pressed={favoritesOnly}
             className={cn(
               'text-muted-foreground',
-              favoritesOnly && 'text-amber-500 hover:text-amber-500',
+              favoritesOnly && 'text-favorite hover:text-favorite',
             )}
           >
             <Star className={cn('size-4', favoritesOnly && 'fill-current')} />

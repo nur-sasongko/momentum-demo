@@ -4,7 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Momentum</title>
-    <meta name="theme-color" content="#111111" />
+    <meta
+      name="theme-color"
+      content="#faf7f3"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#131417"
+      media="(prefers-color-scheme: dark)"
+    />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -16,15 +25,22 @@
           var t = localStorage.getItem('theme') || 'dark'
           var r = document.documentElement
           r.classList.remove('light', 'dark', 'auto')
+          var isDark
           if (t === 'auto') {
             r.classList.add('auto')
-            if (window.matchMedia('(prefers-color-scheme: dark)').matches)
-              r.classList.add('dark')
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+            if (isDark) r.classList.add('dark')
           } else if (t === 'dark') {
             r.classList.add('dark')
+            isDark = true
           } else {
             r.classList.add('light')
+            isDark = false
           }
+          var color = isDark ? '#131417' : '#faf7f3'
+          var metas = document.querySelectorAll('meta[name="theme-color"]')
+          for (var i = 0; i < metas.length; i++)
+            metas[i].setAttribute('content', color)
         } catch (e) {}
       })()
     </script>

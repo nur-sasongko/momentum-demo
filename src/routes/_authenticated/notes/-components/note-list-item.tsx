@@ -1,8 +1,8 @@
 import { Lock, Star } from 'lucide-react'
 
-import { formatRelativeTime } from '../-utils/notes-utils'
 import { cn } from '#/libs/utils'
 import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
+import { formatTimeSince } from '#/utils/date'
 import type { NoteSummary } from '#/stores/notes-store'
 
 interface NoteListItemProps {
@@ -36,7 +36,7 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
           ) : null}
           {note.isFavorite ? (
             <Star
-              className="size-3 shrink-0 fill-current text-amber-500"
+              className="size-3 shrink-0 fill-current text-favorite"
               aria-label="Favorited"
             />
           ) : null}
@@ -44,8 +44,8 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
             {note.title || 'Untitled'}
           </h3>
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {formatRelativeTime(note.updatedAt)}
+        <span className="tabular shrink-0 text-xs text-muted-foreground">
+          {formatTimeSince(note.updatedAt)}
         </span>
       </div>
       <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">

@@ -6,7 +6,7 @@ import {
   selectionFromCountryBar,
 } from '../finance-drilldown'
 
-import type { LocationSpending } from '../finance-utils'
+import type { LocationSpending } from '../../-types/finance-chart'
 
 describe('selectionFromCityBar', () => {
   it('builds a city selection from a known-city bar', () => {

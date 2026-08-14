@@ -14,6 +14,7 @@ The Finance module is the personal finance tracker at `/finance`. It provides ba
 - Route entry: `src/routes/_authenticated/finance/index.tsx`
 - Finance store: `src/stores/finance-store.ts`
 - Finance utilities: `src/routes/_authenticated/finance/-utils/finance-utils.ts`
+- Data types: `src/routes/_authenticated/finance/-types/` — see [Data Types](#data-types)
 - Stat cards: `src/routes/_authenticated/finance/-components/finance-stat-cards.tsx`
 - Filters: `src/routes/_authenticated/finance/-components/finance-filters.tsx`
 - Category chart: `src/routes/_authenticated/finance/-components/spending-by-category-chart.tsx`
@@ -47,6 +48,16 @@ The page composes:
 - `location: TransactionLocation | null` — optional place attached to the transaction (see [Location Tracking](#location-tracking))
 
 `SEED_TRANSACTIONS` provides starter data across the current and previous month.
+
+## Data Types
+
+`src/routes/_authenticated/finance/-types/` holds types that cross module boundaries within the slice, split by concern ([`docs/specs/019-core-feature-types-folders.md`](./specs/019-core-feature-types-folders.md)):
+
+- `finance-api.ts` — snake_case Supabase response rows (`FinanceCategoryRow`, `TransactionRow`, `AggregateRow`), mirroring the `finance_categories`/`finance_transactions` table columns. `transformCategory`/`transformTransaction` in `-utils/finance-queries.ts` map these onto the camelCase `FinanceCategory`/`Transaction` domain types in `#/stores/finance-store`. These row types are a compile-time assertion, not a runtime validation — a column rename in Postgres still yields `undefined` at runtime, but a typo'd field name in the transformer now fails `tsc`.
+- `finance-query.ts` — query params/results (`TransactionQueryParams`, `TransactionPage`, `CityFilter`) and `FinanceFiltersPatch`, the batched patch `useFinanceFilters().setFilters` accepts.
+- `finance-chart.ts` — chart/aggregate shapes (`CategorySpending`, `DailySpendingPoint`, `LocationSpending`, `FilteredSummary`, `FacetOption`) and drilldown types (`DrilldownSelection`, `DrilldownSpec`).
+
+Component `Props`, chart-zoom internals (`chart-zoom.ts`, `use-chart-zoom.ts`), and the route-search schema types (`FinanceView`, `FinanceSearch` in `finance-search.ts`) stay put — see "What goes in `-types/`" in [`docs/architecture/feature-slices.md`](./architecture/feature-slices.md).
 
 ## State and Persistence
 
@@ -123,10 +134,18 @@ Every category/location/day gets a labelled X-axis tick — no Recharts `interva
 Each row shows:
 
 - Date
-- Note/description
 - Color-coded category badge
-- Amount (green `+` for income, red `-` for expense)
-- Delete action
+- Note/description (2-line clamp preview, opens the markdown editor in a popover)
+- Location (opens a picker; blank shows "Add location")
+- Amount, right-aligned, tabular figures (`+` money-in / `−` money-out)
+- Edit/Delete actions
+
+Built on `<DataTable tableId="finance.transactions" resizable stickyHeader showDensityControl>` (`#/components/ui/data-table`, spec 21):
+
+- **Column widths persist** per browser (`src/stores/table-preferences-store.ts`), keyed by `tableId` — dragging or keyboard-resizing (`ArrowLeft`/`ArrowRight`, `Shift` for a bigger step, `Home`/double-click to reset a column) survives reload. A "Reset widths" control appears in the pagination bar once any column has been customized.
+- **Density** (compact/default/comfortable) is a per-table, persisted preference from the same control group.
+- **Header stays pinned** while scrolling a full page of rows.
+- Loading is a skeleton on first load; a background refetch dims the existing rows instead of replacing them with a spinner.
 
 ### Add Transaction Sheet
 

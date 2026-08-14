@@ -35,7 +35,7 @@ export function HabitCard({ habit }: { habit: Habit }) {
             )}
           >
             <Flame className="size-3.5" />
-            {streak} day streak
+            <span className="tabular">{streak}</span> day streak
           </p>
         </div>
       </CardHeader>

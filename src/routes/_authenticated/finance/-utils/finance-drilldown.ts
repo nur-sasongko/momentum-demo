@@ -1,51 +1,15 @@
 import type { DateRange } from '#/stores/finance-store'
-import type { DateKey } from '#/utils/date'
-import type { FinanceFiltersPatch } from './use-finance-filters'
 import { NO_LOCATION_LABEL } from './finance-utils'
 
 import type {
   CategorySpending,
   DailyCategorySeries,
   DailySpendingPoint,
+  DrilldownSelection,
+  DrilldownSpec,
   LocationSpending,
-} from './finance-utils'
-
-export type DrilldownSelection =
-  | {
-      kind: 'category'
-      label: string
-      color: string
-      amount: number
-      categoryId: string
-      categoryName: string
-    }
-  | {
-      kind: 'day-category'
-      label: string
-      color: string
-      amount: number
-      categoryId: string
-      categoryName: string
-      day: DateKey
-      dayLabel: string
-    }
-  | { kind: 'city'; label: string; color: string; amount: number; city: string }
-  | {
-      kind: 'country'
-      label: string
-      color: string
-      amount: number
-      country: string
-    }
-
-export interface DrilldownSpec {
-  dateFrom: string | null
-  dateTo: string | null
-  type: 'expense'
-  categoryIds: string[]
-  cities: string[]
-  countries: string[]
-}
+} from '../-types/finance-chart'
+import type { FinanceFiltersPatch } from '../-types/finance-query'
 
 /**
  * Converts a chart selection into the underlying filter spec.

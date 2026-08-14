@@ -18,8 +18,11 @@ import type { ReactNode } from 'react'
 /** Shared margins so all three finance charts align visually. */
 export const CHART_MARGIN = { top: 8, right: 8, left: 0, bottom: 8 }
 
-/** Shared axis tick style. */
-export const CHART_AXIS_TICK = { fontSize: 12 }
+/** Shared axis tick style. `fontFamily` reaches the Recharts default tick's `<text>` element as a plain SVG attribute. */
+export const CHART_AXIS_TICK = {
+  fontSize: 12,
+  fontFamily: 'var(--font-numeric)',
+}
 
 /** Fixed height of the chart plot, shared by the wrapper div and `ResponsiveContainer` so they can't drift apart. */
 export const CHART_HEIGHT_PX = 256
@@ -32,8 +35,13 @@ export const ANGLED_AXIS_HEIGHT = 70
  * — this app's theme variables are defined as `oklch()` values, so wrapping
  * one in `hsl()` produced an invalid color (the hover cursor silently never
  * rendered).
+ *
+ * `--border` rather than `--muted`: the design system keeps card/muted close
+ * in lightness by intent (a quiet sunken-panel step), which left the cursor
+ * almost imperceptible against the chart's card background. `--border` sits
+ * further from `--card` in both themes and reads as a real highlight.
  */
-export const CHART_TOOLTIP_CURSOR = { fill: 'var(--muted)', opacity: 0.4 }
+export const CHART_TOOLTIP_CURSOR = { fill: 'var(--border)', opacity: 0.5 }
 
 export function chartYAxisTickFormatter(value: number): string {
   return value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value)

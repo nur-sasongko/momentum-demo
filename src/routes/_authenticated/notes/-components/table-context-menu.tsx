@@ -2,7 +2,7 @@ import type { Editor } from '@tiptap/core'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-import type { TableAlign } from '#/routes/_authenticated/notes/-utils/table-utils'
+import type { TableAlign } from '#/routes/_authenticated/notes/-types/notes-table'
 import { setColumnAlignment } from '#/routes/_authenticated/notes/-utils/table-utils'
 import { cn } from '#/libs/utils'
 

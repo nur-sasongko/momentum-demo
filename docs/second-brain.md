@@ -50,6 +50,7 @@ Related architecture: `docs/architecture/feature-slices.md`.
 - Tiptap extension wiring: `src/routes/_authenticated/notes/-utils/tiptap-extensions.ts`
 - JSON seed/content helpers: `src/routes/_authenticated/notes/-utils/tiptap-content.ts`
 - Table commands: `src/routes/_authenticated/notes/-utils/table-utils.ts`
+- Data types: `src/routes/_authenticated/notes/-types/` — see [Data Types](#data-types)
 
 ### Editor components
 
@@ -107,6 +108,16 @@ interface Note extends NoteSummary {
 
 The list pane only ever fetches `NoteSummary` rows (paginated); `content` loads on demand for the
 selected note via `useNoteQuery`. New accounts start with zero rows — there is no demo seeding.
+
+## Data Types
+
+`src/routes/_authenticated/notes/-types/` holds types that cross module boundaries within the slice ([`docs/specs/019-core-feature-types-folders.md`](specs/019-core-feature-types-folders.md)):
+
+- `notes-api.ts` — `NoteRow`, the snake_case Supabase response row mirroring the `notes` table exactly (including `plain_text`/`search_vector`, which the app never reads directly), and `NoteSummaryRow`, a `Pick` of the columns the list/link-target queries select. `transformNote`/`transformNoteSummary` in `-utils/notes-queries.ts` map these onto the camelCase `Note`/`NoteSummary` domain types above. Like the finance row types, this is a compile-time assertion (a typo'd field now fails `tsc`), not a runtime validation of what Postgres actually returns.
+- `notes-query.ts` — `NotesListParams` (the list query's cache key), `NotesTagFilter`/`NotesOrder`/`NotesListQueryDescriptor` (query-building), `NotesListPage`, `NoteTagCount`.
+- `notes-table.ts` — `TableAlign`, shared between the table bubble menu and context menu.
+
+Component `Props`, Tiptap extension `Options` types, and the route-search schema types (`TagFilterMode`, `NotesSortBy`, `NotesSearch` in `notes-route-search.ts`) stay put — see "What goes in `-types/`" in [`docs/architecture/feature-slices.md`](architecture/feature-slices.md).
 
 ## State and persistence
 

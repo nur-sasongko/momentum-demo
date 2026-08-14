@@ -6,16 +6,26 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useRouteContext } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { toast } from 'sonner'
 
+import { useCurrentUser } from '#/hooks/use-current-user'
 import { getSupabaseBrowserClient } from '#/libs/supabase/client'
 import type { Note, NoteSummary } from '#/stores/notes-store'
 import { useNotesStore } from '#/stores/notes-store'
 import { buildNotesTsQuery } from './notes-search'
 import type { NotesSortBy, TagFilterMode } from './notes-route-search'
 import { useNotesFilters } from './use-notes-filters'
+
+import type { NoteRow, NoteSummaryRow } from '../-types/notes-api'
+import type {
+  NoteTagCount,
+  NotesListPage,
+  NotesListParams,
+  NotesListQueryDescriptor,
+  NotesOrder,
+  NotesTagFilter,
+} from '../-types/notes-query'
 
 export const PAGE_SIZE = 30
 
@@ -93,16 +103,6 @@ export function useNotesListParams(): NotesListParams {
 // Query key factory
 // ---------------------------------------------------------------------------
 
-export interface NotesListParams {
-  search: string | null
-  /** Pre-sorted — this is part of the cache key. */
-  activeTags: string[]
-  tagFilterMode: TagFilterMode
-  untaggedOnly: boolean
-  favoritesOnly: boolean
-  sortBy: NotesSortBy
-}
-
 export const NOTES_KEYS = {
   list: (params: NotesListParams) => ['notes', 'list', params] as const,
   detail: (id: string) => ['notes', 'detail', id] as const,
@@ -114,45 +114,29 @@ export const NOTES_KEYS = {
 // Transformers
 // ---------------------------------------------------------------------------
 
-function transformNoteSummary(row: Record<string, unknown>): NoteSummary {
+function transformNoteSummary(row: NoteSummaryRow): NoteSummary {
   return {
-    id: row.id as string,
-    title: row.title as string,
-    excerpt: row.excerpt as string,
-    tags: row.tags as string[],
-    isFavorite: row.is_favorite as boolean,
-    isReadOnly: row.is_read_only as boolean,
-    createdAt: row.created_at as string,
-    updatedAt: row.updated_at as string,
+    id: row.id,
+    title: row.title,
+    excerpt: row.excerpt,
+    tags: row.tags,
+    isFavorite: row.is_favorite,
+    isReadOnly: row.is_read_only,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }
 }
 
-function transformNote(row: Record<string, unknown>): Note {
+function transformNote(row: NoteRow): Note {
   return {
     ...transformNoteSummary(row),
-    content: row.content as JSONContent,
+    content: row.content,
   }
 }
 
 // ---------------------------------------------------------------------------
 // Filter/sort mapping — pure function, testable without a Supabase client
 // ---------------------------------------------------------------------------
-
-export type NotesTagFilter =
-  | { kind: 'none' }
-  | { kind: 'untagged' }
-  | { kind: 'overlaps'; tags: string[] }
-  | { kind: 'contains'; tags: string[] }
-
-export interface NotesOrder {
-  column: 'updated_at' | 'created_at' | 'title'
-  ascending: boolean
-}
-
-export interface NotesListQueryDescriptor {
-  tagFilter: NotesTagFilter
-  order: NotesOrder[]
-}
 
 const SORT_ORDER: Record<NotesSortBy, NotesOrder> = {
   'updated-desc': { column: 'updated_at', ascending: false },
@@ -185,10 +169,6 @@ export function buildNotesListQueryParams(filters: {
 // ---------------------------------------------------------------------------
 // 1. Paginated list query (infinite scroll)
 // ---------------------------------------------------------------------------
-
-export interface NotesListPage {
-  data: NoteSummary[]
-}
 
 export function noteListQueryOptions(params: NotesListParams) {
   return {
@@ -258,7 +238,7 @@ export function useNoteQuery(id: string | null) {
         .single()
 
       if (error) throw error
-      return transformNote(data as Record<string, unknown>)
+      return transformNote(data as NoteRow)
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
@@ -268,11 +248,6 @@ export function useNoteQuery(id: string | null) {
 // ---------------------------------------------------------------------------
 // 3. Tags aggregate (chips + Tag Manager)
 // ---------------------------------------------------------------------------
-
-export interface NoteTagCount {
-  tag: string
-  noteCount: number
-}
 
 export function noteTagsQueryOptions() {
   return {
@@ -444,7 +419,7 @@ export function seedOptimisticNote(
 
 export function useCreateNoteMutation() {
   const queryClient = useQueryClient()
-  const user = useRouteContext({ from: '__root__', select: (c) => c.user })
+  const user = useCurrentUser()
 
   return useMutation({
     mutationFn: async (note: Note) => {
@@ -494,12 +469,7 @@ export function useUpdateNoteContentMutation() {
         .single()
 
       if (error) throw error
-      const row: {
-        id: string
-        title: string
-        excerpt: string
-        updated_at: string
-      } = data
+      const row: Pick<NoteRow, 'id' | 'title' | 'excerpt' | 'updated_at'> = data
       return row
     },
     onSuccess: (row, variables) => {

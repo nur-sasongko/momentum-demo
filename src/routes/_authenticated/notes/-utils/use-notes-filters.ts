@@ -1,6 +1,7 @@
 import { getRouteApi } from '@tanstack/react-router'
 import { useCallback, useRef } from 'react'
 
+import { toggleArrayValue } from '#/utils/search-params'
 import { NOTES_ROUTE_ID } from './notes-route-search'
 
 import type {
@@ -77,10 +78,7 @@ export function useNotesFilters() {
   const toggleActiveTag = useCallback(
     (tag: string) => {
       const current = searchRef.current
-      const next = current.tags.includes(tag)
-        ? current.tags.filter((t) => t !== tag)
-        : [...current.tags, tag]
-      const isBoundary = current.tags.length === 0 || next.length === 0
+      const { next, isBoundary } = toggleArrayValue(current.tags, tag)
       apply(
         { tags: next, untagged: next.length > 0 ? false : current.untagged },
         { replace: !isBoundary },

@@ -3,6 +3,7 @@ import {
   endOfDayIso,
   formatDateTimeLabel,
   formatMonthLabel,
+  formatTimeSince,
   formatTodayDate,
   formatTransactionDate,
   getCurrentMonthKey,
@@ -180,5 +181,76 @@ describe('getDaysInRange', () => {
 
   it('returns a single-day array when from equals to', () => {
     expect(getDaysInRange('2026-07-15', '2026-07-15')).toEqual(['2026-07-15'])
+  })
+})
+
+describe('formatTimeSince', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(FIXED_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('returns "just now" for a timestamp under a minute old', () => {
+    expect(
+      formatTimeSince(new Date(FIXED_DATE.getTime() - 30_000).toISOString()),
+    ).toBe('just now')
+  })
+
+  it('returns a singular minute label at exactly one minute', () => {
+    expect(
+      formatTimeSince(new Date(FIXED_DATE.getTime() - 60_000).toISOString()),
+    ).toBe('1 minute')
+  })
+
+  it('returns a plural minutes label under an hour', () => {
+    expect(
+      formatTimeSince(
+        new Date(FIXED_DATE.getTime() - 5 * 60_000).toISOString(),
+      ),
+    ).toBe('5 minutes')
+  })
+
+  it('returns a singular hour label at exactly one hour', () => {
+    expect(
+      formatTimeSince(
+        new Date(FIXED_DATE.getTime() - 60 * 60_000).toISOString(),
+      ),
+    ).toBe('1 hour')
+  })
+
+  it('returns a plural hours label under a day', () => {
+    expect(
+      formatTimeSince(
+        new Date(FIXED_DATE.getTime() - 3 * 60 * 60_000).toISOString(),
+      ),
+    ).toBe('3 hours')
+  })
+
+  it('returns a singular day label at exactly one day', () => {
+    expect(
+      formatTimeSince(
+        new Date(FIXED_DATE.getTime() - 24 * 60 * 60_000).toISOString(),
+      ),
+    ).toBe('1 day')
+  })
+
+  it('returns a plural days label beyond a day', () => {
+    expect(
+      formatTimeSince(
+        new Date(FIXED_DATE.getTime() - 2 * 24 * 60 * 60_000).toISOString(),
+      ),
+    ).toBe('2 days')
+  })
+
+  it('never appends an "ago" suffix', () => {
+    expect(
+      formatTimeSince(
+        new Date(FIXED_DATE.getTime() - 5 * 60_000).toISOString(),
+      ),
+    ).not.toContain('ago')
   })
 })

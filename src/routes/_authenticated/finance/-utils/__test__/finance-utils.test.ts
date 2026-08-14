@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { FinanceCategory } from '#/stores/finance-store'
 import { startOfDayIso } from '#/utils/date'
-import type { AggregateRow } from '../finance-utils'
+import type { AggregateRow } from '../../-types/finance-api'
 import {
   getCategoryFacetCounts,
   getCityFacetOptions,
@@ -228,8 +228,8 @@ describe('getDailySpendingByCategory', () => {
     expect(series.map((s) => s.name).sort()).toEqual(['Food', 'Transport'])
     expect(data[0]).toMatchObject({
       date: '2026-07-01',
-      Food: 50,
-      Transport: 20,
+      'cat-1': 50,
+      'cat-2': 20,
       total: 70,
     })
   })
@@ -249,8 +249,12 @@ describe('getDailySpendingByCategory', () => {
       categories,
     )
 
-    expect(series).toEqual([{ key: 'Other', name: 'Other', color: '#71717a' }])
-    expect(data[0]).toMatchObject({ Other: 15, total: 15 })
+    // key stays the category id — grouping by display name would merge this
+    // deleted category with one actually named "Other".
+    expect(series).toEqual([
+      { key: 'deleted-cat', name: 'Other', color: '#71717a' },
+    ])
+    expect(data[0]).toMatchObject({ 'deleted-cat': 15, total: 15 })
   })
 
   it('ignores income rows', () => {
