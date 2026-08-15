@@ -17,8 +17,15 @@ import { buildNotesTsQuery } from './notes-search'
 import type { NotesSortBy, TagFilterMode } from './notes-route-search'
 import { useNotesFilters } from './use-notes-filters'
 
-import type { NoteRow, NoteSummaryRow } from '../-types/notes-api'
 import type {
+  ArchivedNoteRow,
+  NoteRow,
+  NoteSummaryRow,
+} from '../-types/notes-api'
+import type {
+  ArchivedNote,
+  ArchivedNotesPage,
+  ArchivedNotesParams,
   NoteTagCount,
   NotesListPage,
   NotesListParams,
@@ -108,6 +115,13 @@ export const NOTES_KEYS = {
   detail: (id: string) => ['notes', 'detail', id] as const,
   tags: ['notes', 'tags'] as const,
   linkTargets: ['notes', 'link-targets'] as const,
+  // Archive keys share the `'archive'` root with finance's equivalents (see
+  // `FINANCE_KEYS` in `finance-queries.ts`) so a single
+  // `invalidateQueries({ queryKey: ['archive'] })` refreshes both `/archive`
+  // tabs regardless of which feature's mutation triggered it.
+  archiveList: (params: ArchivedNotesParams) =>
+    ['archive', 'notes', 'list', params] as const,
+  archiveCount: ['archive', 'notes', 'count'] as const,
 }
 
 // ---------------------------------------------------------------------------
@@ -132,6 +146,20 @@ function transformNote(row: NoteRow): Note {
     ...transformNoteSummary(row),
     content: row.content,
   }
+}
+
+function transformArchivedNote(row: ArchivedNoteRow): ArchivedNote {
+  return {
+    ...transformNoteSummary(row),
+    deletedAt: row.deleted_at,
+  }
+}
+
+/** Restricts a select to live (non-archived) rows. Every live read goes through this. */
+function liveOnly<T extends { is: (column: string, value: boolean | null) => T }>(
+  query: T,
+): T {
+  return query.is('deleted_at', null)
 }
 
 // ---------------------------------------------------------------------------
@@ -182,11 +210,13 @@ export function noteListQueryOptions(params: NotesListParams) {
       const from = pageParam * PAGE_SIZE
       const to = from + PAGE_SIZE - 1
 
-      let q = supabase
-        .from('notes')
-        .select(
-          'id, title, excerpt, tags, is_favorite, is_read_only, created_at, updated_at',
-        )
+      let q = liveOnly(
+        supabase
+          .from('notes')
+          .select(
+            'id, title, excerpt, tags, is_favorite, is_read_only, created_at, updated_at',
+          ),
+      )
 
       const { tagFilter, order } = buildNotesListQueryParams(params)
       if (tagFilter.kind === 'untagged') q = q.filter('tags', 'eq', '{}')
@@ -231,11 +261,12 @@ export function useNoteQuery(id: string | null) {
     queryKey: NOTES_KEYS.detail(id ?? ''),
     queryFn: async (): Promise<Note> => {
       const supabase = getSupabaseBrowserClient()
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('id', id as string)
-        .single()
+      const { data, error } = await liveOnly(
+        supabase
+          .from('notes')
+          .select('*')
+          .eq('id', id as string),
+      ).single()
 
       if (error) throw error
       return transformNote(data as NoteRow)
@@ -280,12 +311,13 @@ export function useNoteLinkTargetsQuery() {
     queryKey: NOTES_KEYS.linkTargets,
     queryFn: async (): Promise<NoteSummary[]> => {
       const supabase = getSupabaseBrowserClient()
-      const { data, error } = await supabase
-        .from('notes')
-        .select(
-          'id, title, excerpt, tags, is_favorite, is_read_only, created_at, updated_at',
-        )
-        .order('title')
+      const { data, error } = await liveOnly(
+        supabase
+          .from('notes')
+          .select(
+            'id, title, excerpt, tags, is_favorite, is_read_only, created_at, updated_at',
+          ),
+      ).order('title')
 
       if (error) throw error
 
@@ -294,6 +326,55 @@ export function useNoteLinkTargetsQuery() {
       return targets
     },
     staleTime: 60 * 1000,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// 5. Archive — paginated archived-notes list + tab count for `/archive`
+// ---------------------------------------------------------------------------
+
+export function useArchivedNotesQuery(params: ArchivedNotesParams) {
+  return useQuery({
+    queryKey: NOTES_KEYS.archiveList(params),
+    queryFn: async (): Promise<ArchivedNotesPage> => {
+      const supabase = getSupabaseBrowserClient()
+      const from = params.page * params.pageSize
+      const to = from + params.pageSize - 1
+
+      const { data, count, error } = await supabase
+        .from('notes')
+        .select(
+          'id, title, excerpt, tags, is_favorite, is_read_only, created_at, updated_at, deleted_at',
+          { count: 'exact' },
+        )
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false })
+        .range(from, to)
+
+      if (error) throw error
+
+      const rows = data as ArchivedNoteRow[]
+      return { data: rows.map(transformArchivedNote), count: count ?? 0 }
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useArchivedNotesCountQuery() {
+  return useQuery({
+    queryKey: NOTES_KEYS.archiveCount,
+    queryFn: async (): Promise<number> => {
+      const supabase = getSupabaseBrowserClient()
+      const { count, error } = await supabase
+        .from('notes')
+        .select('id', { count: 'exact', head: true })
+        .not('deleted_at', 'is', null)
+
+      if (error) throw error
+      return count ?? 0
+    },
+    staleTime: 30 * 1000,
   })
 }
 
@@ -528,21 +609,92 @@ export function useUpdateNoteMetaMutation() {
   })
 }
 
-export function useDeleteNoteMutation() {
+/** Notes and archived notes both disappear from these on archive/restore. */
+function invalidateNoteVisibility(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  queryClient.invalidateQueries({ queryKey: ['notes', 'list'] })
+  queryClient.invalidateQueries({ queryKey: NOTES_KEYS.tags })
+  queryClient.invalidateQueries({ queryKey: NOTES_KEYS.linkTargets })
+  queryClient.invalidateQueries({ queryKey: ['archive'] })
+}
+
+/**
+ * Soft-deletes a note — the delete button. Renamed from the old
+ * `useDeleteNoteMutation`: it no longer hard-deletes, so keeping a
+ * `useDelete*` name here would be misleading. The `.is('deleted_at', null)`
+ * guard means archiving an already-archived note (a double-click, or a
+ * second tab) matches zero rows instead of resetting the 30-day clock.
+ */
+export function useArchiveNoteMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = getSupabaseBrowserClient()
-      const { error } = await supabase.from('notes').delete().eq('id', id)
+      const { error } = await supabase
+        .from('notes')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
+        .is('deleted_at', null)
       if (error) throw error
       return id
     },
     onSuccess: (id) => {
-      queryClient.invalidateQueries({ queryKey: ['notes', 'list'] })
-      queryClient.invalidateQueries({ queryKey: NOTES_KEYS.tags })
-      queryClient.invalidateQueries({ queryKey: NOTES_KEYS.linkTargets })
+      invalidateNoteVisibility(queryClient)
       queryClient.removeQueries({ queryKey: NOTES_KEYS.detail(id) })
+    },
+    onError: () => {
+      toast.error('Failed to archive note.')
+    },
+  })
+}
+
+/** Brings an archived note back to every live view — the archive's Restore action, and the Undo action on the archive toast. */
+export function useRestoreNoteMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase
+        .from('notes')
+        .update({ deleted_at: null })
+        .eq('id', id)
+        .not('deleted_at', 'is', null)
+      if (error) throw error
+      return id
+    },
+    onSuccess: () => {
+      invalidateNoteVisibility(queryClient)
+    },
+    onError: () => {
+      toast.error('Failed to restore note.')
+    },
+  })
+}
+
+/**
+ * Permanently deletes an archived note — only reachable from `/archive`.
+ * The `.not('deleted_at', 'is', null)` guard means this can never match a
+ * live row, even if a caller somehow passed one's id.
+ */
+export function usePurgeNoteMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', id)
+        .not('deleted_at', 'is', null)
+      if (error) throw error
+      return id
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['archive'] })
     },
     onError: () => {
       toast.error('Failed to delete note.')

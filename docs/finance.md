@@ -138,7 +138,13 @@ Each row shows:
 - Note/description (2-line clamp preview, opens the markdown editor in a popover)
 - Location (opens a picker; blank shows "Add location")
 - Amount, right-aligned, tabular figures (`+` money-in / `−` money-out)
-- Edit/Delete actions
+- Edit/Archive actions
+
+Archiving asks for confirmation ("Move to Archive?") before soft-deleting a transaction —
+`useArchiveTransactionMutation()` sets `deleted_at` rather than issuing a `DELETE`, and a toast
+(`Transaction archived`) offers **Undo**. Archived transactions vanish from this table, the
+aggregate charts, and the stat cards, and are recoverable from `/archive` for 30 days — see
+[`docs/archive.md`](archive.md).
 
 Built on `<DataTable tableId="finance.transactions" resizable stickyHeader showDensityControl>` (`#/components/ui/data-table`, spec 21):
 

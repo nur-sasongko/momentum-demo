@@ -14,15 +14,8 @@ import type { FocusEvent, KeyboardEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { ConfirmDialog } from '#/components/confirm-dialog'
 import { Button } from '#/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog'
 import { UnsavedChangesBar } from '#/components/unsaved-changes-bar'
 import { useBeforeUnloadGuard } from '#/hooks/use-beforeunload-guard'
 import { cn } from '#/libs/utils'
@@ -33,9 +26,10 @@ import { TiptapEditor } from '#/routes/_authenticated/notes/-components/tiptap-e
 import type { NotesListPage } from '#/routes/_authenticated/notes/-types/notes-query'
 import {
   NOTES_KEYS,
-  useDeleteNoteMutation,
+  useArchiveNoteMutation,
   useNoteTagsQuery,
   useNotesListParams,
+  useRestoreNoteMutation,
   useUpdateNoteContentMutation,
   useUpdateNoteMetaMutation,
 } from '#/routes/_authenticated/notes/-utils/notes-queries'
@@ -60,11 +54,11 @@ function draftsEqual(a: Draft, b: Draft): boolean {
 }
 
 // Portals owned by the editor (slash menu, `[[` link menu, table context
-// menu) render outside the pane's DOM subtree, and the delete dialog is a
-// Radix portal too — blurring into any of them must not read as "left the
-// pane".
+// menu) render outside the pane's DOM subtree, and the archive confirm
+// dialog is a Radix portal too — blurring into any of them must not read as
+// "left the pane".
 const EDITOR_PORTAL_SELECTOR =
-  '[data-note-editor-portal], [data-slot="dialog-content"]'
+  '[data-note-editor-portal], [data-slot="alert-dialog-content"]'
 
 function isWithinEditorSurface(pane: HTMLElement, target: Node): boolean {
   if (pane.contains(target)) return true
@@ -83,7 +77,8 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
 
   const updateContent = useUpdateNoteContentMutation()
   const updateMeta = useUpdateNoteMetaMutation()
-  const deleteNote = useDeleteNoteMutation()
+  const archiveNote = useArchiveNoteMutation()
+  const restoreNote = useRestoreNoteMutation()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const editorRef = useRef<Editor | null>(null)
@@ -225,7 +220,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
   const undoDisabled = note.isReadOnly || !canUndo
   const redoDisabled = note.isReadOnly || !canRedo
 
-  const handleDelete = () => {
+  const handleArchive = () => {
     const cached = queryClient.getQueryData<{ pages: NotesListPage[] }>(
       NOTES_KEYS.list(listParams),
     )
@@ -238,10 +233,22 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         : null
 
     deletedRef.current = true
-    deleteNote.mutate(note.id)
+    archiveNote.mutate(note.id)
     selectNote(nextId)
     setConfirmOpen(false)
-    toast.success('Note deleted')
+    toast.success('Note archived', {
+      action: {
+        label: 'Undo',
+        // Waits for the restore to land before re-selecting — selecting
+        // immediately would refetch the note while it's still archived
+        // server-side and surface a spurious "not found".
+        onClick: () => {
+          restoreNote.mutate(note.id, {
+            onSuccess: () => selectNote(note.id),
+          })
+        },
+      },
+    })
   }
 
   const handleToggleReadOnly = () => {
@@ -356,7 +363,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
             variant="ghost"
             size="icon-sm"
             onClick={() => setConfirmOpen(true)}
-            aria-label="Delete note"
+            aria-label="Archive note"
             className="text-muted-foreground hover:text-destructive"
           >
             <Trash2 className="size-4" />
@@ -404,25 +411,14 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         </div>
       </div>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>Delete note?</DialogTitle>
-            <DialogDescription>
-              &ldquo;{note.title || 'Untitled'}&rdquo; will be permanently
-              deleted.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onConfirm={handleArchive}
+        title="Move to Archive?"
+        description={`"${note.title || 'Untitled'}" will be moved to the Archive and permanently deleted after 30 days.`}
+        confirmLabel="Move to Archive"
+      />
 
       {showSaveBar ? (
         <UnsavedChangesBar

@@ -1,7 +1,8 @@
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
-import { PieChart, Table } from 'lucide-react'
+import { Archive, PieChart, Table } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '#/components/ui/tabs'
+import { ArchivedTransactionsTable } from '#/routes/_authenticated/finance/-components/archived-transactions-table'
 import { FinanceEmptyState } from '#/routes/_authenticated/finance/-components/finance-empty-state'
 import { FinanceFilters } from '#/routes/_authenticated/finance/-components/finance-filters'
 import { FinanceStatCards } from '#/routes/_authenticated/finance/-components/finance-stat-cards'
@@ -12,6 +13,7 @@ import { SpendingDrilldownSheet } from '#/routes/_authenticated/finance/-compone
 import { TransactionFormSheet } from '#/routes/_authenticated/finance/-components/transaction-form'
 import { TransactionsTable } from '#/routes/_authenticated/finance/-components/transactions-table'
 import {
+  useArchivedTransactionsCountQuery,
   useFinanceAggregateQuery,
   useFinanceCategoriesQuery,
 } from './-utils/finance-queries'
@@ -24,6 +26,10 @@ import { useDrilldown } from './-utils/use-drilldown'
 import { useFinanceFilters } from './-utils/use-finance-filters'
 
 import type { FinanceView } from './-utils/finance-search'
+
+function tabLabel(base: string, count: number | undefined): string {
+  return count === undefined ? base : `${base} (${count})`
+}
 
 export const Route = createFileRoute('/_authenticated/finance/')({
   head: () => ({
@@ -40,6 +46,7 @@ function FinancePage() {
   const { isLoading: catsLoading } = useFinanceCategoriesQuery()
   const { data: aggregateRows = [], isLoading: aggLoading } =
     useFinanceAggregateQuery()
+  const archivedCountQuery = useArchivedTransactionsCountQuery()
   const { activeView, setActiveView, dateRange, setFilters } =
     useFinanceFilters()
   const drilldown = useDrilldown()
@@ -65,6 +72,9 @@ function FinancePage() {
   }
 
   const hasTransactions = aggregateRows.length > 0
+  const hasArchivedTransactions = (archivedCountQuery.data ?? 0) > 0
+  const showTabs = hasTransactions || hasArchivedTransactions
+  const showFiltersAndStats = activeView !== 'archive'
 
   return (
     <div className="route-fade-in space-y-6 p-4 md:p-6">
@@ -77,10 +87,14 @@ function FinancePage() {
         </p>
       </div>
 
-      <FinanceFilters />
-      <FinanceStatCards />
+      {showFiltersAndStats && (
+        <>
+          <FinanceFilters />
+          <FinanceStatCards />
+        </>
+      )}
 
-      {hasTransactions ? (
+      {showTabs ? (
         <Tabs
           value={activeView}
           onValueChange={(v) => setActiveView(v as FinanceView)}
@@ -95,16 +109,29 @@ function FinancePage() {
               <Table />
               Table
             </TabsTrigger>
+            <TabsTrigger value="archive">
+              <Archive />
+              {tabLabel('Archive', archivedCountQuery.data)}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="chart" className="space-y-4">
-            <SpendingByCategoryChart onSelect={drilldown.open} />
-            <SpendingByDailyChart onSelect={drilldown.open} />
-            {hasLocationData(aggregateRows) && (
-              <SpendingByLocationChart onSelect={drilldown.open} />
+            {hasTransactions ? (
+              <>
+                <SpendingByCategoryChart onSelect={drilldown.open} />
+                <SpendingByDailyChart onSelect={drilldown.open} />
+                {hasLocationData(aggregateRows) && (
+                  <SpendingByLocationChart onSelect={drilldown.open} />
+                )}
+              </>
+            ) : (
+              <FinanceEmptyState />
             )}
           </TabsContent>
           <TabsContent value="table">
-            <TransactionsTable />
+            {hasTransactions ? <TransactionsTable /> : <FinanceEmptyState />}
+          </TabsContent>
+          <TabsContent value="archive">
+            <ArchivedTransactionsTable />
           </TabsContent>
         </Tabs>
       ) : (

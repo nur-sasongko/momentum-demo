@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Brain, Flame, Wallet, CheckSquare } from 'lucide-react'
+import { Archive, Brain, Flame, Wallet, CheckSquare } from 'lucide-react'
 
 import {
   Sidebar,
@@ -14,7 +14,7 @@ import {
 } from '#/components/ui/sidebar'
 
 type EnabledNavItem = {
-  to: '/notes' | '/habits' | '/finance' | '/tasks'
+  to: '/notes' | '/habits' | '/finance' | '/tasks' | '/archive'
   label: string
   icon: typeof Brain
   enabled: true
@@ -34,6 +34,12 @@ const navItems: NavItem[] = [
   { to: '/finance' as const, label: 'Finance', icon: Wallet, enabled: true },
   { to: '/habits' as const, label: 'Habits', icon: Flame, enabled: true },
   { to: '/tasks' as const, label: 'Tasks', icon: CheckSquare, enabled: true },
+  {
+    to: '/archive' as const,
+    label: 'Archive',
+    icon: Archive,
+    enabled: true,
+  },
 ]
 
 export function AppSidebar() {

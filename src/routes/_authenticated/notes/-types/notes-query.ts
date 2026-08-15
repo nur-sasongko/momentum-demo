@@ -35,6 +35,19 @@ export interface NotesListPage {
   data: NoteSummary[]
 }
 
+/** An archived note — the list-pane `NoteSummary` shape plus when it was archived. */
+export type ArchivedNote = NoteSummary & { deletedAt: string }
+
+export interface ArchivedNotesParams {
+  page: number
+  pageSize: number
+}
+
+export interface ArchivedNotesPage {
+  data: ArchivedNote[]
+  count: number
+}
+
 export interface NoteTagCount {
   tag: string
   noteCount: number

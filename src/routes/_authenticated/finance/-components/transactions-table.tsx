@@ -1,7 +1,9 @@
 import { createColumnHelper } from '@tanstack/react-table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
+import { ConfirmDialog } from '#/components/confirm-dialog'
 import { LocationCell } from '#/components/location/location-cell'
 import { MarkdownEditorCell } from '#/components/markdown/markdown-editor-cell'
 import { Badge } from '#/components/ui/badge'
@@ -26,7 +28,8 @@ import {
   LocationHeaderFilter,
 } from './transaction-header-filters'
 import {
-  useDeleteTransactionMutation,
+  useArchiveTransactionMutation,
+  useRestoreTransactionMutation,
   useTransactionsQuery,
   useUpdateTransactionMutation,
 } from '../-utils/finance-queries'
@@ -62,7 +65,23 @@ function toUpdateInput(tx: Transaction): UpdateInput {
 
 function RowActions({ row }: { row: Transaction }) {
   const setEditingTransaction = useFinanceStore((s) => s.setEditingTransaction)
-  const deleteMutation = useDeleteTransactionMutation()
+  const archiveMutation = useArchiveTransactionMutation()
+  const restoreMutation = useRestoreTransactionMutation()
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const isIncome = row.type === 'income'
+  const label = `${row.category?.name ?? 'Other'} — ${isIncome ? '+' : '−'}${formatNumberWithSeparators(row.amount)}`
+
+  const handleArchive = () => {
+    archiveMutation.mutate(row.id)
+    setConfirmOpen(false)
+    toast.success('Transaction archived', {
+      action: {
+        label: 'Undo',
+        onClick: () => restoreMutation.mutate(row.id),
+      },
+    })
+  }
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -78,13 +97,21 @@ function RowActions({ row }: { row: Transaction }) {
       <Button
         variant="ghost"
         size="icon-sm"
-        onClick={() => deleteMutation.mutate(row.id)}
-        aria-label="Delete transaction"
+        onClick={() => setConfirmOpen(true)}
+        aria-label="Archive transaction"
         className="text-muted-foreground hover:text-destructive"
-        disabled={deleteMutation.isPending}
+        disabled={archiveMutation.isPending}
       >
         <Trash2 className="size-3.5" />
       </Button>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        onConfirm={handleArchive}
+        title="Move to Archive?"
+        description={`"${label}" will be moved to the Archive and permanently deleted after 30 days.`}
+        confirmLabel="Move to Archive"
+      />
     </div>
   )
 }

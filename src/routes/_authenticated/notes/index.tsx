@@ -1,5 +1,6 @@
 import { createFileRoute, stripSearchParams } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 import { NoteEditor } from '#/routes/_authenticated/notes/-components/note-editor'
 import { NoteList } from '#/routes/_authenticated/notes/-components/note-list'
@@ -70,6 +71,18 @@ function NotesPage() {
       selectNote(firstNoteId, { replace: true })
     }
   }, [selectedId, firstNoteId, selectNote])
+
+  // A bookmarked/cross-tab `?note=<id>` can point at a note that's since
+  // been archived — `useNoteQuery` now excludes archived rows, so Supabase's
+  // `.single()` reports PGRST116 ("no rows"). Fall back to the first live
+  // note instead of leaving the pane blank over a stale draft.
+  useEffect(() => {
+    const code = (noteQuery.error as { code?: string } | null)?.code
+    if (selectedId && code === 'PGRST116') {
+      selectNote(firstNoteId ?? null, { replace: true })
+      toast.info('That note is in the Archive.')
+    }
+  }, [selectedId, noteQuery.error, firstNoteId, selectNote])
 
   const handleNoteSelect = () => {
     if (isMobile) setMobileView('editor')

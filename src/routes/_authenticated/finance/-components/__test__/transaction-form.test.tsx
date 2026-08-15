@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useFinanceStore } from '#/stores/finance-store'
@@ -76,43 +76,53 @@ describe('TransactionFormSheet — discard/stay confirmation', () => {
     expect(useFinanceStore.getState().isAddTransactionOpen).toBe(false)
   })
 
-  it('shows the confirmation dialog when closing an edited add form', () => {
+  it('shows the confirmation dialog when closing an edited add form', async () => {
     useFinanceStore.setState({ isAddTransactionOpen: true })
     render(<TransactionFormSheet />)
 
-    fireEvent.change(screen.getByLabelText('Amount'), {
-      target: { value: '25' },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Amount'), {
+        target: { value: '25' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.getByText('Discard unsaved changes?')).toBeTruthy()
     expect(useFinanceStore.getState().isAddTransactionOpen).toBe(true)
   })
 
-  it('"Keep editing" leaves the sheet open with edits intact', () => {
+  it('"Keep editing" leaves the sheet open with edits intact', async () => {
     useFinanceStore.setState({ isAddTransactionOpen: true })
     render(<TransactionFormSheet />)
 
-    fireEvent.change(screen.getByLabelText('Amount'), {
-      target: { value: '25' },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Amount'), {
+        target: { value: '25' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    })
 
     expect(screen.queryByText('Discard unsaved changes?')).toBeNull()
     expect(useFinanceStore.getState().isAddTransactionOpen).toBe(true)
     expect(screen.getByLabelText('Amount')).toHaveProperty('value', '25.00')
   })
 
-  it('"Discard changes" closes and resets the sheet', () => {
+  it('"Discard changes" closes and resets the sheet', async () => {
     useFinanceStore.setState({ isAddTransactionOpen: true })
     render(<TransactionFormSheet />)
 
-    fireEvent.change(screen.getByLabelText('Amount'), {
-      target: { value: '25' },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Amount'), {
+        target: { value: '25' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
+    })
 
     expect(useFinanceStore.getState().isAddTransactionOpen).toBe(false)
   })
@@ -131,7 +141,7 @@ describe('TransactionFormSheet — discard/stay confirmation', () => {
     expect(useFinanceStore.getState().isAddTransactionOpen).toBe(false)
   })
 
-  it('shows the confirmation dialog when closing an edited existing transaction', () => {
+  it('shows the confirmation dialog when closing an edited existing transaction', async () => {
     useFinanceStore.setState({
       isAddTransactionOpen: true,
       editingTransactionId: existingTransaction.id,
@@ -139,10 +149,12 @@ describe('TransactionFormSheet — discard/stay confirmation', () => {
     })
     render(<TransactionFormSheet />)
 
-    fireEvent.change(screen.getByLabelText('Amount'), {
-      target: { value: '99' },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Amount'), {
+        target: { value: '99' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.getByText('Discard unsaved changes?')).toBeTruthy()
   })

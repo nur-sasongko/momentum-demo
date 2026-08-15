@@ -28,9 +28,13 @@ Related architecture: `docs/architecture/feature-slices.md`.
 ## Current UX at `/notes`
 
 - **Left pane**: search, tag chips, scrollable note list (with lock icon on read-only notes).
-- **Right pane**: inline title, read-only badge when locked, lock/unlock + delete actions, Tiptap body editor.
+- **Right pane**: inline title, read-only badge when locked, lock/unlock + archive actions, Tiptap body editor.
 - **Empty state**: CTA to create the first note when the library is empty.
-- **Delete flow**: confirmation dialog + Sonner toast (`Note deleted`).
+- **Delete flow**: soft delete, not destructive. Confirmation dialog ("Move to Archive?") sets
+  `deleted_at`, advances selection to the next note, and shows a toast (`Note archived`) with an
+  **Undo** action. Archived notes are hidden from every live query (list, detail, tag counts,
+  `[[` link targets) and are recoverable from `/archive` for 30 days — see
+  [`docs/archive.md`](archive.md).
 
 ## Source of truth
 
@@ -139,7 +143,9 @@ accessed through TanStack Query hooks in
 - `useNoteTagsQuery()` — tag chips + counts via the `get_note_tags()` RPC.
 - `useNoteLinkTargetsQuery()` — whole-library targets for the `[[` menu.
 - `useCreateNoteMutation()`, `useUpdateNoteContentMutation()` (explicit save, see below),
-  `useUpdateNoteMetaMutation()` (tags/favorite/lock, immediate), `useDeleteNoteMutation()`,
+  `useUpdateNoteMetaMutation()` (tags/favorite/lock, immediate), `useArchiveNoteMutation()`
+  (soft delete), `useRestoreNoteMutation()`, `usePurgeNoteMutation()` (hard delete, archive-only —
+  see [`docs/archive.md`](archive.md)),
   `useRenameTagMutation()` / `useDeleteTagMutation()` (`rename_note_tag`/`delete_note_tag` RPCs).
 
 `NoteEditor` holds a local draft (`title`, `content`) and a last-saved snapshot, both seeded from

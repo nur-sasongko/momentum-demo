@@ -6,9 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useNotesFilters } from '../../-utils/use-notes-filters'
 import { NoteEditor } from '../note-editor'
 import {
-  useDeleteNoteMutation,
+  useArchiveNoteMutation,
   useNotesListParams,
   useNoteTagsQuery,
+  useRestoreNoteMutation,
   useUpdateNoteContentMutation,
   useUpdateNoteMetaMutation,
 } from '../../-utils/notes-queries'
@@ -44,15 +45,20 @@ vi.mock('../../-utils/notes-queries', () => ({
   useNotesListParams: vi.fn(),
   useUpdateNoteContentMutation: vi.fn(),
   useUpdateNoteMetaMutation: vi.fn(),
-  useDeleteNoteMutation: vi.fn(),
+  useArchiveNoteMutation: vi.fn(),
+  useRestoreNoteMutation: vi.fn(),
 }))
 
 vi.mock('../../-utils/use-notes-filters', () => ({
   useNotesFilters: vi.fn(),
 }))
 
-function renderNoteEditor(ui: ReactElement) {
+function renderNoteEditor(
+  ui: ReactElement,
+  seed?: (queryClient: QueryClient) => void,
+) {
   const queryClient = new QueryClient()
+  seed?.(queryClient)
   const result = render(
     <QueryClientProvider client={queryClient}>
       {ui}
@@ -63,6 +69,7 @@ function renderNoteEditor(ui: ReactElement) {
   )
   return {
     ...result,
+    queryClient,
     rerender: (nextUi: ReactElement) =>
       result.rerender(
         <QueryClientProvider client={queryClient}>
@@ -104,7 +111,8 @@ interface MutateOptions {
 
 let contentMutate: ReturnType<typeof vi.fn>
 let metaMutate: ReturnType<typeof vi.fn>
-let deleteMutate: ReturnType<typeof vi.fn>
+let archiveMutate: ReturnType<typeof vi.fn>
+let restoreMutate: ReturnType<typeof vi.fn>
 let contentMutateCalls: Array<{ input: unknown; options?: MutateOptions }>
 
 function typeTitle(value: string) {
@@ -140,7 +148,8 @@ beforeEach(() => {
     contentMutateCalls.push({ input, options })
   })
   metaMutate = vi.fn()
-  deleteMutate = vi.fn()
+  archiveMutate = vi.fn()
+  restoreMutate = vi.fn()
 
   vi.mocked(useNotesFilters).mockReturnValue({
     selectedId: null,
@@ -158,9 +167,12 @@ beforeEach(() => {
   vi.mocked(useUpdateNoteMetaMutation).mockReturnValue({
     mutate: metaMutate,
   } as unknown as ReturnType<typeof useUpdateNoteMetaMutation>)
-  vi.mocked(useDeleteNoteMutation).mockReturnValue({
-    mutate: deleteMutate,
-  } as unknown as ReturnType<typeof useDeleteNoteMutation>)
+  vi.mocked(useArchiveNoteMutation).mockReturnValue({
+    mutate: archiveMutate,
+  } as unknown as ReturnType<typeof useArchiveNoteMutation>)
+  vi.mocked(useRestoreNoteMutation).mockReturnValue({
+    mutate: restoreMutate,
+  } as unknown as ReturnType<typeof useRestoreNoteMutation>)
 })
 
 afterEach(() => {
@@ -264,14 +276,16 @@ describe('NoteEditor — save triggers', () => {
     portalNode.remove()
   })
 
-  it('blurring into the delete confirmation dialog issues no save', () => {
+  it('blurring into the archive confirmation dialog issues no save', () => {
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
 
     typeTitle('Hello')
-    fireEvent.click(screen.getByLabelText('Delete note'))
+    fireEvent.click(screen.getByLabelText('Archive note'))
 
-    const dialogContent = document.querySelector('[data-slot="dialog-content"]')
+    const dialogContent = document.querySelector(
+      '[data-slot="alert-dialog-content"]',
+    )
     expect(dialogContent).not.toBeNull()
 
     blurTitleTo(dialogContent)
@@ -379,6 +393,58 @@ describe('NoteEditor — save triggers', () => {
 
     expect(contentMutate).not.toHaveBeenCalled()
     expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+describe('NoteEditor — archive', () => {
+  it('does not archive when the trash icon is clicked without confirming', () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    fireEvent.click(screen.getByLabelText('Archive note'))
+
+    expect(archiveMutate).not.toHaveBeenCalled()
+    expect(screen.getByText('Move to Archive?')).toBeTruthy()
+  })
+
+  it('does not archive when the dialog is cancelled', () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    fireEvent.click(screen.getByLabelText('Archive note'))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(archiveMutate).not.toHaveBeenCalled()
+    expect(screen.queryByText('Move to Archive?')).toBeNull()
+  })
+
+  it('archives the note and advances selection to the next note on confirm', () => {
+    const selectNote = vi.fn()
+    vi.mocked(useNotesFilters).mockReturnValue({
+      selectedId: 'note-2',
+      selectNote,
+    } as unknown as ReturnType<typeof useNotesFilters>)
+
+    const note = makeNote({ id: 'note-2' })
+    renderNoteEditor(<NoteEditor note={note} />, (queryClient) => {
+      queryClient.setQueryData(['notes', 'list', {}], {
+        pages: [
+          {
+            data: [
+              makeNote({ id: 'note-1' }),
+              makeNote({ id: 'note-2' }),
+              makeNote({ id: 'note-3' }),
+            ],
+          },
+        ],
+      })
+    })
+
+    fireEvent.click(screen.getByLabelText('Archive note'))
+    fireEvent.click(screen.getByRole('button', { name: 'Move to Archive' }))
+
+    expect(archiveMutate).toHaveBeenCalledWith('note-2')
+    expect(selectNote).toHaveBeenCalledWith('note-3')
   })
 })
 

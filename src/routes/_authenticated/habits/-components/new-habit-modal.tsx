@@ -7,6 +7,7 @@ import { Button } from '#/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -81,6 +82,9 @@ export function NewHabitModal() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New habit</DialogTitle>
+          <DialogDescription>
+            Set a name, icon, and color for your new habit.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-5">
