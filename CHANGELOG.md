@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
-## [Unreleased]
+## [0.0.4] - 2026-08-15
 
 ### Added
 
