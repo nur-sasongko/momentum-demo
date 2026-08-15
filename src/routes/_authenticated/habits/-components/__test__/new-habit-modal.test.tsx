@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { useHabitsStore } from '#/stores/habits-store'
@@ -22,40 +22,50 @@ describe('NewHabitModal — discard/stay confirmation', () => {
     expect(useHabitsStore.getState().isNewHabitOpen).toBe(false)
   })
 
-  it('shows the confirmation dialog after typing a name', () => {
+  it('shows the confirmation dialog after typing a name', async () => {
     render(<NewHabitModal />)
 
-    fireEvent.change(screen.getByLabelText('Name'), {
-      target: { value: 'Morning run' },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Name'), {
+        target: { value: 'Morning run' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.getByText('Discard unsaved changes?')).toBeTruthy()
     expect(useHabitsStore.getState().isNewHabitOpen).toBe(true)
   })
 
-  it('"Keep editing" leaves the modal open with the draft intact', () => {
+  it('"Keep editing" leaves the modal open with the draft intact', async () => {
     render(<NewHabitModal />)
 
-    fireEvent.change(screen.getByLabelText('Name'), {
-      target: { value: 'Morning run' },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Name'), {
+        target: { value: 'Morning run' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+    })
 
     expect(screen.queryByText('Discard unsaved changes?')).toBeNull()
     expect(useHabitsStore.getState().isNewHabitOpen).toBe(true)
     expect(screen.getByLabelText('Name')).toHaveProperty('value', 'Morning run')
   })
 
-  it('"Discard changes" closes the modal and resets the form', () => {
+  it('"Discard changes" closes the modal and resets the form', async () => {
     render(<NewHabitModal />)
 
-    fireEvent.change(screen.getByLabelText('Name'), {
-      target: { value: 'Morning run' },
+    await act(async () => {
+      fireEvent.change(screen.getByLabelText('Name'), {
+        target: { value: 'Morning run' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }))
+    })
 
     expect(useHabitsStore.getState().isNewHabitOpen).toBe(false)
   })
