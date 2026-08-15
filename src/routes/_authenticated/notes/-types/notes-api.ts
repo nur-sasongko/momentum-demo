@@ -19,6 +19,8 @@ export interface NoteRow {
   is_read_only: boolean
   created_at: string
   updated_at: string
+  /** `null` means live. Set means archived — see `#/utils/archive`. */
+  deleted_at: string | null
 }
 
 /** The columns selected by the list/link-target queries — everything except the body. */
@@ -33,3 +35,10 @@ export type NoteSummaryRow = Pick<
   | 'created_at'
   | 'updated_at'
 >
+
+/**
+ * The columns selected by the archive list query — same shape as
+ * `NoteSummaryRow` plus `deleted_at`, narrowed to `string` since the query
+ * filters `deleted_at is not null` and every row returned carries one.
+ */
+export type ArchivedNoteRow = NoteSummaryRow & { deleted_at: string }

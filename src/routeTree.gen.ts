@@ -16,6 +16,7 @@ import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedNotesIndexRouteImport } from './routes/_authenticated/notes/index'
 import { Route as AuthenticatedHabitsIndexRouteImport } from './routes/_authenticated/habits/index'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance/index'
+import { Route as AuthenticatedArchiveIndexRouteImport } from './routes/_authenticated/archive/index'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -53,10 +54,17 @@ const AuthenticatedFinanceIndexRoute =
     path: '/finance/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedArchiveIndexRoute =
+  AuthenticatedArchiveIndexRouteImport.update({
+    id: '/archive/',
+    path: '/archive/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login/': typeof LoginIndexRoute
+  '/archive/': typeof AuthenticatedArchiveIndexRoute
   '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/habits/': typeof AuthenticatedHabitsIndexRoute
   '/notes/': typeof AuthenticatedNotesIndexRoute
@@ -65,6 +73,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginIndexRoute
+  '/archive': typeof AuthenticatedArchiveIndexRoute
   '/finance': typeof AuthenticatedFinanceIndexRoute
   '/habits': typeof AuthenticatedHabitsIndexRoute
   '/notes': typeof AuthenticatedNotesIndexRoute
@@ -75,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login/': typeof LoginIndexRoute
+  '/_authenticated/archive/': typeof AuthenticatedArchiveIndexRoute
   '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/_authenticated/habits/': typeof AuthenticatedHabitsIndexRoute
   '/_authenticated/notes/': typeof AuthenticatedNotesIndexRoute
@@ -82,14 +92,22 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login/' | '/finance/' | '/habits/' | '/notes/' | '/tasks/'
+  fullPaths:
+    | '/'
+    | '/login/'
+    | '/archive/'
+    | '/finance/'
+    | '/habits/'
+    | '/notes/'
+    | '/tasks/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/finance' | '/habits' | '/notes' | '/tasks'
+  to: '/' | '/login' | '/archive' | '/finance' | '/habits' | '/notes' | '/tasks'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/login/'
+    | '/_authenticated/archive/'
     | '/_authenticated/finance/'
     | '/_authenticated/habits/'
     | '/_authenticated/notes/'
@@ -153,10 +171,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/archive/': {
+      id: '/_authenticated/archive/'
+      path: '/archive'
+      fullPath: '/archive/'
+      preLoaderRoute: typeof AuthenticatedArchiveIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedArchiveIndexRoute: typeof AuthenticatedArchiveIndexRoute
   AuthenticatedFinanceIndexRoute: typeof AuthenticatedFinanceIndexRoute
   AuthenticatedHabitsIndexRoute: typeof AuthenticatedHabitsIndexRoute
   AuthenticatedNotesIndexRoute: typeof AuthenticatedNotesIndexRoute
@@ -164,6 +190,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedArchiveIndexRoute: AuthenticatedArchiveIndexRoute,
   AuthenticatedFinanceIndexRoute: AuthenticatedFinanceIndexRoute,
   AuthenticatedHabitsIndexRoute: AuthenticatedHabitsIndexRoute,
   AuthenticatedNotesIndexRoute: AuthenticatedNotesIndexRoute,

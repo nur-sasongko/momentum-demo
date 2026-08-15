@@ -28,6 +28,8 @@ export interface TransactionRow {
   location_city: string | null
   location_country: string | null
   location_maps_url: string | null
+  /** `null` means live. Set means archived — see `#/utils/archive`. */
+  deleted_at: string | null
 }
 
 // Lightweight row used by aggregate query (charts + stat cards)
@@ -38,4 +40,13 @@ export interface AggregateRow {
   category_id: string
   location_city: string | null
   location_country: string | null
+}
+
+/**
+ * The row shape returned by the archive list query. `deleted_at` is
+ * narrowed to `string` — the query filters `deleted_at is not null`, so
+ * every row returned is guaranteed to carry one.
+ */
+export type ArchivedTransactionRow = Omit<TransactionRow, 'deleted_at'> & {
+  deleted_at: string
 }

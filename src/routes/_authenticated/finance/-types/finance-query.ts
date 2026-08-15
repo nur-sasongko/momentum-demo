@@ -24,6 +24,19 @@ export interface TransactionPage {
   count: number
 }
 
+/** An archived transaction — the live `Transaction` shape plus when it was archived. */
+export type ArchivedTransaction = Transaction & { deletedAt: string }
+
+export interface ArchivedTransactionsParams {
+  page: number
+  pageSize: number
+}
+
+export interface ArchivedTransactionsPage {
+  data: ArchivedTransaction[]
+  count: number
+}
+
 export type CityFilter =
   | { kind: 'none' }
   | { kind: 'in'; values: string[] }

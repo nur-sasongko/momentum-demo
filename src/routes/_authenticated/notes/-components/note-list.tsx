@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Settings2, Star } from 'lucide-react'
+import { Archive, Plus, Search, Settings2, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '#/components/ui/button'
@@ -14,11 +14,13 @@ import {
 import { Skeleton } from '#/components/ui/skeleton'
 import { useDebouncedValue } from '#/hooks/use-debounced-value'
 import { cn } from '#/libs/utils'
+import { ArchivedNotesSheet } from '#/routes/_authenticated/notes/-components/archived-notes-sheet'
 import { NoteListItem } from '#/routes/_authenticated/notes/-components/note-list-item'
 import { TagManagerDialog } from '#/routes/_authenticated/notes/-components/tag-manager-dialog'
 import {
   buildEmptyNote,
   seedOptimisticNote,
+  useArchivedNotesCountQuery,
   useCreateNoteMutation,
   useNoteTagsQuery,
   useNotesListParams,
@@ -75,6 +77,7 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
 
   const [inputValue, setInputValue] = useState(searchQuery)
   const [managerOpen, setManagerOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
   const debouncedInput = useDebouncedValue(inputValue, 300)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
@@ -83,6 +86,7 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
   const params = useNotesListParams()
   const listQuery = useNotesListQuery(params)
   const tagsQuery = useNoteTagsQuery()
+  const archivedCountQuery = useArchivedNotesCountQuery()
 
   useEffect(() => {
     // Skip the no-op write on mount (and after the URL already caught up) —
@@ -140,15 +144,29 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
     <aside className="flex w-full shrink-0 flex-col border-r border-border bg-card/30 md:w-80">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold tracking-tight">Second Brain</h2>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={handleCreate}
-          aria-label="New note"
-          disabled={isNewNoteActive}
-        >
-          <Plus className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setArchiveOpen(true)}
+            aria-label="Archived notes"
+            className="h-8 gap-1 px-2 text-muted-foreground hover:text-foreground"
+          >
+            <Archive className="size-4" />
+            {archivedCountQuery.data ? (
+              <span className="text-xs tabular">{archivedCountQuery.data}</span>
+            ) : null}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleCreate}
+            aria-label="New note"
+            disabled={isNewNoteActive}
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3 border-b border-border px-4 py-3">
@@ -294,6 +312,7 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
       </div>
 
       <TagManagerDialog open={managerOpen} onOpenChange={setManagerOpen} />
+      <ArchivedNotesSheet open={archiveOpen} onOpenChange={setArchiveOpen} />
     </aside>
   )
 }

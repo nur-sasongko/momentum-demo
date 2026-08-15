@@ -5,14 +5,14 @@ import { stringArrayParam } from '#/utils/search-params'
 import type { TransactionType } from '#/stores/finance-store'
 
 /** Active tab on the finance page. Defined here, not in the store — see docs/specs/011-finance-filters-url-state.md. */
-export type FinanceView = 'chart' | 'table'
+export type FinanceView = 'chart' | 'table' | 'archive'
 
 export const FINANCE_ROUTE_ID = '/_authenticated/finance/' as const
 
 const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 export const financeSearchSchema = z.object({
-  view: z.enum(['chart', 'table']).catch('chart'),
+  view: z.enum(['chart', 'table', 'archive']).catch('chart'),
   from: z.string().regex(DATE_KEY_PATTERN).optional().catch(undefined),
   to: z.string().regex(DATE_KEY_PATTERN).optional().catch(undefined),
   type: z.enum(['income', 'expense']).optional().catch(undefined),

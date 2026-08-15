@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useFinanceStore } from '#/stores/finance-store'
 import {
-  useDeleteTransactionMutation,
+  useArchiveTransactionMutation,
   useFinanceAggregateQuery,
+  useRestoreTransactionMutation,
   useTransactionsQuery,
   useUpdateTransactionMutation,
 } from '../../-utils/finance-queries'
@@ -18,7 +19,8 @@ vi.mock('../../-utils/finance-queries', () => ({
   useTransactionsQuery: vi.fn(),
   useFinanceAggregateQuery: vi.fn(() => ({ data: [] })),
   useUpdateTransactionMutation: vi.fn(),
-  useDeleteTransactionMutation: vi.fn(),
+  useArchiveTransactionMutation: vi.fn(),
+  useRestoreTransactionMutation: vi.fn(),
   useCreateCategoryMutation: vi.fn(() => ({
     mutate: vi.fn(),
     isPending: false,
@@ -41,8 +43,10 @@ const useTransactionsQueryMock = useTransactionsQuery as unknown as Mock
 const useFinanceAggregateQueryMock = useFinanceAggregateQuery as unknown as Mock
 const useUpdateTransactionMutationMock =
   useUpdateTransactionMutation as unknown as Mock
-const useDeleteTransactionMutationMock =
-  useDeleteTransactionMutation as unknown as Mock
+const useArchiveTransactionMutationMock =
+  useArchiveTransactionMutation as unknown as Mock
+const useRestoreTransactionMutationMock =
+  useRestoreTransactionMutation as unknown as Mock
 const useFinanceFiltersMock = useFinanceFilters as unknown as Mock
 
 function mockFinanceFilters(overrides: Record<string, unknown> = {}) {
@@ -95,6 +99,8 @@ const transaction: Transaction = {
 }
 
 let updateMutate: Mock
+let archiveMutate: Mock
+let restoreMutate: Mock
 
 beforeEach(() => {
   mockMatchMedia()
@@ -111,8 +117,14 @@ beforeEach(() => {
     mutate: updateMutate,
     isPending: false,
   })
-  useDeleteTransactionMutationMock.mockReturnValue({
-    mutate: vi.fn(),
+  archiveMutate = vi.fn()
+  useArchiveTransactionMutationMock.mockReturnValue({
+    mutate: archiveMutate,
+    isPending: false,
+  })
+  restoreMutate = vi.fn()
+  useRestoreTransactionMutationMock.mockReturnValue({
+    mutate: restoreMutate,
     isPending: false,
   })
 })
@@ -165,6 +177,36 @@ describe('TransactionsTable — Amount cell', () => {
 
     expect(updateMutate).not.toHaveBeenCalled()
     expect(screen.getByText('−100.00')).toBeTruthy()
+  })
+})
+
+describe('TransactionsTable — archive confirmation', () => {
+  it('does not archive when the trash icon is clicked without confirming', () => {
+    render(<TransactionsTable />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive transaction' }))
+
+    expect(archiveMutate).not.toHaveBeenCalled()
+    expect(screen.getByText('Move to Archive?')).toBeTruthy()
+  })
+
+  it('archives only after the dialog is confirmed', () => {
+    render(<TransactionsTable />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move to Archive' }))
+
+    expect(archiveMutate).toHaveBeenCalledWith('tx-1')
+  })
+
+  it('does not archive when the dialog is cancelled', () => {
+    render(<TransactionsTable />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Archive transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(archiveMutate).not.toHaveBeenCalled()
+    expect(screen.queryByText('Move to Archive?')).toBeNull()
   })
 })
 

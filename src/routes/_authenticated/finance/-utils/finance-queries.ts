@@ -14,10 +14,14 @@ import { DEFAULT_CATEGORY_CONFIGS } from './finance-utils'
 
 import type {
   AggregateRow,
+  ArchivedTransactionRow,
   FinanceCategoryRow,
   TransactionRow,
 } from '../-types/finance-api'
 import type {
+  ArchivedTransaction,
+  ArchivedTransactionsPage,
+  ArchivedTransactionsParams,
   CityFilter,
   TransactionPage,
   TransactionQueryParams,
@@ -37,6 +41,13 @@ export const FINANCE_KEYS = {
   aggregate: ['finance', 'aggregate'] as const,
   transactions: (params: TransactionQueryParams) =>
     ['finance', 'transactions', params] as const,
+  // Archive keys share the `'archive'` root with notes' equivalents (see
+  // `NOTES_KEYS` in `notes-queries.ts`) so a single
+  // `invalidateQueries({ queryKey: ['archive'] })` refreshes both `/archive`
+  // tabs regardless of which feature's mutation triggered it.
+  archiveList: (params: ArchivedTransactionsParams) =>
+    ['archive', 'transactions', 'list', params] as const,
+  archiveCount: ['archive', 'transactions', 'count'] as const,
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +106,23 @@ function transformTransaction(
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
+}
+
+function transformArchivedTransaction(
+  row: ArchivedTransactionRow,
+  categories: FinanceCategory[],
+): ArchivedTransaction {
+  return {
+    ...transformTransaction(row, categories),
+    deletedAt: row.deleted_at,
+  }
+}
+
+/** Restricts a select to live (non-archived) rows. Every live read goes through this. */
+function liveOnly<T extends { is: (column: string, value: boolean | null) => T }>(
+  query: T,
+): T {
+  return query.is('deleted_at', null)
 }
 
 // ---------------------------------------------------------------------------
@@ -156,11 +184,13 @@ export function useFinanceAggregateQuery() {
     queryFn: async (): Promise<AggregateRow[]> => {
       const supabase = getSupabaseBrowserClient()
 
-      const { data, error } = await supabase
-        .from('finance_transactions')
-        .select(
-          'amount, type, date, category_id, location_city, location_country',
-        )
+      const { data, error } = await liveOnly(
+        supabase
+          .from('finance_transactions')
+          .select(
+            'amount, type, date, category_id, location_city, location_country',
+          ),
+      )
 
       if (error) throw error
       return data
@@ -214,12 +244,14 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
       const from = params.page * params.pageSize
       const to = from + params.pageSize - 1
 
-      let q = supabase
-        .from('finance_transactions')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .order('date', { ascending: false })
-        .range(from, to)
+      let q = liveOnly(
+        supabase
+          .from('finance_transactions')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .order('date', { ascending: false })
+          .range(from, to),
+      )
 
       if (params.dateFrom) q = q.gte('date', startOfDayIso(params.dateFrom))
       if (params.dateTo) q = q.lte('date', endOfDayIso(params.dateTo))
@@ -252,6 +284,59 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
       return { data: transactions, count: count ?? 0 }
     },
     placeholderData: keepPreviousData,
+    staleTime: 30 * 1000,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// 4. Archive — paginated archived-transactions list + tab count for `/archive`
+// ---------------------------------------------------------------------------
+
+export function useArchivedTransactionsQuery(
+  params: ArchivedTransactionsParams,
+) {
+  return useQuery({
+    queryKey: FINANCE_KEYS.archiveList(params),
+    queryFn: async (): Promise<ArchivedTransactionsPage> => {
+      const supabase = getSupabaseBrowserClient()
+      const from = params.page * params.pageSize
+      const to = from + params.pageSize - 1
+
+      const { data, count, error } = await supabase
+        .from('finance_transactions')
+        .select('*', { count: 'exact' })
+        .not('deleted_at', 'is', null)
+        .order('deleted_at', { ascending: false })
+        .range(from, to)
+
+      if (error) throw error
+
+      const categories = useFinanceStore.getState().categories
+      const rows = data as ArchivedTransactionRow[]
+      const transactions = rows.map((row) =>
+        transformArchivedTransaction(row, categories),
+      )
+
+      return { data: transactions, count: count ?? 0 }
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 30 * 1000,
+  })
+}
+
+export function useArchivedTransactionsCountQuery() {
+  return useQuery({
+    queryKey: FINANCE_KEYS.archiveCount,
+    queryFn: async (): Promise<number> => {
+      const supabase = getSupabaseBrowserClient()
+      const { count, error } = await supabase
+        .from('finance_transactions')
+        .select('id', { count: 'exact', head: true })
+        .not('deleted_at', 'is', null)
+
+      if (error) throw error
+      return count ?? 0
+    },
     staleTime: 30 * 1000,
   })
 }
@@ -361,7 +446,71 @@ export function useUpdateTransactionMutation() {
   })
 }
 
-export function useDeleteTransactionMutation() {
+function invalidateAllAndArchive(
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  invalidateAll(queryClient)
+  queryClient.invalidateQueries({ queryKey: ['archive'] })
+}
+
+/**
+ * Soft-deletes a transaction — the delete button. Renamed from the old
+ * `useDeleteTransactionMutation`: it no longer hard-deletes, so keeping a
+ * `useDelete*` name here would be misleading. The `.is('deleted_at', null)`
+ * guard means archiving an already-archived transaction (a double-click, or
+ * a second tab) matches zero rows instead of resetting the 30-day clock.
+ */
+export function useArchiveTransactionMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase
+        .from('finance_transactions')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', id)
+        .is('deleted_at', null)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      invalidateAllAndArchive(queryClient)
+    },
+    onError: () => {
+      toast.error('Failed to archive transaction.')
+    },
+  })
+}
+
+/** Brings an archived transaction back to every live view — the archive's Restore action, and the Undo action on the archive toast. */
+export function useRestoreTransactionMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = getSupabaseBrowserClient()
+      const { error } = await supabase
+        .from('finance_transactions')
+        .update({ deleted_at: null })
+        .eq('id', id)
+        .not('deleted_at', 'is', null)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      invalidateAllAndArchive(queryClient)
+    },
+    onError: () => {
+      toast.error('Failed to restore transaction.')
+    },
+  })
+}
+
+/**
+ * Permanently deletes an archived transaction — only reachable from
+ * `/archive`. The `.not('deleted_at', 'is', null)` guard means this can
+ * never match a live row, even if a caller somehow passed one's id.
+ */
+export function usePurgeTransactionMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -371,10 +520,11 @@ export function useDeleteTransactionMutation() {
         .from('finance_transactions')
         .delete()
         .eq('id', id)
+        .not('deleted_at', 'is', null)
       if (error) throw error
     },
     onSuccess: () => {
-      invalidateAll(queryClient)
+      queryClient.invalidateQueries({ queryKey: ['archive'] })
     },
     onError: () => {
       toast.error('Failed to delete transaction.')

@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [Unreleased]
+
+### Added
+
+- Archive: notes and transactions are now soft-deleted instead of destroyed.
+  Deleting either moves it to a new `/archive` page (tabs for Second Brain
+  and Finance), where it can be restored with one click or permanently
+  deleted. Archived items are purged automatically after 30 days.
+- Confirmation before archiving a transaction — this action previously had
+  no confirmation at all. Deleting a note or a transaction now shows the
+  same confirm dialog, followed by a toast with an Undo action.
+- Archived notes and transactions are now also reachable without leaving
+  the feature: an Archive button in the Second Brain list header opens a
+  side panel of archived notes, and Finance gets a third "Archive" tab
+  alongside Chart and Table. Both mirror `/archive`'s Restore and Delete
+  permanently actions.
+
+### Changed
+
+- Notes and finance queries now exclude archived rows everywhere (list,
+  detail, search, tag counts, `[[link]]` targets, charts, stat cards) — an
+  archived item behaves like it no longer exists until restored.
+- Finance: the Chart/Table/Archive tab strip now stays visible whenever
+  there are archived transactions, even with an empty live ledger, so the
+  Archive tab is never one archive-everything action away from vanishing.
+  The filter bar and stat cards hide while the Archive tab is active, since
+  neither applies to it.
+
 ## [0.0.3] - 2026-08-14
 
 ### Added
