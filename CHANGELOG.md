@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [0.0.5] - 2026-08-21
+
+### Added
+
+- Second Brain: an outline rail for the open note, listing its H1–H3
+  headings and letting you jump straight to any section. It collapses to a
+  narrow tick gutter below a wide viewport (or when you hide it yourself —
+  that choice is remembered), and to a floating button in the bottom-right
+  corner on mobile.
+
+### Changed
+
+- Second Brain's layout no longer grows with your tag count. The list
+  pane's search, filters, sort, and favourites now live behind a single
+  filter button with an active-count badge instead of a wrapping row of tag
+  chips; a note's tags moved out of the editor toolbar and into its byline,
+  next to the edited time and a new word count, rendered as plain `#tag`
+  text you can click to filter the list; and Undo, Redo, Lock, and Archive
+  moved into an overflow menu so the header stays a single fixed row at
+  every tag count and viewport width. The note itself now reads in a
+  centered, readable column instead of stretching full-pane width.
+
+### Fixed
+
+- Second Brain: "Clear all" in the notes filter popover and active-filter
+  chip bar no longer silently restores the tag filters it was supposed to
+  clear.
+
 ## [0.0.4] - 2026-08-15
 
 ### Added
