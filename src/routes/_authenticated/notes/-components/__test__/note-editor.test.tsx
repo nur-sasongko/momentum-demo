@@ -19,24 +19,38 @@ import type { ReactElement } from 'react'
 import type { Note } from '#/stores/notes-store'
 
 let latestOnChange: ((content: JSONContent) => void) | null = null
+let latestOnBlur: (() => void) | null = null
 
 vi.mock('../tiptap-editor', () => ({
   TiptapEditor: ({
     content,
     onChange,
     onReady,
+    onBlur,
   }: {
     content: JSONContent
     onChange: (content: JSONContent) => void
     onReady?: (content: JSONContent) => void
+    onBlur?: () => void
   }) => {
     useEffect(() => {
       onReady?.(content)
       // Mirrors `onCreate` firing exactly once per real editor instance.
     }, [])
     latestOnChange = onChange
+    latestOnBlur = onBlur ?? null
     return <div data-testid="tiptap-editor-stub" />
   },
+}))
+
+// jsdom has no `matchMedia`; `NoteOutline` / `NoteOutlineMobileMenu` read it
+// via `useIsMobile` / `useIsWide` even when they render nothing, so stub the
+// hooks rather than jsdom.
+vi.mock('#/hooks/use-mobile', () => ({
+  useIsMobile: () => false,
+}))
+vi.mock('#/hooks/use-is-wide', () => ({
+  useIsWide: () => true,
 }))
 
 vi.mock('../../-utils/notes-queries', () => ({
@@ -104,6 +118,33 @@ const BODY_EDIT: JSONContent = {
   ],
 }
 
+const HEADING_ONLY: JSONContent = {
+  type: 'doc',
+  content: [
+    {
+      type: 'heading',
+      attrs: { level: 1 },
+      content: [{ type: 'text', text: 'Intro' }],
+    },
+  ],
+}
+
+const HEADING_WITH_NEW_SECTION: JSONContent = {
+  type: 'doc',
+  content: [
+    {
+      type: 'heading',
+      attrs: { level: 1 },
+      content: [{ type: 'text', text: 'Intro' }],
+    },
+    {
+      type: 'heading',
+      attrs: { level: 2 },
+      content: [{ type: 'text', text: 'Setup' }],
+    },
+  ],
+}
+
 interface MutateOptions {
   onSuccess?: () => void
   onError?: () => void
@@ -136,12 +177,46 @@ function lastSaveOptions() {
   return contentMutateCalls[contentMutateCalls.length - 1]?.options
 }
 
-function headerText(): string {
-  return screen.getByText(/Last edited/).textContent
+function bylineMetaText(): string {
+  return screen.getByText(/^Edited /).textContent
+}
+
+function bylineStatusText(): string | null {
+  return screen.queryByTestId('note-byline-status')?.textContent ?? null
+}
+
+function openOverflowMenu() {
+  fireEvent.click(screen.getByLabelText('More actions'))
+}
+
+function openArchiveConfirm() {
+  openOverflowMenu()
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Move to Archive' }))
 }
 
 beforeEach(() => {
+  // jsdom has neither. `showHeaderTitle`'s effect constructs an
+  // `IntersectionObserver`; `TruncatedText` (the outline rail's labels, and
+  // the header title once it renders) constructs a `ResizeObserver`.
+  vi.stubGlobal(
+    'IntersectionObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
+
   latestOnChange = null
+  latestOnBlur = null
   contentMutateCalls = []
 
   contentMutate = vi.fn((input: unknown, options?: MutateOptions) => {
@@ -177,6 +252,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks()
+  vi.unstubAllGlobals()
 })
 
 describe('NoteEditor — no phantom writes on open', () => {
@@ -281,7 +357,7 @@ describe('NoteEditor — save triggers', () => {
     renderNoteEditor(<NoteEditor note={note} />)
 
     typeTitle('Hello')
-    fireEvent.click(screen.getByLabelText('Archive note'))
+    openArchiveConfirm()
 
     const dialogContent = document.querySelector(
       '[data-slot="alert-dialog-content"]',
@@ -401,7 +477,7 @@ describe('NoteEditor — archive', () => {
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
 
-    fireEvent.click(screen.getByLabelText('Archive note'))
+    openArchiveConfirm()
 
     expect(archiveMutate).not.toHaveBeenCalled()
     expect(screen.getByText('Move to Archive?')).toBeTruthy()
@@ -411,7 +487,7 @@ describe('NoteEditor — archive', () => {
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
 
-    fireEvent.click(screen.getByLabelText('Archive note'))
+    openArchiveConfirm()
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(archiveMutate).not.toHaveBeenCalled()
@@ -440,7 +516,7 @@ describe('NoteEditor — archive', () => {
       })
     })
 
-    fireEvent.click(screen.getByLabelText('Archive note'))
+    openArchiveConfirm()
     fireEvent.click(screen.getByRole('button', { name: 'Move to Archive' }))
 
     expect(archiveMutate).toHaveBeenCalledWith('note-2')
@@ -454,26 +530,35 @@ describe('NoteEditor — save state UI', () => {
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
 
-    expect(headerText()).not.toContain('Unsaved changes')
+    expect(bylineStatusText()).toBeNull()
 
     typeTitle('Hello')
-    expect(headerText()).toContain('Unsaved changes')
+    expect(bylineStatusText()).toBe('Unsaved changes')
 
     pressSaveShortcut()
-    expect(headerText()).toContain('Saving…')
+    expect(bylineStatusText()).toBe('Saving…')
 
     act(() => {
       lastSaveOptions()?.onSuccess?.()
     })
-    expect(headerText()).toContain('Saved')
+    expect(bylineStatusText()).toBe('Saved')
 
     act(() => {
       vi.advanceTimersByTime(2000)
     })
-    expect(headerText()).not.toContain('Saved')
-    expect(headerText()).not.toContain('Unsaved changes')
+    expect(bylineStatusText()).toBeNull()
 
     vi.useRealTimers()
+  })
+
+  it('the byline metadata text never changes as the save status changes next to it', () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    const before = bylineMetaText()
+    typeTitle('Hello')
+
+    expect(bylineMetaText()).toBe(before)
   })
 
   it('the save bar is absent on mount, appears after typing, and unmounts after a successful save', () => {
@@ -541,5 +626,40 @@ describe('NoteEditor — save state UI', () => {
       name: 'Save',
     })
     expect(saveButton.disabled).toBe(false)
+  })
+})
+
+describe('NoteEditor — outline recompute timing', () => {
+  it('does not update the rendered outline while typing, only on blur', () => {
+    const note = makeNote({ content: HEADING_ONLY })
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    expect(screen.getByText('Intro')).toBeTruthy()
+    expect(screen.queryByText('Setup')).toBeNull()
+
+    act(() => {
+      latestOnChange?.(HEADING_WITH_NEW_SECTION)
+    })
+    expect(screen.queryByText('Setup')).toBeNull()
+
+    act(() => {
+      latestOnBlur?.()
+    })
+    expect(screen.getByText('Setup')).toBeTruthy()
+  })
+
+  it('recomputes the outline on blur without triggering a save', () => {
+    const note = makeNote({ content: HEADING_ONLY })
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    act(() => {
+      latestOnChange?.(HEADING_WITH_NEW_SECTION)
+    })
+    act(() => {
+      latestOnBlur?.()
+    })
+
+    expect(screen.getByText('Setup')).toBeTruthy()
+    expect(contentMutate).not.toHaveBeenCalled()
   })
 })

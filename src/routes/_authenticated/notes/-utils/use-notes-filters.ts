@@ -108,6 +108,10 @@ export function useNotesFilters() {
     [apply],
   )
 
+  const clearAllFilters = useCallback(() => {
+    apply({ tags: [], untagged: false, fav: false })
+  }, [apply])
+
   const setSortBy = useCallback(
     (sort: NotesSortBy) => {
       apply({ sort })
@@ -130,6 +134,7 @@ export function useNotesFilters() {
     setTagFilterMode,
     setUntaggedOnly,
     setFavoritesOnly,
+    clearAllFilters,
     setSortBy,
   }
 }

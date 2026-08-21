@@ -2,10 +2,10 @@ import type { Editor, JSONContent } from '@tiptap/core'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft,
+  EllipsisVertical,
   Lock,
   Redo2,
   Star,
-  Tag,
   Trash2,
   Undo2,
   Unlock,
@@ -15,24 +15,38 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { ConfirmDialog } from '#/components/confirm-dialog'
+import { TruncatedText } from '#/components/truncated-text'
 import { Button } from '#/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
 import { UnsavedChangesBar } from '#/components/unsaved-changes-bar'
 import { useBeforeUnloadGuard } from '#/hooks/use-beforeunload-guard'
 import { cn } from '#/libs/utils'
-import { formatTimeSince } from '#/utils/date'
-import { noteContentToPlainText } from '../-utils/notes-utils'
-import { TagInput } from '#/routes/_authenticated/notes/-components/tag-input'
+import { getRedoShortcutLabel, getUndoShortcutLabel } from '#/utils/platform'
+import { countWords, noteContentToPlainText } from '../-utils/notes-utils'
+import { NoteByline } from '#/routes/_authenticated/notes/-components/note-byline'
+import {
+  NoteOutline,
+  NoteOutlineMobileMenu,
+} from '#/routes/_authenticated/notes/-components/note-outline'
 import { TiptapEditor } from '#/routes/_authenticated/notes/-components/tiptap-editor'
 import type { NotesListPage } from '#/routes/_authenticated/notes/-types/notes-query'
+import { extractOutline } from '#/routes/_authenticated/notes/-utils/note-outline'
 import {
   NOTES_KEYS,
   useArchiveNoteMutation,
-  useNoteTagsQuery,
   useNotesListParams,
   useRestoreNoteMutation,
   useUpdateNoteContentMutation,
   useUpdateNoteMetaMutation,
 } from '#/routes/_authenticated/notes/-utils/notes-queries'
+import { useNoteOutline } from '#/routes/_authenticated/notes/-utils/use-note-outline'
 import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 import type { Note } from '#/stores/notes-store'
 
@@ -53,10 +67,14 @@ function draftsEqual(a: Draft, b: Draft): boolean {
   )
 }
 
+function computeWordCount(content: JSONContent): number {
+  return countWords(noteContentToPlainText(content))
+}
+
 // Portals owned by the editor (slash menu, `[[` link menu, table context
-// menu) render outside the pane's DOM subtree, and the archive confirm
-// dialog is a Radix portal too — blurring into any of them must not read as
-// "left the pane".
+// menu, the tag picker, the overflow menu, the mobile outline FAB) render
+// outside the pane's DOM subtree, and the archive confirm dialog is a Radix
+// portal too — blurring into any of them must not read as "left the pane".
 const EDITOR_PORTAL_SELECTOR =
   '[data-note-editor-portal], [data-slot="alert-dialog-content"]'
 
@@ -69,8 +87,6 @@ function isWithinEditorSurface(pane: HTMLElement, target: Node): boolean {
 
 export function NoteEditor({ note, onBack }: NoteEditorProps) {
   const { selectNote } = useNotesFilters()
-  const tagsQuery = useNoteTagsQuery()
-  const tagSuggestions = (tagsQuery.data ?? []).map((t) => t.tag)
 
   const queryClient = useQueryClient()
   const listParams = useNotesListParams()
@@ -82,12 +98,23 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const editorRef = useRef<Editor | null>(null)
+  // The outline's scroll-spy needs the editor as reactive state, not a ref
+  // read during render — see the comment on `onEditorChange` in
+  // `tiptap-editor.tsx`.
+  const [liveEditor, setLiveEditor] = useState<Editor | null>(null)
   const paneRef = useRef<HTMLElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>(
     'idle',
   )
+  const [entries, setEntries] = useState(() => extractOutline(note.content))
+  const [wordCount, setWordCount] = useState(() =>
+    computeWordCount(note.content),
+  )
+  const [showHeaderTitle, setShowHeaderTitle] = useState(false)
 
   const [draft, setDraft] = useState<Draft>({
     title: note.title,
@@ -108,12 +135,39 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
 
   const isDirty = !note.isReadOnly && !draftsEqual(draft, savedSnapshot)
 
+  const outline = useNoteOutline(entries, scrollRef, liveEditor)
+
   // Baseline both the draft and the saved snapshot against the editor's own
   // post-init JSON, so ProseMirror's parse-time attribute defaults are never
   // mistaken for an edit.
   const handleEditorReady = useCallback((content: JSONContent) => {
     setDraft((d) => ({ ...d, content }))
     setSavedSnapshot((s) => ({ ...s, content }))
+    setEntries(extractOutline(content))
+    setWordCount(computeWordCount(content))
+  }, [])
+
+  // The outline and word count recompute on blur and on save, never per
+  // keystroke — typing `## ` would otherwise make the rail grow and the
+  // byline reflow on every character.
+  const handleEditorBlur = useCallback(() => {
+    setEntries(extractOutline(draftRef.current.content))
+    setWordCount(computeWordCount(draftRef.current.content))
+  }, [])
+
+  // The header shows the note title once its own `<h1>`-equivalent (the
+  // title field) scrolls out of the pane's scroll root, so the reader keeps
+  // their bearings deep in a long note without a data-dependent header.
+  useEffect(() => {
+    const root = scrollRef.current
+    const target = titleRef.current
+    if (!root || !target) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowHeaderTitle(!entry.isIntersecting),
+      { root, threshold: 0 },
+    )
+    observer.observe(target)
+    return () => observer.disconnect()
   }, [])
 
   const flush = useCallback(
@@ -142,6 +196,8 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
             inFlightRef.current = null
             setSavedSnapshot(current)
             setSaveState('saved')
+            setEntries(extractOutline(current.content))
+            setWordCount(computeWordCount(current.content))
             window.setTimeout(() => {
               setSaveState((s) => (s === 'saved' ? 'idle' : s))
             }, 2000)
@@ -265,15 +321,6 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
     updateMeta.mutate({ id: note.id, patch: { tags } })
   }
 
-  const saveIndicator =
-    saveState === 'saving'
-      ? ' · Saving…'
-      : saveState === 'saved'
-        ? ' · Saved'
-        : isDirty
-          ? ' · Unsaved changes'
-          : ''
-
   const showSaveBar = !note.isReadOnly && (isDirty || saveState === 'saving')
 
   return (
@@ -283,26 +330,24 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
       onKeyDown={handlePaneKeyDown}
       className="relative flex min-w-0 flex-1 flex-col"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-3 md:px-6">
-        <div className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3 md:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {onBack ? (
             <Button
               variant="ghost"
               size="icon-sm"
               onClick={onBack}
               aria-label="Back to notes"
-              className="text-muted-foreground"
+              className="shrink-0 text-muted-foreground"
             >
               <ChevronLeft className="size-4" />
             </Button>
           ) : null}
-          <Tag className="size-4 shrink-0" />
-          <TagInput
-            value={note.tags}
-            onChange={handleTagsChange}
-            suggestions={tagSuggestions}
-            disabled={note.isReadOnly}
-          />
+          {showHeaderTitle ? (
+            <TruncatedText className="truncate text-sm font-medium text-foreground">
+              {draft.title || 'Untitled'}
+            </TruncatedText>
+          ) : null}
           {note.isReadOnly ? (
             <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
               Read-only
@@ -310,27 +355,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           ) : null}
         </div>
 
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            disabled={undoDisabled}
-            onClick={() => editorRef.current?.chain().focus().undo().run()}
-            aria-label="Undo"
-            className="text-muted-foreground"
-          >
-            <Undo2 className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            disabled={redoDisabled}
-            onClick={() => editorRef.current?.chain().focus().redo().run()}
-            aria-label="Redo"
-            className="text-muted-foreground"
-          >
-            <Redo2 className="size-4" />
-          </Button>
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -346,69 +371,121 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           >
             <Star className={cn('size-4', note.isFavorite && 'fill-current')} />
           </Button>
-          <Button
-            variant={note.isReadOnly ? 'secondary' : 'ghost'}
-            size="icon-sm"
-            onClick={handleToggleReadOnly}
-            aria-label={note.isReadOnly ? 'Unlock note' : 'Lock note'}
-            className="text-muted-foreground"
-          >
-            {note.isReadOnly ? (
-              <Lock className="size-4" />
-            ) : (
-              <Unlock className="size-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setConfirmOpen(true)}
-            aria-label="Archive note"
-            className="text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="More actions"
+                className="text-muted-foreground"
+              >
+                <EllipsisVertical className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" data-note-editor-portal="">
+              <DropdownMenuItem
+                disabled={undoDisabled}
+                onClick={() => editorRef.current?.chain().focus().undo().run()}
+              >
+                <Undo2 />
+                Undo
+                <DropdownMenuShortcut>
+                  {getUndoShortcutLabel()}
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={redoDisabled}
+                onClick={() => editorRef.current?.chain().focus().redo().run()}
+              >
+                <Redo2 />
+                Redo
+                <DropdownMenuShortcut>
+                  {getRedoShortcutLabel()}
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleToggleReadOnly}>
+                {note.isReadOnly ? <Lock /> : <Unlock />}
+                {note.isReadOnly ? 'Unlock note' : 'Lock note'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 />
+                Move to Archive
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      <div
-        className={cn(
-          'flex flex-1 flex-col overflow-y-auto px-6 py-5',
-          showSaveBar && 'pb-20',
-        )}
-      >
-        <input
-          type="text"
-          value={draft.title}
-          readOnly={note.isReadOnly}
-          onChange={(event) =>
-            setDraft((d) => ({ ...d, title: event.target.value }))
-          }
-          placeholder="Untitled"
+      <div className="flex min-h-0 flex-1">
+        <div
+          ref={scrollRef}
           className={cn(
-            'w-full border-0 bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground',
-            note.isReadOnly && 'cursor-default',
+            'flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5',
+            showSaveBar && 'pb-20',
           )}
-          aria-label="Note title"
-        />
-        <p className="mt-1 text-xs text-muted-foreground">
-          Last edited{' '}
-          <span className="tabular">{formatTimeSince(note.updatedAt)}</span> ago
-          {saveIndicator}
-        </p>
+        >
+          <div className="mx-auto w-full max-w-[44rem]">
+            <input
+              ref={titleRef}
+              type="text"
+              value={draft.title}
+              readOnly={note.isReadOnly}
+              onChange={(event) =>
+                setDraft((d) => ({ ...d, title: event.target.value }))
+              }
+              placeholder="Untitled"
+              className={cn(
+                'w-full border-0 bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground',
+                note.isReadOnly && 'cursor-default',
+              )}
+              aria-label="Note title"
+            />
 
-        <div className="mt-6 flex-1">
-          <TiptapEditor
-            key={note.id}
-            noteId={note.id}
-            content={draft.content}
-            isReadOnly={note.isReadOnly}
-            editorRef={editorRef}
-            onHistoryChange={handleHistoryChange}
-            onChange={(content) => setDraft((d) => ({ ...d, content }))}
-            onReady={handleEditorReady}
-          />
+            <NoteByline
+              note={note}
+              wordCount={wordCount}
+              saveState={saveState}
+              isDirty={isDirty}
+              onTagsChange={handleTagsChange}
+            />
+
+            <div className="mt-6">
+              <TiptapEditor
+                key={note.id}
+                noteId={note.id}
+                content={draft.content}
+                isReadOnly={note.isReadOnly}
+                editorRef={editorRef}
+                onEditorChange={setLiveEditor}
+                onHistoryChange={handleHistoryChange}
+                onChange={(content) => setDraft((d) => ({ ...d, content }))}
+                onReady={handleEditorReady}
+                onBlur={handleEditorBlur}
+              />
+            </div>
+          </div>
         </div>
+
+        <NoteOutline
+          entries={entries}
+          activeIndex={outline.activeIndex}
+          progress={outline.progress}
+          isReadOnly={note.isReadOnly}
+          onSelect={outline.scrollTo}
+        />
+        <NoteOutlineMobileMenu
+          entries={entries}
+          activeIndex={outline.activeIndex}
+          progress={outline.progress}
+          isReadOnly={note.isReadOnly}
+          isRaised={showSaveBar}
+          onSelect={outline.scrollTo}
+        />
       </div>
 
       <ConfirmDialog

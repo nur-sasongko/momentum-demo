@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   endOfDayIso,
   formatDateTimeLabel,
+  formatExactTimestamp,
   formatMonthLabel,
+  formatShortDate,
   formatTimeSince,
   formatTodayDate,
   formatTransactionDate,
@@ -252,5 +254,48 @@ describe('formatTimeSince', () => {
         new Date(FIXED_DATE.getTime() - 5 * 60_000).toISOString(),
       ),
     ).not.toContain('ago')
+  })
+})
+
+describe('formatShortDate', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(FIXED_DATE)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('omits the year within the current year', () => {
+    const date = new Date(2026, 7, 12, 9, 0, 0)
+    expect(formatShortDate(date.toISOString())).toBe('Aug 12')
+  })
+
+  it('includes the year when it differs from the current year', () => {
+    const date = new Date(2025, 7, 12, 9, 0, 0)
+    expect(formatShortDate(date.toISOString())).toBe('Aug 12, 2025')
+  })
+
+  it('reads the year as of Jan 1, not Dec 31 of the prior year', () => {
+    vi.setSystemTime(new Date(2027, 0, 1, 0, 0, 0))
+    const date = new Date(2026, 11, 31, 23, 0, 0)
+    expect(formatShortDate(date.toISOString())).toBe('Dec 31, 2026')
+  })
+})
+
+describe('formatExactTimestamp', () => {
+  it('renders a full, unambiguous timestamp', () => {
+    const date = new Date(2026, 7, 12, 9, 41, 0)
+    expect(formatExactTimestamp(date.toISOString())).toBe(
+      'Aug 12, 2026  9:41 AM',
+    )
+  })
+
+  it('renders an afternoon timestamp in 12-hour form', () => {
+    const date = new Date(2026, 7, 12, 14, 3, 0)
+    expect(formatExactTimestamp(date.toISOString())).toBe(
+      'Aug 12, 2026  2:03 PM',
+    )
   })
 })

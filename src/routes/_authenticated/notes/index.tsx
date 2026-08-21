@@ -89,21 +89,23 @@ function NotesPage() {
   }
 
   if (listQuery.isPending) {
-    return <div className="route-fade-in h-[calc(100dvh-3.5rem)]" />
+    return (
+      <div className="route-fade-in h-[calc(100svh-var(--topbar-height))]" />
+    )
   }
 
   const isLibraryEmpty = linkTargetsQuery.data?.length === 0
 
   if (isLibraryEmpty) {
     return (
-      <div className="route-fade-in flex h-[calc(100dvh-3.5rem)] overflow-hidden">
+      <div className="route-fade-in flex h-[calc(100svh-var(--topbar-height))] overflow-hidden">
         <NotesEmptyState />
       </div>
     )
   }
 
   return (
-    <div className="route-fade-in flex h-[calc(100dvh-3.5rem)] overflow-hidden">
+    <div className="route-fade-in flex h-[calc(100svh-var(--topbar-height))] overflow-hidden">
       {(!isMobile || mobileView === 'list') && (
         <NoteList onNoteSelect={handleNoteSelect} />
       )}

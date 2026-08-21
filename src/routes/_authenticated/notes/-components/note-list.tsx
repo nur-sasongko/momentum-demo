@@ -1,40 +1,37 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Archive, Plus, Search, Settings2, Star } from 'lucide-react'
+import { Archive, Plus, Search, Settings2, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
+import { useIsClipped } from '#/components/truncated-text'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '#/components/ui/select'
 import { Skeleton } from '#/components/ui/skeleton'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 import { useDebouncedValue } from '#/hooks/use-debounced-value'
-import { cn } from '#/libs/utils'
 import { ArchivedNotesSheet } from '#/routes/_authenticated/notes/-components/archived-notes-sheet'
 import { NoteListItem } from '#/routes/_authenticated/notes/-components/note-list-item'
+import { NotesFilterPopover } from '#/routes/_authenticated/notes/-components/notes-filter-popover'
 import { TagManagerDialog } from '#/routes/_authenticated/notes/-components/tag-manager-dialog'
 import {
   buildEmptyNote,
   seedOptimisticNote,
   useArchivedNotesCountQuery,
   useCreateNoteMutation,
-  useNoteTagsQuery,
   useNotesListParams,
   useNotesListQuery,
 } from '#/routes/_authenticated/notes/-utils/notes-queries'
-import type {
-  NotesSortBy,
-  TagFilterMode,
-} from '#/routes/_authenticated/notes/-utils/notes-route-search'
 import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
+
+const VISIBLE_ACTIVE_FILTERS = 3
 
 function NoteListItemSkeleton() {
   return (
-    <div className="w-full border-b border-border px-4 py-3">
+    <div className="mx-2 px-3 py-2.5">
       <div className="flex items-start justify-between gap-2">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-3 w-10 shrink-0" />
@@ -45,11 +42,51 @@ function NoteListItemSkeleton() {
   )
 }
 
-const SORT_LABELS: Record<NotesSortBy, string> = {
-  'updated-desc': 'Last updated',
-  'created-desc': 'Recently created',
-  'title-asc': 'Title A–Z',
-  'title-desc': 'Title Z–A',
+/**
+ * The token itself is the tooltip's trigger (not just the truncated label
+ * inside it), so a keyboard user tabbing onto it — not just a mouse hovering
+ * it — sees the peek. Armed only when the label is actually clipped, per
+ * `025`'s "Truncated text peeks with a tooltip, not a `title`" amendment.
+ */
+function ActiveFilterTokenButton({
+  label,
+  onRemove,
+}: {
+  label: string
+  onRemove: () => void
+}) {
+  const labelRef = useRef<HTMLSpanElement>(null)
+  const isClipped = useIsClipped(labelRef)
+
+  const button = (
+    <button
+      type="button"
+      onClick={onRemove}
+      className="inline-flex min-w-0 max-w-32 shrink items-center gap-1 truncate rounded-full bg-muted px-2 py-0.5 text-muted-foreground hover:text-foreground"
+    >
+      <span ref={labelRef} className="truncate">
+        {label}
+      </span>
+      <X className="size-3 shrink-0" />
+    </button>
+  )
+
+  if (!isClipped) return button
+
+  return (
+    <TooltipProvider delayDuration={500}>
+      <Tooltip>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent aria-hidden="true">{label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+interface ActiveFilterToken {
+  key: string
+  label: string
+  onRemove: () => void
 }
 
 interface NoteListProps {
@@ -62,17 +99,13 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
     selectNote,
     searchQuery,
     activeTags,
-    tagFilterMode,
     untaggedOnly,
     favoritesOnly,
-    sortBy,
     setSearch,
-    setActiveTags,
     toggleActiveTag,
-    setTagFilterMode,
     setUntaggedOnly,
     setFavoritesOnly,
-    setSortBy,
+    clearAllFilters,
   } = useNotesFilters()
 
   const [inputValue, setInputValue] = useState(searchQuery)
@@ -85,7 +118,6 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
   const createNote = useCreateNoteMutation()
   const params = useNotesListParams()
   const listQuery = useNotesListQuery(params)
-  const tagsQuery = useNoteTagsQuery()
   const archivedCountQuery = useArchivedNotesCountQuery()
 
   useEffect(() => {
@@ -110,7 +142,6 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const notes = listQuery.data?.pages.flatMap((page) => page.data) ?? []
-  const tags = tagsQuery.data ?? []
   const selectedNote = notes.find((n) => n.id === selectedId)
   const isNewNoteActive =
     selectedNote?.title === 'Untitled' && selectedNote.excerpt === ''
@@ -124,167 +155,87 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
     onNoteSelect?.()
   }
 
-  const handleClearAll = () => {
-    setActiveTags([])
-    setUntaggedOnly(false)
-  }
-
-  const chipClass = (active: boolean) =>
-    cn(
-      'rounded-full px-3 py-1 text-xs font-medium transition-colors',
-      active
-        ? 'bg-primary text-primary-foreground'
-        : 'border border-border text-muted-foreground hover:text-foreground',
-    )
-
-  const allActive = activeTags.length === 0 && !untaggedOnly
-  const showAndOr = activeTags.length >= 2
+  const tokens: ActiveFilterToken[] = [
+    ...activeTags.map((tag) => ({
+      key: `tag:${tag}`,
+      label: `#${tag}`,
+      onRemove: () => toggleActiveTag(tag),
+    })),
+    ...(untaggedOnly
+      ? [
+          {
+            key: 'untagged',
+            label: 'Untagged',
+            onRemove: () => setUntaggedOnly(false),
+          },
+        ]
+      : []),
+    ...(favoritesOnly
+      ? [
+          {
+            key: 'favorites',
+            label: 'Favourites',
+            onRemove: () => setFavoritesOnly(false),
+          },
+        ]
+      : []),
+  ]
+  const visibleTokens = tokens.slice(0, VISIBLE_ACTIVE_FILTERS)
+  const overflowCount = tokens.length - visibleTokens.length
 
   return (
-    <aside className="flex w-full shrink-0 flex-col border-r border-border bg-card/30 md:w-80">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold tracking-tight">Second Brain</h2>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setArchiveOpen(true)}
-            aria-label="Archived notes"
-            className="h-8 gap-1 px-2 text-muted-foreground hover:text-foreground"
-          >
-            <Archive className="size-4" />
-            {archivedCountQuery.data ? (
-              <span className="text-xs tabular">{archivedCountQuery.data}</span>
-            ) : null}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleCreate}
-            aria-label="New note"
-            disabled={isNewNoteActive}
-          >
-            <Plus className="size-4" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-3 border-b border-border px-4 py-3">
-        <div className="relative">
+    <aside className="flex w-full shrink-0 flex-col border-r border-border bg-sidebar md:w-80">
+      <div className="flex items-center gap-1.5 border-b border-border px-3 py-2 max-h-12">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
-            placeholder="Search notes..."
+            placeholder="Search notes…"
             className="pl-9"
             aria-label="Search notes"
           />
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={handleClearAll}
-            className={chipClass(allActive)}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            onClick={() => setUntaggedOnly(!untaggedOnly)}
-            className={chipClass(untaggedOnly)}
-          >
-            Untagged
-          </button>
-          {tags.map(({ tag }) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => toggleActiveTag(tag)}
-              className={chipClass(
-                activeTags.some((t) => t.toLowerCase() === tag.toLowerCase()),
-              )}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {showAndOr ? (
-            <div
-              role="group"
-              aria-label="Tag filter mode"
-              className="inline-flex overflow-hidden rounded-md border border-border text-xs"
-            >
-              {(['OR', 'AND'] as TagFilterMode[]).map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setTagFilterMode(mode)}
-                  aria-pressed={tagFilterMode === mode}
-                  className={cn(
-                    'px-2 py-1 transition-colors',
-                    tagFilterMode === mode
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setFavoritesOnly(!favoritesOnly)}
-            aria-label={
-              favoritesOnly ? 'Show all notes' : 'Show favorites only'
-            }
-            aria-pressed={favoritesOnly}
-            className={cn(
-              'text-muted-foreground',
-              favoritesOnly && 'text-favorite hover:text-favorite',
-            )}
-          >
-            <Star className={cn('size-4', favoritesOnly && 'fill-current')} />
-          </Button>
-
-          <Select
-            value={sortBy}
-            onValueChange={(value) => setSortBy(value as NotesSortBy)}
-          >
-            <SelectTrigger
-              size="sm"
-              className="ml-auto h-8 text-xs"
-              aria-label="Sort notes"
-            >
-              <SelectValue placeholder="Sort" />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(SORT_LABELS) as NotesSortBy[]).map((key) => (
-                <SelectItem key={key} value={key} className="text-xs">
-                  {SORT_LABELS[key]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setManagerOpen(true)}
-            aria-label="Manage tags"
-            className="text-muted-foreground"
-          >
-            <Settings2 className="size-4" />
-          </Button>
-        </div>
+        <NotesFilterPopover />
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={handleCreate}
+          aria-label="New note"
+          disabled={isNewNoteActive}
+          className="shrink-0 text-muted-foreground"
+        >
+          <Plus className="size-4" />
+        </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      {tokens.length > 0 ? (
+        <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs">
+          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+            {visibleTokens.map((token) => (
+              <ActiveFilterTokenButton
+                key={token.key}
+                label={token.label}
+                onRemove={token.onRemove}
+              />
+            ))}
+            {overflowCount > 0 ? (
+              <span className="shrink-0 text-muted-foreground">
+                +{overflowCount}
+              </span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+          >
+            Clear all
+          </button>
+        </div>
+      ) : null}
+
+      <div className="flex-1 overflow-y-auto py-1">
         {isInitialLoading ? (
           Array.from({ length: 5 }, (_, i) => <NoteListItemSkeleton key={i} />)
         ) : notes.length === 0 ? (
@@ -309,6 +260,32 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
               : null}
           </>
         )}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1 border-t border-border px-2 py-1.5">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setArchiveOpen(true)}
+          className="gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Archive className="size-3.5" />
+          <span>
+            Archive
+            {archivedCountQuery.data ? (
+              <span className="tabular"> ({archivedCountQuery.data})</span>
+            ) : null}
+          </span>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setManagerOpen(true)}
+          className="ml-auto gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Settings2 className="size-3.5" />
+          Tags
+        </Button>
       </div>
 
       <TagManagerDialog open={managerOpen} onOpenChange={setManagerOpen} />

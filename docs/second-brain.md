@@ -27,8 +27,28 @@ Related architecture: `docs/architecture/feature-slices.md`.
 
 ## Current UX at `/notes`
 
-- **Left pane**: search, tag chips, scrollable note list (with lock icon on read-only notes).
-- **Right pane**: inline title, read-only badge when locked, lock/unlock + archive actions, Tiptap body editor.
+Layout is fixed-height chrome around scrolling content — see
+[`docs/specs/025-notes-workspace-layout.md`](specs/025-notes-workspace-layout.md) for the full
+rationale and [`docs/specs/024-notes-table-of-contents.md`](specs/024-notes-table-of-contents.md)
+for the outline.
+
+- **Left pane**: one search/filter/new-note row, an optional active-filter summary row, the
+  scrollable note list (with lock icon on read-only notes, tags as one line of `#tag` text, no
+  per-row border), and a fixed footer (Archive, Manage tags). Tag filtering, match mode
+  (`Any`/`All`), favourites-only, untagged-only, and sort all live in the `NotesFilterPopover`
+  behind the search bar's filter trigger, which shows a count badge — the full tag vocabulary
+  never renders inline. Selected/hovered rows use the sidebar surface tokens
+  (`--sidebar-active`/`--sidebar-accent`), not a brand-colored wash.
+- **Right pane**: a fixed one-row header (back button on mobile, the note title once it scrolls
+  out of view, a read-only badge, favourite, and an overflow menu for Undo/Redo/Lock/Archive);
+  title, byline, and Tiptap body share a `max-w-[44rem]` centered column. The byline
+  (`note-byline.tsx`) is the note's metadata line — edited time, word count, save status, and the
+  note's own tags as `#tag` text with a `＋` picker to edit them. Clicking a tag on the byline adds
+  it to the list's active filter without leaving the note.
+- **Mobile outline**: below `md`, the table-of-contents trigger is a floating action button
+  (bottom-right, matching `TaskAddFab`'s geometry) rather than a header icon — see
+  [`024`](specs/024-notes-table-of-contents.md#the-mobile-trigger-is-a-floating-action-button-not-a-header-icon).
+  It lifts from `bottom-6` to `bottom-24` while the unsaved-changes bar is visible.
 - **Empty state**: CTA to create the first note when the library is empty.
 - **Delete flow**: soft delete, not destructive. Confirmation dialog ("Move to Archive?") sets
   `deleted_at`, advances selection to the next note, and shows a toast (`Note archived`) with an
@@ -43,8 +63,12 @@ Related architecture: `docs/architecture/feature-slices.md`.
 - Route entry: `src/routes/_authenticated/notes/index.tsx`
 - List pane: `src/routes/_authenticated/notes/-components/note-list.tsx`
 - List row: `src/routes/_authenticated/notes/-components/note-list-item.tsx`
+- Filter popover: `src/routes/_authenticated/notes/-components/notes-filter-popover.tsx`
+- Shared tag picker (list filter + note byline): `src/routes/_authenticated/notes/-components/tag-picker.tsx`
 - Editor shell: `src/routes/_authenticated/notes/-components/note-editor.tsx`
-- Save-state bar: `src/routes/_authenticated/notes/-components/unsaved-changes-bar.tsx`
+- Note metadata line (tags, edited time, word count, save status): `src/routes/_authenticated/notes/-components/note-byline.tsx`
+- Table of contents rail/FAB: `src/routes/_authenticated/notes/-components/note-outline.tsx`
+- Save-state bar: `src/components/unsaved-changes-bar.tsx`
 - Empty state: `src/routes/_authenticated/notes/-components/notes-empty-state.tsx`
 
 ### Store and utilities
@@ -80,9 +104,11 @@ Related architecture: `docs/architecture/feature-slices.md`.
 
 `createFileRoute('/_authenticated/notes/')` is defined in `src/routes/_authenticated/notes/index.tsx`, with a `loader` that prefetches the first list page and tags.
 
-- Full-height split container (`h-[calc(100dvh-3.5rem)]`) below the shared top bar.
+- Full-height split container (`h-[calc(100svh-var(--topbar-height))]`, small viewport height so
+  mobile Safari's chrome-hiding scroll doesn't resize the panes) below the shared top bar.
 - Left pane: fixed width (`w-80`), scrollable.
-- Right pane: flexible; hosts `NoteEditor` + `TiptapEditor`.
+- Right pane: flexible; hosts `NoteEditor` + `TiptapEditor`, both capped at `max-w-[44rem]` and
+  centered for a readable prose measure.
 - If there are no notes, the route renders `NotesEmptyState`.
 
 ## Data model
@@ -160,8 +186,11 @@ full design.
 
 ## Search, tags, and sorting
 
-Search, tag filtering (AND/OR/untagged), favorites, and sorting are all resolved server-side by
-`useNotesListQuery` — the client never filters a local array. Helpers:
+Search, tag filtering (`AND`/`OR` internally — shown to the user as `All`/`Any` — plus untagged),
+favorites, and sorting are all resolved server-side by `useNotesListQuery` — the client never
+filters a local array. Every one of those controls lives in `NotesFilterPopover`
+(`-components/notes-filter-popover.tsx`), reachable from the search bar's filter trigger, which
+carries a count badge for the number of active filters. Helpers:
 
 - `buildNotesTsQuery(search)` (`notes-search.ts`) — builds the Postgres full-text prefix query fed
   to `.textSearch('search_vector', ...)`.
@@ -169,10 +198,14 @@ Search, tag filtering (AND/OR/untagged), favorites, and sorting are all resolved
   tag's casing.
 - `getExcerpt(plainText)` — truncates plain text for list rows (the server already computes
   `excerpt`; this is only used where a fresh plain-text string is on hand).
-- `formatRelativeTime(iso)` — "Last edited X ago" in the editor header.
+- `countWords(plainText)` (`notes-utils.ts`) — word count shown in the note byline.
+- `formatTimeAgo(iso)` (`#/utils/date`) — the complete "Edited 2h ago" / "Edited just now" phrase
+  used in the byline; `formatTimeSince(iso)` returns the bare duration used in list rows.
 
-Tag chips (`useNoteTagsQuery`) and tag rename/delete (`TagManagerDialog`) are fully editable from
-the UI.
+`TagPicker` (`-components/tag-picker.tsx`) is the one searchable, scrollable, count-annotated tag
+list backing both `NotesFilterPopover` (`allowCreate={false}`) and the note byline's `＋` tag editor
+(`allowCreate`), so filtering and tagging a note go through the same component. Tag rename/delete
+stays in `TagManagerDialog`, reachable from the list pane's footer.
 
 ## Editor architecture (Tiptap)
 
@@ -264,7 +297,7 @@ Styling in `src/styles.css`: fixed layout, `min-width: 80px`, header row backgro
 
 ## Read-only mode
 
-Each note can be locked manually from the editor header (lock icon).
+Each note can be locked manually from the editor header's overflow menu (`Lock note` / `Unlock note`).
 
 When `isReadOnly` is true:
 
@@ -272,7 +305,9 @@ When `isReadOnly` is true:
 - Tiptap `editable` is false; content updates are not saved
 - Slash menu, bubble menus, table context menu, and code language menu are not mounted
 - List shows a lock icon; header shows a "Read-only" badge
-- Toggle again to unlock; state persists in `localStorage`
+- The byline's `＋` tag-editing trigger is hidden; tags still render as plain `#tag` text and are
+  still clickable to filter the list
+- Toggle again to unlock; state persists in the database (`isReadOnly` on the note row)
 
 Use this when a note is finished and should be read without accidental edits.
 

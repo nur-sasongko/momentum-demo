@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NoteListItem } from '../note-list-item'
 
@@ -8,6 +8,22 @@ import type { NoteSummary } from '#/stores/notes-store'
 vi.mock('../../-utils/use-notes-filters', () => ({
   useNotesFilters: () => ({ selectNote: vi.fn() }),
 }))
+
+// jsdom has no `ResizeObserver`; `TruncatedText` (title, tag run) needs one.
+beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 function makeSummary(overrides: Partial<NoteSummary> = {}): NoteSummary {
   return {
@@ -33,11 +49,10 @@ describe('NoteListItem', () => {
     ).toBeTruthy()
   })
 
-  it('renders tag chips from the summary', () => {
+  it('renders tags from the summary as one line of #tag text', () => {
     render(<NoteListItem note={makeSummary()} isActive={false} />)
 
-    expect(screen.getByText('#Work')).toBeTruthy()
-    expect(screen.getByText('#Ideas')).toBeTruthy()
+    expect(screen.getByText('#Work #Ideas')).toBeTruthy()
   })
 
   it('shows the lock icon for a read-only note', () => {

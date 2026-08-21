@@ -222,6 +222,54 @@ export function formatTimeSince(isoDate: string): string {
 }
 
 /**
+ * Returns how long ago an ISO date/datetime string was, as a complete
+ * phrase — `"just now"` or `"5 minutes ago"` — never a dangling `"just now
+ * ago"`.
+ *
+ * @param isoDate - ISO date/datetime string in the past.
+ * @returns A phrase such as `"just now"`, `"5 minutes ago"`, or `"2 days ago"`.
+ *
+ * @example
+ * formatTimeAgo("2026-05-30T12:00:00.000Z") // "5 minutes ago"
+ */
+export function formatTimeAgo(isoDate: string): string {
+  const since = formatTimeSince(isoDate)
+  return since === 'just now' ? since : `${since} ago`
+}
+
+/**
+ * Formats an ISO date/datetime string as a short absolute date, omitting
+ * the year within the current year and appending it otherwise.
+ *
+ * @param isoDate - ISO date/datetime string.
+ * @returns A label such as `"Aug 12"` or `"Aug 12, 2025"`.
+ *
+ * @example
+ * formatShortDate("2026-08-12T09:41:00.000Z") // "Aug 12" (in 2026)
+ * formatShortDate("2025-08-12T09:41:00.000Z") // "Aug 12, 2025"
+ */
+export function formatShortDate(isoDate: string): string {
+  const date = new Date(isoDate)
+  const isCurrentYear = date.getFullYear() === new Date().getFullYear()
+  return format(date, isCurrentYear ? 'MMM d' : 'MMM d, yyyy')
+}
+
+/**
+ * Formats an ISO date/datetime string as a full, unambiguous timestamp for
+ * a tooltip that peeks the exact instant behind a relative or abbreviated
+ * label.
+ *
+ * @param isoDate - ISO date/datetime string.
+ * @returns A label such as `"Aug 12, 2026  9:41 AM"`.
+ *
+ * @example
+ * formatExactTimestamp("2026-08-12T09:41:00.000Z") // "Aug 12, 2026  9:41 AM"
+ */
+export function formatExactTimestamp(isoDate: string): string {
+  return format(new Date(isoDate), 'MMM d, yyyy  h:mm a')
+}
+
+/**
  * Returns the end of the local day for a date key, for use as an inclusive
  * upper bound when comparing against timestamps that may carry time-of-day.
  *
