@@ -20,6 +20,12 @@ export function getExcerpt(plainText: string, maxLength = 120): string {
   return `${plain.slice(0, maxLength).trim()}…`
 }
 
+export function countWords(plainText: string): number {
+  const trimmed = plainText.trim()
+  if (!trimmed) return 0
+  return trimmed.split(/\s+/).length
+}
+
 export function isEmptyDoc(content: JSONContent): boolean {
   const nodes = content.content ?? []
   if (nodes.length === 0) return true

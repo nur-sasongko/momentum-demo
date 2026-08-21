@@ -60,11 +60,11 @@ function mockNotesFilters(overrides: Record<string, unknown> = {}) {
     sortBy: 'updated-desc',
     selectNote: vi.fn(),
     setSearch: vi.fn(),
-    setActiveTags: vi.fn(),
     toggleActiveTag: vi.fn(),
     setTagFilterMode: vi.fn(),
     setUntaggedOnly: vi.fn(),
     setFavoritesOnly: vi.fn(),
+    clearAllFilters: vi.fn(),
     setSortBy: vi.fn(),
     ...overrides,
   } as unknown as ReturnType<typeof useNotesFilters>)
@@ -78,6 +78,15 @@ class IntersectionObserverStub {
 
 beforeEach(() => {
   vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
+  // `ActiveFilterTokenButton` uses `useIsClipped`, which needs one.
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
   mockNotesFilters()
 
   vi.mocked(useNotesListParams).mockReturnValue(
@@ -162,8 +171,8 @@ describe('NoteList', () => {
 
     renderNoteList()
 
-    const button = screen.getByRole('button', { name: 'Archived notes' })
-    expect(button.textContent).toBe('')
+    const button = screen.getByRole('button', { name: 'Archive' })
+    expect(button.textContent).toBe('Archive')
   })
 
   it('shows the archived count on the Archive button', () => {
@@ -182,8 +191,8 @@ describe('NoteList', () => {
     renderNoteList()
 
     expect(
-      screen.getByRole('button', { name: 'Archived notes' }).textContent,
-    ).toBe('3')
+      screen.getByRole('button', { name: 'Archive (3)' }).textContent,
+    ).toBe('Archive (3)')
   })
 
   it('opens the archived notes sheet when the Archive button is clicked', () => {
@@ -199,7 +208,25 @@ describe('NoteList', () => {
     renderNoteList()
 
     expect(screen.queryByText('Archived notes')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Archived notes' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Archive' }))
     expect(screen.getByText('Archived notes')).toBeTruthy()
+  })
+
+  it('Clear all calls clearAllFilters', () => {
+    const clearAllFilters = vi.fn()
+    mockNotesFilters({ activeTags: ['spec'], clearAllFilters })
+    vi.mocked(useNotesListQuery).mockReturnValue({
+      data: { pages: [{ data: [] }] },
+      isPending: false,
+      isFetching: false,
+      isFetchingNextPage: false,
+      hasNextPage: false,
+      fetchNextPage: vi.fn(),
+    } as unknown as ReturnType<typeof useNotesListQuery>)
+
+    renderNoteList()
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }))
+
+    expect(clearAllFilters).toHaveBeenCalledOnce()
   })
 })

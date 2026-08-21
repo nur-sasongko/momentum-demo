@@ -42,7 +42,7 @@
   --chart-4: oklch(0.48 0.14 340);
   --chart-5: oklch(0.49 0.14 145);
   --radius: 0.625rem;
-  --topbar-height: 3rem;
+  --topbar-height: 3.5rem;
   --sidebar: oklch(0.962 0.008 82);
   --sidebar-foreground: oklch(0.28 0.012 75);
   --sidebar-primary: oklch(0.52 0.17 285);
@@ -203,6 +203,10 @@ gmp-place-autocomplete::part(input) {
     height: 2.25rem;
     font-size: 0.875rem;
   }
+
+  :root {
+    --topbar-height: 3rem;
+  }
 }
 
 .dark gmp-place-autocomplete::part(input) {
@@ -302,6 +306,7 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
 
 .note-tiptap :where(h1, h2, h3, h4) {
   @apply text-foreground;
+  scroll-margin-top: 1.5rem;
 }
 
 .note-tiptap :where(p, ul, ol, blockquote, pre, hr) {

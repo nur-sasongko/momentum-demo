@@ -15,7 +15,9 @@ interface TiptapEditorProps {
   content: JSONContent
   onChange: (content: JSONContent) => void
   onReady?: (content: JSONContent) => void
+  onBlur?: () => void
   editorRef?: RefObject<Editor | null>
+  onEditorChange?: (editor: Editor | null) => void
   onHistoryChange?: (canUndo: boolean, canRedo: boolean) => void
   isReadOnly?: boolean
   className?: string
@@ -26,7 +28,9 @@ export function TiptapEditor({
   content,
   onChange,
   onReady,
+  onBlur,
   editorRef,
+  onEditorChange,
   onHistoryChange,
   isReadOnly = false,
   className,
@@ -68,20 +72,31 @@ export function TiptapEditor({
       onCreate: ({ editor: currentEditor }) => {
         onReady?.(currentEditor.getJSON())
       },
+      onBlur: () => {
+        onBlur?.()
+      },
     },
     [noteId],
   )
 
+  // `editorRef` alone can't drive reactive consumers (e.g. the outline's
+  // scroll-spy) — mutating a ref never triggers a re-render of whoever
+  // reads it, so a parent that reads `editorRef.current` during its own
+  // render permanently sees the pre-mount `null` unless something unrelated
+  // happens to re-render it later. `onEditorChange` gives those consumers a
+  // real state update instead.
   useEffect(() => {
     if (editorRef) {
       editorRef.current = editor
     }
+    onEditorChange?.(editor)
     return () => {
       if (editorRef) {
         editorRef.current = null
       }
+      onEditorChange?.(null)
     }
-  }, [editor, editorRef])
+  }, [editor, editorRef, onEditorChange])
 
   useEffect(() => {
     if (editor === null || onHistoryChange === undefined) {

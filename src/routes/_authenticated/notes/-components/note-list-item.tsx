@@ -1,5 +1,6 @@
 import { Lock, Star } from 'lucide-react'
 
+import { TruncatedText } from '#/components/truncated-text'
 import { cn } from '#/libs/utils'
 import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 import { formatTimeSince } from '#/utils/date'
@@ -17,13 +18,15 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
   return (
     <button
       type="button"
+      data-active={isActive}
       onClick={() => {
         selectNote(note.id)
         onSelect?.()
       }}
       className={cn(
-        'w-full border-b border-border px-4 py-3 text-left transition-colors',
-        isActive ? 'bg-primary/10' : 'hover:bg-muted/50',
+        'mx-2 flex w-[calc(100%-1rem)] flex-col rounded-md px-3 py-2.5 text-left transition-colors',
+        'not-data-[active=true]:hover:bg-sidebar-accent',
+        'data-[active=true]:bg-sidebar-active data-[active=true]:shadow-xs data-[active=true]:ring-1 data-[active=true]:ring-sidebar-border dark:data-[active=true]:shadow-none dark:data-[active=true]:ring-0',
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -40,9 +43,15 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
               aria-label="Favorited"
             />
           ) : null}
-          <h3 className="line-clamp-1 text-sm font-semibold text-foreground">
+          <TruncatedText
+            as="h3"
+            className={cn(
+              'line-clamp-1 text-sm font-semibold',
+              isActive ? 'text-sidebar-active-foreground' : 'text-foreground',
+            )}
+          >
             {note.title || 'Untitled'}
-          </h3>
+          </TruncatedText>
         </div>
         <span className="tabular shrink-0 text-xs text-muted-foreground">
           {formatTimeSince(note.updatedAt)}
@@ -52,13 +61,12 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
         {note.excerpt || 'No content yet'}
       </p>
       {note.tags.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1">
-          {[...new Set(note.tags)].map((tag) => (
-            <span key={tag} className="text-xs text-primary">
-              #{tag}
-            </span>
-          ))}
-        </div>
+        <TruncatedText
+          as="p"
+          className="mt-2 line-clamp-1 text-xs text-primary"
+        >
+          {[...new Set(note.tags)].map((tag) => `#${tag}`).join(' ')}
+        </TruncatedText>
       )}
     </button>
   )

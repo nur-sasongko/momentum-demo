@@ -4,6 +4,8 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                                                                 | Feature | Status      | Created    |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- | ----------- | ---------- |
+| 25  | [Second Brain Workspace Layout: Chrome That Does Not Grow](./025-notes-workspace-layout.md)                                          | notes   | in-progress | 2026-08-21 |
+| 24  | [Note Outline: A Proportional Table of Contents for Second Brain](./024-notes-table-of-contents.md)                                  | notes   | in-progress | 2026-08-20 |
 | 23  | [In-Feature Archive Views: Archived Notes in Second Brain, Archived Transactions in Finance](./023-core-in-feature-archive-views.md) | core    | in-progress | 2026-08-15 |
 | 22  | [Archive: Soft Delete, Restore & 30-Day Auto-Purge for Notes and Transactions](./022-core-archive-soft-delete.md)                    | core    | in-progress | 2026-08-15 |
 | 21  | [Data Table Refinement: Layout Stability, Density, Sticky Header & Optional Column Resizing](./021-core-data-table-refinement.md)    | core    | done        | 2026-08-13 |
