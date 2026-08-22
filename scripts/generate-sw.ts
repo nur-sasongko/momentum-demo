@@ -37,7 +37,7 @@ async function generateServiceWorker() {
       swSrc: tempSwPath,
       swDest: resolve(distDir, 'sw.js'),
       globDirectory: distDir,
-      globPatterns: ['**/*.{js,css,ico,png,svg,woff2,webmanifest}'],
+      globPatterns: ['**/*.{js,css,ico,png,svg,woff2,ttf,webmanifest}'],
       globIgnores: ['sw-src.js', 'sw.js'],
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
     })

@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [Unreleased]
+
+### Added
+
+- Second Brain: export the open note as a PDF from the editor's overflow
+  menu. Text stays selectable and searchable — headings, lists, task
+  checkboxes, tables, code blocks, callouts, and images are real PDF
+  content, not a screenshot of the page. Unsaved changes are saved first
+  (with confirmation) so the file always matches what's in the database.
+
 ## [0.0.5] - 2026-08-21
 
 ### Added

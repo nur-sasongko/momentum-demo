@@ -2,7 +2,9 @@ import type { Editor, JSONContent } from '@tiptap/core'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft,
+  Download,
   EllipsisVertical,
+  Loader2,
   Lock,
   Redo2,
   Star,
@@ -37,6 +39,7 @@ import {
 } from '#/routes/_authenticated/notes/-components/note-outline'
 import { TiptapEditor } from '#/routes/_authenticated/notes/-components/tiptap-editor'
 import type { NotesListPage } from '#/routes/_authenticated/notes/-types/notes-query'
+import { exportNoteToPdf } from '#/routes/_authenticated/notes/-utils/export-note-pdf'
 import { extractOutline } from '#/routes/_authenticated/notes/-utils/note-outline'
 import {
   NOTES_KEYS,
@@ -97,6 +100,8 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
   const restoreNote = useRestoreNoteMutation()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [exportConfirmOpen, setExportConfirmOpen] = useState(false)
+  const [exportPending, setExportPending] = useState(false)
   const editorRef = useRef<Editor | null>(null)
   // The outline's scroll-spy needs the editor as reactive state, not a ref
   // read during render — see the comment on `onEditorChange` in
@@ -131,7 +136,12 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
   savedSnapshotRef.current = savedSnapshot
 
   const inFlightRef = useRef<Draft | null>(null)
+  const inFlightPromiseRef = useRef<Promise<boolean> | null>(null)
   const deletedRef = useRef(false)
+  // The freshest known `updated_at`, updated synchronously from the save
+  // mutation's own response — the `note` prop lags behind by a render, so it
+  // cannot be trusted for a timestamp read immediately after `await flush()`.
+  const lastSavedAtRef = useRef(note.updatedAt)
 
   const isDirty = !note.isReadOnly && !draftsEqual(draft, savedSnapshot)
 
@@ -170,12 +180,18 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
     return () => observer.disconnect()
   }, [])
 
+  // Resolves to `true` once `current` is confirmed saved (including "was
+  // already saved"), or `false` on a real failure — never rejects, so callers
+  // that need to know whether it's safe to proceed (export's save gate) can
+  // `await` it directly instead of racing `onSuccess`/`onError`.
   const flush = useCallback(
-    (current: Draft) => {
-      if (deletedRef.current) return
-      if (draftsEqual(current, savedSnapshotRef.current)) return
+    (current: Draft): Promise<boolean> => {
+      if (deletedRef.current) return Promise.resolve(false)
+      if (draftsEqual(current, savedSnapshotRef.current)) {
+        return Promise.resolve(true)
+      }
       if (inFlightRef.current && draftsEqual(current, inFlightRef.current)) {
-        return
+        return inFlightPromiseRef.current ?? Promise.resolve(true)
       }
 
       inFlightRef.current = current
@@ -184,39 +200,42 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         .replace(/\s+/g, ' ')
         .trim()
 
-      updateContent.mutate(
-        {
+      const promise = updateContent
+        .mutateAsync({
           id: note.id,
           title: current.title,
           content: current.content,
           plainText,
-        },
-        {
-          onSuccess: () => {
-            inFlightRef.current = null
-            setSavedSnapshot(current)
-            setSaveState('saved')
-            setEntries(extractOutline(current.content))
-            setWordCount(computeWordCount(current.content))
-            window.setTimeout(() => {
-              setSaveState((s) => (s === 'saved' ? 'idle' : s))
-            }, 2000)
-            if (!draftsEqual(draftRef.current, current)) {
-              flush(draftRef.current)
-            }
-          },
-          onError: () => {
-            inFlightRef.current = null
-            setSaveState('idle')
-          },
-        },
-      )
+        })
+        .then((row) => {
+          inFlightRef.current = null
+          lastSavedAtRef.current = row.updated_at
+          setSavedSnapshot(current)
+          setSaveState('saved')
+          setEntries(extractOutline(current.content))
+          setWordCount(computeWordCount(current.content))
+          window.setTimeout(() => {
+            setSaveState((s) => (s === 'saved' ? 'idle' : s))
+          }, 2000)
+          if (!draftsEqual(draftRef.current, current)) {
+            void flush(draftRef.current)
+          }
+          return true
+        })
+        .catch(() => {
+          inFlightRef.current = null
+          setSaveState('idle')
+          return false
+        })
+
+      inFlightPromiseRef.current = promise
+      return promise
     },
     [note.id, updateContent],
   )
 
   const handleSaveClick = () => {
-    flush(draftRef.current)
+    void flush(draftRef.current)
     editorRef.current?.commands.focus()
   }
 
@@ -230,7 +249,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         !(relatedTarget instanceof Node) ||
         !isWithinEditorSurface(pane, relatedTarget)
       ) {
-        flush(draftRef.current)
+        void flush(draftRef.current)
       }
       return
     }
@@ -241,7 +260,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
     window.setTimeout(() => {
       const active = document.activeElement
       if (active && isWithinEditorSurface(pane, active)) return
-      flush(draftRef.current)
+      void flush(draftRef.current)
     }, 0)
   }
 
@@ -250,7 +269,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
       (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's'
     if (!isSaveShortcut) return
     event.preventDefault()
-    flush(draftRef.current)
+    void flush(draftRef.current)
   }
 
   useBeforeUnloadGuard(isDirty)
@@ -258,10 +277,10 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
   // Flush a pending save when switching notes, unmounting, or the tab is
   // closing — never lose the last few keystrokes.
   useEffect(() => {
-    const handlePageHide = () => flush(draftRef.current)
+    const handlePageHide = () => void flush(draftRef.current)
     window.addEventListener('pagehide', handlePageHide)
     return () => {
-      flush(draftRef.current)
+      void flush(draftRef.current)
       window.removeEventListener('pagehide', handlePageHide)
     }
     // Keyed only to `note.id` — cleanup must fire exactly on note switch or
@@ -319,6 +338,56 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
 
   const handleTagsChange = (tags: string[]) => {
     updateMeta.mutate({ id: note.id, patch: { tags } })
+  }
+
+  const runExport = useCallback(
+    async (exported: Draft) => {
+      setExportPending(true)
+      const toastId = toast.loading('Building PDF…')
+      try {
+        const result = await exportNoteToPdf({
+          title: exported.title,
+          tags: note.tags,
+          content: exported.content,
+          updatedAt: lastSavedAtRef.current,
+        })
+        const suffix =
+          result.skipped.length > 0
+            ? ` · ${result.skipped.length} item${result.skipped.length === 1 ? '' : 's'} could not be embedded`
+            : result.usedFallbackFonts
+              ? ' · used fallback fonts'
+              : ''
+        toast.success(`Exported ${result.filename}${suffix}`, { id: toastId })
+      } catch (error) {
+        toast.error("Couldn't build the PDF", {
+          id: toastId,
+          description: error instanceof Error ? error.message : undefined,
+        })
+      } finally {
+        setExportPending(false)
+      }
+    },
+    [note.tags],
+  )
+
+  const handleExportClick = () => {
+    if (exportPending) return
+    if (!isDirty) {
+      void runExport(draftRef.current)
+      return
+    }
+    setExportConfirmOpen(true)
+  }
+
+  const handleConfirmSaveAndExport = async () => {
+    setExportConfirmOpen(false)
+    const draftToExport = draftRef.current
+    const saved = await flush(draftToExport)
+    if (!saved) {
+      toast.error("Couldn't save the note — nothing was exported")
+      return
+    }
+    void runExport(draftToExport)
   }
 
   const showSaveBar = !note.isReadOnly && (isDirty || saveState === 'saving')
@@ -402,6 +471,18 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
                 <DropdownMenuShortcut>
                   {getRedoShortcutLabel()}
                 </DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={exportPending}
+                onClick={handleExportClick}
+              >
+                {exportPending ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Download />
+                )}
+                Export as PDF
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleToggleReadOnly}>
@@ -495,6 +576,15 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
         title="Move to Archive?"
         description={`"${note.title || 'Untitled'}" will be moved to the Archive and permanently deleted after 30 days.`}
         confirmLabel="Move to Archive"
+      />
+
+      <ConfirmDialog
+        open={exportConfirmOpen}
+        onOpenChange={setExportConfirmOpen}
+        onConfirm={() => void handleConfirmSaveAndExport()}
+        title="Save before exporting?"
+        description="This note has unsaved changes. They'll be saved first so the PDF matches your note."
+        confirmLabel="Save & export"
       />
 
       {showSaveBar ? (

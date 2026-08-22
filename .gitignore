@@ -17,3 +17,6 @@ coverage
 
 # eslint cache
 .cache/
+
+# temp folders
+temp
