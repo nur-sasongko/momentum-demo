@@ -469,38 +469,38 @@ embedded"). An export that quietly drops content is worse than one that admits i
 
 **The export itself**
 
-- [ ] Given a note is open and saved, when the user picks **Export as PDF** from the
+- [x] Given a note is open and saved, when the user picks **Export as PDF** from the
       editor overflow menu, then a `.pdf` downloads with no intermediate dialog.
-- [ ] Given the exported PDF is opened in a text-extracting tool (or `pdftotext`),
+- [x] Given the exported PDF is opened in a text-extracting tool (or `pdftotext`),
       when its text is extracted, then the note's headings, paragraphs, list items,
       table cells, and code appear as text — confirming no page was rasterized.
-- [ ] Given any export, when the resulting PDF's page box is inspected (viewer
+- [x] Given any export, when the resulting PDF's page box is inspected (viewer
       document properties, or `pdfinfo`), then every page reports **A4 portrait —
       595 × 842 pt / 210 × 297 mm**.
-- [ ] Given the exported PDF is printed on A4 paper at 100% scale (no "fit to
+- [x] Given the exported PDF is printed on A4 paper at 100% scale (no "fit to
       page"), then nothing is clipped and no scaling prompt appears.
-- [ ] Given a note titled "Compounding attention", when exported on 2026-08-22,
+- [x] Given a note titled "Compounding attention", when exported on 2026-08-22,
       then the file is named `compounding-attention-2026-08-22.pdf`.
-- [ ] Given page 1 of the export, then it opens on the note's title with a byline of
+- [x] Given page 1 of the export, then it opens on the note's title with a byline of
       its tags and edited date — no cover page, no table of contents.
 
 **The save gate**
 
-- [ ] Given the open note has **no** unsaved changes, when the user exports, then no
+- [x] Given the open note has **no** unsaved changes, when the user exports, then no
       confirm dialog appears and no write is sent to the database.
-- [ ] Given the open note **has** unsaved changes, when the user exports, then a
+- [x] Given the open note **has** unsaved changes, when the user exports, then a
       confirm dialog asks to save before exporting, and no file is produced until it
       is confirmed.
-- [ ] Given that dialog, when the user confirms, then the note is saved first and the
+- [x] Given that dialog, when the user confirms, then the note is saved first and the
       PDF reflects the saved content — including the just-saved edit.
-- [ ] Given that dialog, when the user cancels, then nothing is saved, nothing is
+- [x] Given that dialog, when the user cancels, then nothing is saved, nothing is
       downloaded, and the note stays dirty with the `UnsavedChangesBar` still shown.
-- [ ] Given the save fails (offline write rejected, RLS error), when the export was
+- [x] Given the save fails (offline write rejected, RLS error), when the export was
       confirmed, then an error toast explains it and **no PDF is produced**.
-- [ ] Given a read-only (locked) note, when the user exports, then no confirm dialog
+- [x] Given a read-only (locked) note, when the user exports, then no confirm dialog
       appears (a locked note cannot be dirty) and the PDF is identical to the
       unlocked case — the lock is an editing constraint, not a print one.
-- [ ] Given an export is already running, when the user picks the menu item again,
+- [x] Given an export is already running, when the user picks the menu item again,
       then it is disabled and no second file is produced.
 
 **Content fidelity**
