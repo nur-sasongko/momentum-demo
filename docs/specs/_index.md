@@ -4,6 +4,7 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                                                                 | Feature | Status      | Created    |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- | ----------- | ---------- |
+| 26  | [Export a Note to PDF: Real Text, Not Screenshots](./026-notes-pdf-export.md)                                                        | notes   | in-progress | 2026-08-22 |
 | 25  | [Second Brain Workspace Layout: Chrome That Does Not Grow](./025-notes-workspace-layout.md)                                          | notes   | in-progress | 2026-08-21 |
 | 24  | [Note Outline: A Proportional Table of Contents for Second Brain](./024-notes-table-of-contents.md)                                  | notes   | in-progress | 2026-08-20 |
 | 23  | [In-Feature Archive Views: Archived Notes in Second Brain, Archived Transactions in Finance](./023-core-in-feature-archive-views.md) | core    | in-progress | 2026-08-15 |

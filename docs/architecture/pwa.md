@@ -22,6 +22,14 @@ Related architecture docs:
 3. `scripts/generate-sw.ts` compiles `src/sw.ts` and injects precache assets.
 4. `dist/sw.js` is produced for browser registration.
 
+`generate-sw.ts`'s `globPatterns` (`js,css,ico,png,svg,woff2,ttf,webmanifest`)
+decides what's in the precache — anything not listed is missing offline on a cold
+cache. `ttf` was added for `public/fonts/pdf/` (Second Brain's PDF export — see
+[`docs/second-brain.md`](../second-brain.md#export)): those fonts are fetched by
+URL at export time rather than bundled into JS, so without this glob, exporting a
+PDF while offline would silently fall back to standard-14 fonts instead of the
+app's own Inter/IBM Plex Mono.
+
 ## Source of truth
 
 - PWA plugin config: `vite.config.ts`

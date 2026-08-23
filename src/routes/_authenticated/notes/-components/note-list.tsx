@@ -273,7 +273,16 @@ export function NoteList({ onNoteSelect }: NoteListProps) {
           <span>
             Archive
             {archivedCountQuery.data ? (
-              <span className="tabular"> ({archivedCountQuery.data})</span>
+              // The space has to be its own text node rather than the
+              // leading character inside the nested `<span>` below — the
+              // accessible-name computation trims each element's own text
+              // before concatenating, so a leading space inside the nested
+              // span is discarded and the name reads "Archive(3)" with no
+              // separating space for screen reader users.
+              <>
+                {' '}
+                <span className="tabular">({archivedCountQuery.data})</span>
+              </>
             ) : null}
           </span>
         </Button>

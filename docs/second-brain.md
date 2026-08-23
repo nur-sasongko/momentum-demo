@@ -311,6 +311,43 @@ When `isReadOnly` is true:
 
 Use this when a note is finished and should be read without accidental edits.
 
+## Export
+
+The editor's overflow menu (`note-editor.tsx`) has an **Export as PDF** item that
+downloads the open note as a real, selectable-text A4 PDF — no rasterization. See
+[`docs/specs/026-notes-pdf-export.md`](specs/026-notes-pdf-export.md) for the full
+design; summary of the source of truth:
+
+- `-utils/tiptap-to-pdf.ts` — pure ProseMirror JSON → pdfmake content transform. No
+  DOM, no pdfmake import. Headings, lists, task checkboxes (drawn as vector
+  `canvas` shapes), tables (with `colspan`/`rowspan`/`colwidth` reconstructed into
+  a pdfmake grid), code blocks, callouts, blockquotes, images, and links each map
+  onto a real PDF construct; an unknown node degrades to its text rather than
+  vanishing, tracked in a `skipped` list.
+- `-utils/pdf-document.ts` — page geometry (A4 portrait, 56pt margins,
+  `CONTENT_WIDTH = 483.28`), the style dictionary, the footer, and the
+  orphan-heading page-break rule.
+- `-utils/pdf-images.ts` — resolves an `image` node's `src` (data URL or remote
+  `https://`) to an embeddable, size-capped data URL, parsing PNG/JPEG dimensions
+  straight from the bytes (no `Image()`, no DOM) so an image never upscales past
+  its natural size and is scaled down to fit the page when it doesn't.
+- `-utils/pdf-fonts.ts` — Inter + IBM Plex Mono, embedded from static TTFs in
+  `public/fonts/pdf/` (not the app's own `@fontsource*` WOFF2 — pdfmake needs
+  static TTF/WOFF, not a variable face). Falls back to PDF's standard-14
+  Helvetica/Courier on any font-load failure so a bad network never blocks the
+  export, just plainer output.
+- `-utils/export-note-pdf.ts` — the only module that touches the pdfmake runtime,
+  loaded via dynamic `import()` so it never lands in the `/notes` route's initial
+  JS. Resolves images, runs the transform, builds the document, and downloads it.
+
+**The note is always saved before it's exported.** If the open note is dirty,
+exporting asks to save first (`ConfirmDialog`); the flush that follows reads the
+mutation's own response for the fresh `updated_at` rather than the (one-render-
+stale) `note` prop, so the exported byline and filename date are never off by one
+save. A clean or read-only note exports with no dialog. Export is single-note only
+— no scope picker, no multi-note batch, no cover page/TOC; see the spec's
+Non-Goals for what a future library-wide export would add.
+
 ## Navigation integration
 
 Sidebar entry in `src/components/AppSidebar.tsx`:
@@ -324,9 +361,17 @@ Tiptap packages (see `package.json`): `@tiptap/react`, `@tiptap/starter-kit`, `@
 
 UI: `sonner` via Shadcn `Toaster` in the root layout.
 
+PDF export: `pdfmake` (dynamically imported — see [Export](#export)), embedding
+static TTFs from `public/fonts/pdf/` (Inter + IBM Plex Mono, not the app's own
+`@fontsource*` packages).
+
 ## Future improvements
 
 - Automated tests for slash commands, table menus, and read-only guards (`src/routes/_authenticated/notes/-components/__test__/`).
-- Optional export/import of notes (JSON or Markdown).
+- Automated tests for the PDF export transform and the save-then-export flow (see
+  [`026`](specs/026-notes-pdf-export.md)'s Test Plan).
+- Export the current filter or the whole library as one PDF, with a cover page and
+  table of contents (deferred out of [`026`](specs/026-notes-pdf-export.md)).
+- Import of notes (JSON or Markdown).
 - Wiring up `?note=<id>` deep links from `[[` note-link clicks.
 - Tab key navigation between table cells and auto-append row on last cell (Notion-style).
