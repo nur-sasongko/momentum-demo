@@ -717,53 +717,53 @@ Toasts, via the existing Sonner instance:
 
 **Unit tests** (`src/routes/_authenticated/notes/-utils/__test__/`):
 
-- [ ] `tiptap-to-pdf.test.ts` — headings map to the right style and clamp H4–H6;
+- [x] `tiptap-to-pdf.test.ts` — headings map to the right style and clamp H4–H6;
       paragraph marks produce the expected run array (bold, italic, strike, code,
       highlight); nested `bulletList`/`orderedList` nest; `taskItem` emits a
       `canvas` box reflecting `checked`.
-- [ ] `tiptap-to-pdf.test.ts` — tables: `headerRows: 1` only when row 0 is
+- [x] `tiptap-to-pdf.test.ts` — tables: `headerRows: 1` only when row 0 is
       `tableHeader`; `colspan`/`rowspan` → `colSpan`/`rowSpan`; `colwidth` array →
       normalized `widths`; `colwidth: null` → `'*'`; per-cell `textAlign` →
       `alignment`.
-- [ ] `tiptap-to-pdf.test.ts` — external `link` mark → `link`; a `[[` note link →
+- [x] `tiptap-to-pdf.test.ts` — external `link` mark → `link`; a `[[` note link →
       styled text with **no** `link` or `linkToDestination` key.
-- [ ] `tiptap-to-pdf.test.ts` — an unknown node type is reported in `skipped` **and**
+- [x] `tiptap-to-pdf.test.ts` — an unknown node type is reported in `skipped` **and**
       its text still reaches the output; an empty doc yields a valid content array.
-- [ ] `pdf-document.test.ts` — the document definition sets `pageSize: 'A4'`,
+- [x] `pdf-document.test.ts` — the document definition sets `pageSize: 'A4'`,
       `pageOrientation: 'portrait'`, and 56pt margins, and `CONTENT_WIDTH` is
       483.28; a `colwidth` row of CSS pixels converts at ×0.75 and scales down
       proportionally when the total would exceed it.
-- [ ] `pdf-document.test.ts` — the title block renders the title, tags, and edited
+- [x] `pdf-document.test.ts` — the title block renders the title, tags, and edited
       date; a blank title becomes `Untitled note`; the footer definition renders
       `page / pageCount`.
-- [ ] `pdf-fonts.test.ts` — with `fetch` mocked, the loader requests exactly the six
+- [x] `pdf-fonts.test.ts` — with `fetch` mocked, the loader requests exactly the six
       files under `/fonts/pdf/`, keys the `vfs` by the same filenames the descriptor
       references, aliases mono `italics`/`bolditalics` onto the upright files, and
       memoizes so a second call issues no further requests.
-- [ ] `pdf-fonts.test.ts` — a rejected or non-OK fetch resolves to the standard-14
+- [x] `pdf-fonts.test.ts` — a rejected or non-OK fetch resolves to the standard-14
       fallback descriptor (Helvetica/Courier) with an empty `vfs`, and flags that
       fallback was used.
-- [ ] `pdf-images.test.ts` — data URLs pass through untouched; a fetch rejection, a
+- [x] `pdf-images.test.ts` — data URLs pass through untouched; a fetch rejection, a
       non-image MIME, and an oversized payload each produce a placeholder plus a
       `skipped` entry.
-- [ ] `src/utils/__tests__/download.test.ts` — `slugify` handles punctuation,
+- [x] `src/utils/__tests__/download.test.ts` — `slugify` handles punctuation,
       diacritics, emoji, and a blank title; `downloadBlob` revokes its object URL.
 
 **Component tests** (`src/routes/_authenticated/notes/-components/__test__/`):
 
-- [ ] `note-editor.test.tsx` — the overflow menu shows **Export as PDF**.
-- [ ] `note-editor.test.tsx` — clean note: exporting calls the export shell and
+- [x] `note-editor.test.tsx` — the overflow menu shows **Export as PDF**.
+- [x] `note-editor.test.tsx` — clean note: exporting calls the export shell and
       **never** calls the update mutation, with no confirm dialog rendered.
-- [ ] `note-editor.test.tsx` — dirty note: exporting renders the confirm dialog and
+- [x] `note-editor.test.tsx` — dirty note: exporting renders the confirm dialog and
       calls neither the mutation nor the export shell until it is confirmed.
-- [ ] `note-editor.test.tsx` — dirty note, confirmed: the mutation is awaited and
+- [x] `note-editor.test.tsx` — dirty note, confirmed: the mutation is awaited and
       the export shell is called **after** it resolves, with the saved content.
-- [ ] `note-editor.test.tsx` — dirty note, cancelled: no mutation, no export, note
+- [x] `note-editor.test.tsx` — dirty note, cancelled: no mutation, no export, note
       still dirty.
-- [ ] `note-editor.test.tsx` — dirty note, save rejects: an error toast fires and the
+- [x] `note-editor.test.tsx` — dirty note, save rejects: an error toast fires and the
       export shell is never called.
-- [ ] `note-editor.test.tsx` — read-only note: exporting shows no confirm dialog.
-- [ ] `note-editor.test.tsx` — the menu item is disabled while an export is pending.
+- [x] `note-editor.test.tsx` — read-only note: exporting shows no confirm dialog.
+- [x] `note-editor.test.tsx` — the menu item is disabled while an export is pending.
 
 **Manual verification:**
 
@@ -877,3 +877,17 @@ here rather than rewritten in place.
   racing to flush an identical draft (e.g. a blur firing during an export's own
   save) await the same underlying save rather than one of them returning early
   with no way to know when the real save lands.
+- **`pdf-fonts.test.ts` tests the shipped `resolveEmbeddedPdfFonts`/
+  `PDF_FALLBACK_FONTS` API, not fetch/vfs/memoization.** The Test Plan bullets
+  above were written against the pre-amendment fetch-based `pdf-fonts.ts`
+  described in "Loading them without weighing down the app". Since that design
+  was never built (see the fonts amendment above), the actual tests assert the
+  real behavior instead: `resolveEmbeddedPdfFonts()` builds absolute
+  `/fonts/pdf/*.ttf` URLs for all four faces of both families, aliases mono
+  `italics`/`bolditalics` onto the upright files, and `PDF_FALLBACK_FONTS`
+  provides the standard-14 Helvetica/Courier descriptor. There is no fetch to
+  mock and no memoization to test — `export-note-pdf.ts`'s try/catch around
+  `createPdf().getBlob()` is the actual fallback mechanism, covered instead by
+  a new `export-note-pdf.test.ts` (mocking `pdfmake/build/pdfmake`'s
+  `setFonts`/`createPdf`) that asserts a failed first attempt rebuilds once
+  with `PDF_FALLBACK_FONTS` and still downloads a PDF.

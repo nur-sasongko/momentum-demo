@@ -9,7 +9,13 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  useHabitsStore.setState({ isNewHabitOpen: false })
+  // Closing via the store (rather than a user interaction) drives the
+  // `Dialog`'s `Presence` from open to closed outside of any user event, so
+  // the update has to be wrapped explicitly — otherwise it can land after
+  // RTL's own `cleanup()` unmounts the tree, unwrapped in `act(...)`.
+  act(() => {
+    useHabitsStore.setState({ isNewHabitOpen: false })
+  })
 })
 
 describe('NewHabitModal — discard/stay confirmation', () => {

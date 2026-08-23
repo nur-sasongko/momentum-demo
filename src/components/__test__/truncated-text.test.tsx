@@ -73,8 +73,12 @@ describe('TruncatedText', () => {
 
     fireEvent.focus(screen.getByText('A heading that overflows its row'))
 
+    // 3, not 2: the trigger, the tooltip's visible content, and a
+    // visually-hidden accessible duplicate Radix renders inside
+    // `TooltipContent` for its `role="tooltip"` node (see
+    // `@radix-ui/react-tooltip`'s `VisuallyHiddenContentContextProvider`).
     expect(screen.getAllByText('A heading that overflows its row').length).toBe(
-      2,
+      3,
     )
   })
 
@@ -84,7 +88,7 @@ describe('TruncatedText', () => {
 
     fireEvent.focus(screen.getByText('A clamped excerpt'))
 
-    expect(screen.getAllByText('A clamped excerpt').length).toBe(2)
+    expect(screen.getAllByText('A clamped excerpt').length).toBe(3)
   })
 
   it('marks the tooltip content aria-hidden so it is not announced twice', () => {
@@ -93,8 +97,15 @@ describe('TruncatedText', () => {
 
     fireEvent.focus(screen.getByText('Clipped label'))
 
+    // Without the accessibility-tree escape hatch, the `role="tooltip"` node
+    // (Radix's visually-hidden accessible duplicate) is unreachable — it
+    // inherits hiddenness from its `aria-hidden="true"` ancestor
+    // (`TooltipContent`), which is exactly what keeps it from being
+    // announced twice alongside the trigger's own accessible name.
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
     const tooltip = screen.getByRole('tooltip', { hidden: true })
-    expect(tooltip.getAttribute('aria-hidden')).toBe('true')
+    expect(tooltip.closest('[aria-hidden="true"]')).not.toBeNull()
   })
 
   it('renders as the given element', () => {

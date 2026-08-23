@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -129,10 +129,38 @@ describe('NoteByline', () => {
 
     fireEvent.focus(screen.getByText(/^Edited /))
 
-    expect(screen.getByText('Created')).toBeTruthy()
-    expect(screen.getByText('Jan 1, 2026  9:41 AM')).toBeTruthy()
-    expect(screen.getByText('Edited')).toBeTruthy()
-    expect(screen.getByText('Jan 5, 2026  2:03 PM')).toBeTruthy()
+    // Scoped to the tooltip content itself: the byline's own trigger line
+    // also contains the bare words "Created"/"Edited", and Radix's
+    // `TooltipContent` additionally renders a visually-hidden accessible
+    // duplicate of its children (see `@radix-ui/react-tooltip`'s
+    // `VisuallyHiddenContentContextProvider`) — so each label/value below
+    // exists twice inside the tooltip alone. `getAllByText` + a length
+    // assertion tolerates that duplication instead of asserting on document
+    // order or DOM structure that isn't this component's concern.
+    const tooltipContent = document.querySelector(
+      '[data-slot="tooltip-content"]',
+    )
+    if (!(tooltipContent instanceof HTMLElement)) {
+      throw new Error('tooltip content not found')
+    }
+    expect(
+      within(tooltipContent).getAllByText('Created').length,
+    ).toBeGreaterThan(0)
+    // `formatExactTimestamp` intentionally emits a double space before the
+    // time (see `date.ts`'s doc comment). RTL's text matcher normalizes the
+    // *node's* text (collapsing runs of whitespace to one space) but never
+    // normalizes the literal query string passed to `getByText` — so the
+    // query itself has to already be in normalized (single-space) form or it
+    // can never match, regardless of what's actually rendered.
+    expect(
+      within(tooltipContent).getAllByText('Jan 1, 2026 9:41 AM').length,
+    ).toBeGreaterThan(0)
+    expect(
+      within(tooltipContent).getAllByText('Edited').length,
+    ).toBeGreaterThan(0)
+    expect(
+      within(tooltipContent).getAllByText('Jan 5, 2026 2:03 PM').length,
+    ).toBeGreaterThan(0)
   })
 
   it('hides the save indicator below the `sm` breakpoint', () => {

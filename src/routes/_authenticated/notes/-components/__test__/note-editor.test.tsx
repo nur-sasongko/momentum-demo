@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { useEffect } from 'react'
+import { toast } from 'sonner'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useNotesFilters } from '../../-utils/use-notes-filters'
+import { exportNoteToPdf } from '../../-utils/export-note-pdf'
 import { NoteEditor } from '../note-editor'
 import {
   useArchiveNoteMutation,
@@ -65,6 +67,18 @@ vi.mock('../../-utils/notes-queries', () => ({
 
 vi.mock('../../-utils/use-notes-filters', () => ({
   useNotesFilters: vi.fn(),
+}))
+
+vi.mock('../../-utils/export-note-pdf', () => ({
+  exportNoteToPdf: vi.fn(),
+}))
+
+vi.mock('sonner', () => ({
+  toast: {
+    loading: vi.fn(() => 'toast-id'),
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }))
 
 function renderNoteEditor(
@@ -145,16 +159,17 @@ const HEADING_WITH_NEW_SECTION: JSONContent = {
   ],
 }
 
-interface MutateOptions {
-  onSuccess?: () => void
-  onError?: () => void
+interface PendingSave {
+  input: { id: string; title: string; content: JSONContent }
+  resolve: (row: { updated_at: string }) => void
+  reject: (error: Error) => void
 }
 
-let contentMutate: ReturnType<typeof vi.fn>
+let contentMutateAsync: ReturnType<typeof vi.fn>
 let metaMutate: ReturnType<typeof vi.fn>
 let archiveMutate: ReturnType<typeof vi.fn>
 let restoreMutate: ReturnType<typeof vi.fn>
-let contentMutateCalls: Array<{ input: unknown; options?: MutateOptions }>
+let pendingSaves: PendingSave[]
 
 function typeTitle(value: string) {
   fireEvent.change(screen.getByLabelText('Note title'), {
@@ -173,8 +188,36 @@ function pressSaveShortcut(key: 'ctrlKey' | 'metaKey' = 'ctrlKey') {
   })
 }
 
-function lastSaveOptions() {
-  return contentMutateCalls[contentMutateCalls.length - 1]?.options
+function lastPendingSave(): PendingSave | undefined {
+  return pendingSaves[pendingSaves.length - 1]
+}
+
+/** Resolves the most recent in-flight save and flushes the `.then` chain. */
+async function resolveLastSave(updatedAt = '2026-01-02T00:00:00.000Z') {
+  const pending = lastPendingSave()
+  await act(async () => {
+    pending?.resolve({ updated_at: updatedAt })
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+}
+
+/** Rejects the most recent in-flight save and flushes the `.catch` chain. */
+async function rejectLastSave() {
+  const pending = lastPendingSave()
+  await act(async () => {
+    pending?.reject(new Error('save failed'))
+    await Promise.resolve()
+    await Promise.resolve()
+  })
+}
+
+async function flushMicrotasks() {
+  await act(async () => {
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+  })
 }
 
 function bylineMetaText(): string {
@@ -185,13 +228,35 @@ function bylineStatusText(): string | null {
   return screen.queryByTestId('note-byline-status')?.textContent ?? null
 }
 
+// Radix's `DropdownMenuTrigger` opens on `pointerdown`, not `click` (see
+// `@radix-ui/react-dropdown-menu`'s `onPointerDown` handler) — a bare
+// `fireEvent.click` never opens it in jsdom, which has no full pointer/mouse
+// event sequence like a real browser or `userEvent.click` would produce.
 function openOverflowMenu() {
-  fireEvent.click(screen.getByLabelText('More actions'))
+  fireEvent.pointerDown(screen.getByLabelText('More actions'), {
+    button: 0,
+    ctrlKey: false,
+  })
 }
 
 function openArchiveConfirm() {
   openOverflowMenu()
   fireEvent.click(screen.getByRole('menuitem', { name: 'Move to Archive' }))
+}
+
+function clickExportMenuItem() {
+  openOverflowMenu()
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Export as PDF' }))
+}
+
+// Radix's dismissable-layer primitives (`DropdownMenuContent`,
+// `AlertDialogContent`) listen for `Escape` on `document` to close — closing
+// any left open before the test ends lets `Presence`'s internal state
+// machine settle synchronously within this test's own act scope, rather
+// than via RTL's auto-`cleanup()` unmount, which can otherwise leave an
+// async transition to fire during a later, unrelated test.
+function closeAnyOpenOverlay() {
+  fireEvent.keyDown(document, { key: 'Escape' })
 }
 
 beforeEach(() => {
@@ -217,14 +282,22 @@ beforeEach(() => {
 
   latestOnChange = null
   latestOnBlur = null
-  contentMutateCalls = []
+  pendingSaves = []
 
-  contentMutate = vi.fn((input: unknown, options?: MutateOptions) => {
-    contentMutateCalls.push({ input, options })
+  contentMutateAsync = vi.fn((input: PendingSave['input']) => {
+    return new Promise<{ updated_at: string }>((resolve, reject) => {
+      pendingSaves.push({ input, resolve, reject })
+    })
   })
   metaMutate = vi.fn()
   archiveMutate = vi.fn()
   restoreMutate = vi.fn()
+
+  vi.mocked(exportNoteToPdf).mockResolvedValue({
+    filename: 'note.pdf',
+    skipped: [],
+    usedFallbackFonts: false,
+  })
 
   vi.mocked(useNotesFilters).mockReturnValue({
     selectedId: null,
@@ -237,7 +310,7 @@ beforeEach(() => {
     {} as unknown as ReturnType<typeof useNotesListParams>,
   )
   vi.mocked(useUpdateNoteContentMutation).mockReturnValue({
-    mutate: contentMutate,
+    mutateAsync: contentMutateAsync,
   } as unknown as ReturnType<typeof useUpdateNoteContentMutation>)
   vi.mocked(useUpdateNoteMetaMutation).mockReturnValue({
     mutate: metaMutate,
@@ -265,7 +338,7 @@ describe('NoteEditor — no phantom writes on open', () => {
       vi.advanceTimersByTime(800)
     })
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
     vi.useRealTimers()
   })
 })
@@ -281,7 +354,7 @@ describe('NoteEditor — no autosave', () => {
       vi.advanceTimersByTime(5000)
     })
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
     vi.useRealTimers()
   })
 
@@ -297,7 +370,7 @@ describe('NoteEditor — no autosave', () => {
       vi.advanceTimersByTime(5000)
     })
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
     vi.useRealTimers()
   })
 })
@@ -309,7 +382,7 @@ describe('NoteEditor — save triggers', () => {
 
     blurTitleTo(screen.getByTestId('outside-target'))
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
   })
 
   it('blurring the pane to an outside element issues exactly one save', () => {
@@ -319,10 +392,9 @@ describe('NoteEditor — save triggers', () => {
     typeTitle('Hello')
     blurTitleTo(screen.getByTestId('outside-target'))
 
-    expect(contentMutate).toHaveBeenCalledTimes(1)
-    expect(contentMutate).toHaveBeenCalledWith(
+    expect(contentMutateAsync).toHaveBeenCalledTimes(1)
+    expect(contentMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'note-1', title: 'Hello' }),
-      expect.anything(),
     )
   })
 
@@ -333,7 +405,7 @@ describe('NoteEditor — save triggers', () => {
     typeTitle('Hello')
     blurTitleTo(screen.getByTestId('tiptap-editor-stub'))
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
   })
 
   it('blurring into an editor-owned portal (slash menu / link menu / table menu) issues no save', () => {
@@ -347,7 +419,7 @@ describe('NoteEditor — save triggers', () => {
     typeTitle('Hello')
     blurTitleTo(portalNode)
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
 
     portalNode.remove()
   })
@@ -366,7 +438,8 @@ describe('NoteEditor — save triggers', () => {
 
     blurTitleTo(dialogContent)
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
+    closeAnyOpenOverlay()
   })
 
   it('Ctrl+S saves once and prevents the browser save dialog', () => {
@@ -377,7 +450,7 @@ describe('NoteEditor — save triggers', () => {
     // `dispatchEvent` returns `false` when a handler called `preventDefault`.
     const notCancelled = pressSaveShortcut('ctrlKey')
 
-    expect(contentMutate).toHaveBeenCalledTimes(1)
+    expect(contentMutateAsync).toHaveBeenCalledTimes(1)
     expect(notCancelled).toBe(false)
   })
 
@@ -388,7 +461,7 @@ describe('NoteEditor — save triggers', () => {
     typeTitle('Hello')
     const notCancelled = pressSaveShortcut('metaKey')
 
-    expect(contentMutate).toHaveBeenCalledTimes(1)
+    expect(contentMutateAsync).toHaveBeenCalledTimes(1)
     expect(notCancelled).toBe(false)
   })
 
@@ -399,9 +472,8 @@ describe('NoteEditor — save triggers', () => {
     typeTitle('Unsaved edit')
     rerender(<NoteEditor note={makeNote({ id: 'note-2' })} />)
 
-    expect(contentMutate).toHaveBeenCalledWith(
+    expect(contentMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'note-1', title: 'Unsaved edit' }),
-      expect.anything(),
     )
   })
 
@@ -412,9 +484,8 @@ describe('NoteEditor — save triggers', () => {
     typeTitle('Unsaved edit')
     unmount()
 
-    expect(contentMutate).toHaveBeenCalledWith(
+    expect(contentMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'note-1', title: 'Unsaved edit' }),
-      expect.anything(),
     )
   })
 
@@ -424,7 +495,7 @@ describe('NoteEditor — save triggers', () => {
 
     unmount()
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
   })
 
   it('toggling favorite calls the meta mutation, not the content mutation', () => {
@@ -437,26 +508,23 @@ describe('NoteEditor — save triggers', () => {
       id: 'note-1',
       patch: { isFavorite: true },
     })
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
   })
 
-  it('a rejected save leaves the note dirty and re-saves on the next trigger', () => {
+  it('a rejected save leaves the note dirty and re-saves on the next trigger', async () => {
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
 
     typeTitle('Hello')
     pressSaveShortcut()
-    expect(contentMutate).toHaveBeenCalledTimes(1)
+    expect(contentMutateAsync).toHaveBeenCalledTimes(1)
 
-    act(() => {
-      lastSaveOptions()?.onError?.()
-    })
+    await rejectLastSave()
 
     pressSaveShortcut()
-    expect(contentMutate).toHaveBeenCalledTimes(2)
-    expect(contentMutate).toHaveBeenLastCalledWith(
+    expect(contentMutateAsync).toHaveBeenCalledTimes(2)
+    expect(contentMutateAsync).toHaveBeenLastCalledWith(
       expect.objectContaining({ id: 'note-1', title: 'Hello' }),
-      expect.anything(),
     )
   })
 
@@ -467,7 +535,7 @@ describe('NoteEditor — save triggers', () => {
     blurTitleTo(screen.getByTestId('outside-target'))
     pressSaveShortcut()
 
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
     expect(screen.queryByRole('status')).toBeNull()
   })
 })
@@ -481,6 +549,7 @@ describe('NoteEditor — archive', () => {
 
     expect(archiveMutate).not.toHaveBeenCalled()
     expect(screen.getByText('Move to Archive?')).toBeTruthy()
+    closeAnyOpenOverlay()
   })
 
   it('does not archive when the dialog is cancelled', () => {
@@ -525,7 +594,7 @@ describe('NoteEditor — archive', () => {
 })
 
 describe('NoteEditor — save state UI', () => {
-  it('follows idle → Unsaved changes → Saving… → Saved', () => {
+  it('follows idle → Unsaved changes → Saving… → Saved', async () => {
     vi.useFakeTimers()
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
@@ -538,12 +607,10 @@ describe('NoteEditor — save state UI', () => {
     pressSaveShortcut()
     expect(bylineStatusText()).toBe('Saving…')
 
-    act(() => {
-      lastSaveOptions()?.onSuccess?.()
-    })
+    await resolveLastSave()
     expect(bylineStatusText()).toBe('Saved')
 
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(2000)
     })
     expect(bylineStatusText()).toBeNull()
@@ -561,7 +628,7 @@ describe('NoteEditor — save state UI', () => {
     expect(bylineMetaText()).toBe(before)
   })
 
-  it('the save bar is absent on mount, appears after typing, and unmounts after a successful save', () => {
+  it('the save bar is absent on mount, appears after typing, and unmounts after a successful save', async () => {
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
 
@@ -571,9 +638,7 @@ describe('NoteEditor — save state UI', () => {
     expect(screen.getByRole('status')).toBeTruthy()
 
     pressSaveShortcut()
-    act(() => {
-      lastSaveOptions()?.onSuccess?.()
-    })
+    await resolveLastSave()
 
     expect(screen.queryByRole('status')).toBeNull()
   })
@@ -590,7 +655,7 @@ describe('NoteEditor — save state UI', () => {
     })
     fireEvent.click(saveButton)
 
-    expect(contentMutate).toHaveBeenCalledTimes(1)
+    expect(contentMutateAsync).toHaveBeenCalledTimes(1)
   })
 
   it('disables the bar button while a save is in flight', () => {
@@ -606,19 +671,17 @@ describe('NoteEditor — save state UI', () => {
     expect(saveButton.disabled).toBe(true)
 
     fireEvent.click(saveButton)
-    expect(contentMutate).toHaveBeenCalledTimes(1)
+    expect(contentMutateAsync).toHaveBeenCalledTimes(1)
   })
 
-  it('a rejected save leaves the bar in the dirty state with Save re-enabled', () => {
+  it('a rejected save leaves the bar in the dirty state with Save re-enabled', async () => {
     const note = makeNote()
     renderNoteEditor(<NoteEditor note={note} />)
 
     typeTitle('Hello')
     pressSaveShortcut()
 
-    act(() => {
-      lastSaveOptions()?.onError?.()
-    })
+    await rejectLastSave()
 
     const bar = screen.getByRole('status')
     expect(within(bar).getByText('Unsaved changes')).toBeTruthy()
@@ -660,6 +723,139 @@ describe('NoteEditor — outline recompute timing', () => {
     })
 
     expect(screen.getByText('Setup')).toBeTruthy()
-    expect(contentMutate).not.toHaveBeenCalled()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
+  })
+})
+
+describe('NoteEditor — PDF export', () => {
+  it('shows Export as PDF in the overflow menu', () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    openOverflowMenu()
+
+    expect(screen.getByRole('menuitem', { name: 'Export as PDF' })).toBeTruthy()
+    closeAnyOpenOverlay()
+  })
+
+  it('clean note: exporting calls the export shell directly, never the update mutation, with no confirm dialog', async () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    clickExportMenuItem()
+    await flushMicrotasks()
+
+    expect(exportNoteToPdf).toHaveBeenCalledTimes(1)
+    expect(contentMutateAsync).not.toHaveBeenCalled()
+    expect(screen.queryByText('Save before exporting?')).toBeNull()
+  })
+
+  it('dirty note: exporting renders the confirm dialog and calls neither the mutation nor the export shell until confirmed', () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    typeTitle('Hello')
+    clickExportMenuItem()
+
+    expect(screen.getByText('Save before exporting?')).toBeTruthy()
+    expect(contentMutateAsync).not.toHaveBeenCalled()
+    expect(exportNoteToPdf).not.toHaveBeenCalled()
+    closeAnyOpenOverlay()
+  })
+
+  it('dirty note, confirmed: awaits the save, then exports with the saved content', async () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    typeTitle('Hello')
+    clickExportMenuItem()
+    fireEvent.click(screen.getByRole('button', { name: 'Save & export' }))
+
+    expect(contentMutateAsync).toHaveBeenCalledTimes(1)
+    expect(exportNoteToPdf).not.toHaveBeenCalled()
+
+    await resolveLastSave('2026-03-01T00:00:00.000Z')
+
+    expect(exportNoteToPdf).toHaveBeenCalledTimes(1)
+    expect(exportNoteToPdf).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Hello',
+        updatedAt: '2026-03-01T00:00:00.000Z',
+      }),
+    )
+  })
+
+  it('dirty note, cancelled: no mutation, no export, note stays dirty', () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    typeTitle('Hello')
+    clickExportMenuItem()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(contentMutateAsync).not.toHaveBeenCalled()
+    expect(exportNoteToPdf).not.toHaveBeenCalled()
+    expect(screen.getByRole('status')).toBeTruthy()
+  })
+
+  it('dirty note, save rejects: an error toast fires and the export shell is never called', async () => {
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    typeTitle('Hello')
+    clickExportMenuItem()
+    fireEvent.click(screen.getByRole('button', { name: 'Save & export' }))
+
+    await rejectLastSave()
+
+    expect(toast.error).toHaveBeenCalledWith(
+      "Couldn't save the note — nothing was exported",
+    )
+    expect(exportNoteToPdf).not.toHaveBeenCalled()
+  })
+
+  it('read-only note: exporting shows no confirm dialog', async () => {
+    const note = makeNote({ isReadOnly: true })
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    clickExportMenuItem()
+    await flushMicrotasks()
+
+    expect(screen.queryByText('Save before exporting?')).toBeNull()
+    expect(exportNoteToPdf).toHaveBeenCalledTimes(1)
+  })
+
+  it('disables the export menu item while an export is pending', async () => {
+    let resolveExport:
+      | ((value: Awaited<ReturnType<typeof exportNoteToPdf>>) => void)
+      | undefined
+    vi.mocked(exportNoteToPdf).mockReturnValue(
+      new Promise((resolve) => {
+        resolveExport = resolve
+      }),
+    )
+
+    const note = makeNote()
+    renderNoteEditor(<NoteEditor note={note} />)
+
+    clickExportMenuItem()
+
+    openOverflowMenu()
+    expect(
+      screen
+        .getByRole('menuitem', { name: 'Export as PDF' })
+        .getAttribute('data-disabled'),
+    ).not.toBeNull()
+
+    await act(async () => {
+      resolveExport?.({
+        filename: 'note.pdf',
+        skipped: [],
+        usedFallbackFonts: false,
+      })
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    closeAnyOpenOverlay()
   })
 })
