@@ -17,6 +17,7 @@ The Finance module is the personal finance tracker at `/finance`. It provides ba
 - Data types: `src/routes/_authenticated/finance/-types/` — see [Data Types](#data-types)
 - Stat cards: `src/routes/_authenticated/finance/-components/finance-stat-cards.tsx`
 - Filters: `src/routes/_authenticated/finance/-components/finance-filters.tsx`
+- Excel export: `src/routes/_authenticated/finance/-utils/export-finance-xlsx.ts` — see [Excel Export](#excel-export)
 - Category chart: `src/routes/_authenticated/finance/-components/spending-by-category-chart.tsx`
 - Transaction table: `src/routes/_authenticated/finance/-components/transactions-table.tsx`
 - Add/edit transaction form: `src/routes/_authenticated/finance/-components/transaction-form.tsx`
@@ -56,6 +57,7 @@ The page composes:
 - `finance-api.ts` — snake_case Supabase response rows (`FinanceCategoryRow`, `TransactionRow`, `AggregateRow`), mirroring the `finance_categories`/`finance_transactions` table columns. `transformCategory`/`transformTransaction` in `-utils/finance-queries.ts` map these onto the camelCase `FinanceCategory`/`Transaction` domain types in `#/stores/finance-store`. These row types are a compile-time assertion, not a runtime validation — a column rename in Postgres still yields `undefined` at runtime, but a typo'd field name in the transformer now fails `tsc`.
 - `finance-query.ts` — query params/results (`TransactionQueryParams`, `TransactionPage`, `CityFilter`) and `FinanceFiltersPatch`, the batched patch `useFinanceFilters().setFilters` accepts.
 - `finance-chart.ts` — chart/aggregate shapes (`CategorySpending`, `DailySpendingPoint`, `LocationSpending`, `FilteredSummary`, `FacetOption`) and drilldown types (`DrilldownSelection`, `DrilldownSpec`).
+- `finance-export.ts` — the `.xlsx` export's library-agnostic shapes (`FinanceExportFilters`, `ExportSheet`, `ExportCell`, `FinanceExportResult`) — see [Excel Export](#excel-export).
 
 Component `Props`, chart-zoom internals (`chart-zoom.ts`, `use-chart-zoom.ts`), and the route-search schema types (`FinanceView`, `FinanceSearch` in `finance-search.ts`) stay put — see "What goes in `-types/`" in [`docs/architecture/feature-slices.md`](./architecture/feature-slices.md).
 
@@ -203,6 +205,19 @@ See [`docs/specs/006-finance-location-tracking.md`](./specs/006-finance-location
 - `src/routes/_authenticated/finance/-components/location-map-embed.tsx` — `LocationMapEmbed` renders a read-only, interactive map (Maps Embed API `place` mode, plain `<iframe>`) wherever a saved location is displayed (`transaction-form.tsx`, `transactions-table.tsx`'s `LocationCell`). Built from the location's text fields (`placeName`/`address`/`city`/`country`), not `mapsUrl` — no lat/lng or place_id is stored, so the embed resolves the place via a text query instead.
 - Requires `VITE_GOOGLE_MAPS_API_KEY` (Maps JavaScript API + Places API + Maps Embed API enabled), validated in `src/libs/env.ts`.
 
+## Excel Export
+
+See [`docs/specs/027-finance-excel-export.md`](./specs/027-finance-excel-export.md) for the full spec. Summary:
+
+- The **Export** button in `-components/finance-filters.tsx` downloads the currently filtered transactions as a real `.xlsx` workbook — `Transactions`, `Summary`, and `Categories` sheets, built client-side with no server round trip. Disabled (with a tooltip) when the active filters match zero transactions.
+- `-utils/finance-export-sheets.ts` — a **pure** `buildFinanceWorkbook(rows, categories, filters, exportedAt)` transform: rows in, a library-agnostic `ExportSheet[]` out (`-types/finance-export.ts`). No DOM, no network, no writer-library import — unit-tested without mocking anything.
+- `-utils/finance-export-query.ts` — `fetchAllTransactionsForExport(filters)` refetches every matching row in batches of 1,000 (Supabase's per-request ceiling), since the table's own cached query only ever holds one page. Throws `FinanceExportRowCapError` before reading any row if the filtered set exceeds 20,000 rows, so a huge export never silently truncates.
+- `-utils/export-finance-xlsx.ts` — the only module that imports `write-excel-file` (dynamically, via `await import('write-excel-file/browser')`), so the library never lands in `/finance`'s initial JS. Translates `ExportSheet[]` into the library's cell/sheet shape and hands the resulting `Blob` to `downloadBlob` (`#/utils/download`).
+- `-utils/use-finance-export.ts` — wires the active URL filter state (`useFinanceFilters`) to the fetch and the writer, owning the pending flag and every toast (loading/success/error), mirroring the shape of the note PDF export's `runExport` (spec 026).
+- `applyTransactionFilters()` in `-utils/finance-queries.ts` (also exported: `liveOnly`, `transformTransaction`) applies the date-range/type/category/location/search predicates shared by the table's paginated query and the export's batched fetch, so the two can't drift apart.
+- `Amount` is signed (expense negative) with a separate `Type` column, so `SUM` gives net with no formula and a pivot on `Type` still gives gross income/expense. Dates are written as local wall-clock, matching what the table shows on the same machine. A note over Excel's 32,767-character cell limit is clipped (with the count surfaced in the success toast) rather than failing the export.
+- Archived transactions are excluded (same `liveOnly` predicate as the table); exporting them is a possible follow-up, not v1 scope.
+
 ## Navigation Integration
 
 Finance is enabled in `src/components/AppSidebar.tsx`:
@@ -215,6 +230,7 @@ Finance is enabled in `src/components/AppSidebar.tsx`:
 
 - `recharts` for the category and location spending bar charts
 - `@vis.gl/react-google-maps` for the interactive location picker (Maps JavaScript API + Places Autocomplete)
+- `write-excel-file` for the `.xlsx` export, dynamically imported so it never lands in `/finance`'s initial JS — see [Excel Export](#excel-export)
 - Shadcn `select`, `sheet`, `dialog`, `card`, `badge`, `input` for UI primitives
 
 ## Extending This Module
@@ -223,5 +239,5 @@ Recommended next steps:
 
 - Add budgets per category with progress indicators.
 - Add recurring transactions.
-- Add CSV export/import for backups.
 - Add account/wallet separation for multi-account tracking.
+- Export import is still unspecced (spec 027 is deliberately write-only).

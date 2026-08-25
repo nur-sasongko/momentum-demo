@@ -26,6 +26,7 @@ import type {
   TransactionPage,
   TransactionQueryParams,
 } from '../-types/finance-query'
+import type { FinanceExportFilters } from '../-types/finance-export'
 import type {
   FinanceCategory,
   Transaction,
@@ -89,7 +90,7 @@ function transformTransactionLocation(
   }
 }
 
-function transformTransaction(
+export function transformTransaction(
   row: TransactionRow,
   categories: FinanceCategory[],
 ): Transaction {
@@ -119,10 +120,51 @@ function transformArchivedTransaction(
 }
 
 /** Restricts a select to live (non-archived) rows. Every live read goes through this. */
-function liveOnly<T extends { is: (column: string, value: boolean | null) => T }>(
-  query: T,
-): T {
+export function liveOnly<
+  T extends { is: (column: string, value: boolean | null) => T },
+>(query: T): T {
   return query.is('deleted_at', null)
+}
+
+/**
+ * Applies date-range, type, category, and location/search filters shared by
+ * the paginated table query (`useTransactionsQuery`) and the batched export
+ * fetch (`fetchAllTransactionsForExport` in `finance-export-query.ts`) —
+ * kept in one place so the two queries can't drift apart.
+ */
+export function applyTransactionFilters<
+  T extends {
+    gte: (column: string, value: string) => T
+    lte: (column: string, value: string) => T
+    eq: (column: string, value: string) => T
+    in: (column: string, values: string[]) => T
+    or: (expression: string) => T
+    ilike: (column: string, pattern: string) => T
+  },
+>(query: T, filters: FinanceExportFilters): T {
+  let q = query
+
+  if (filters.dateFrom) q = q.gte('date', startOfDayIso(filters.dateFrom))
+  if (filters.dateTo) q = q.lte('date', endOfDayIso(filters.dateTo))
+  if (filters.type) q = q.eq('type', filters.type)
+  if (filters.categoryIds.length > 0)
+    q = q.in('category_id', filters.categoryIds)
+
+  const cityFilter = buildLocationFilter('location_city', filters.cities)
+  if (cityFilter.kind === 'in') q = q.in('location_city', cityFilter.values)
+  else if (cityFilter.kind === 'or') q = q.or(cityFilter.expression)
+
+  const countryFilter = buildLocationFilter(
+    'location_country',
+    filters.countries,
+  )
+  if (countryFilter.kind === 'in')
+    q = q.in('location_country', countryFilter.values)
+  else if (countryFilter.kind === 'or') q = q.or(countryFilter.expression)
+
+  if (filters.search) q = q.ilike('note', `%${filters.search}%`)
+
+  return q
 }
 
 // ---------------------------------------------------------------------------
@@ -244,34 +286,17 @@ export function useTransactionsQuery(params: TransactionQueryParams) {
       const from = params.page * params.pageSize
       const to = from + params.pageSize - 1
 
-      let q = liveOnly(
-        supabase
-          .from('finance_transactions')
-          .select('*', { count: 'exact' })
-          .order('created_at', { ascending: false })
-          .order('date', { ascending: false })
-          .range(from, to),
+      const q = applyTransactionFilters(
+        liveOnly(
+          supabase
+            .from('finance_transactions')
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .order('date', { ascending: false })
+            .range(from, to),
+        ),
+        params,
       )
-
-      if (params.dateFrom) q = q.gte('date', startOfDayIso(params.dateFrom))
-      if (params.dateTo) q = q.lte('date', endOfDayIso(params.dateTo))
-      if (params.type) q = q.eq('type', params.type)
-      if (params.categoryIds.length > 0)
-        q = q.in('category_id', params.categoryIds)
-
-      const cityFilter = buildLocationFilter('location_city', params.cities)
-      if (cityFilter.kind === 'in') q = q.in('location_city', cityFilter.values)
-      else if (cityFilter.kind === 'or') q = q.or(cityFilter.expression)
-
-      const countryFilter = buildLocationFilter(
-        'location_country',
-        params.countries,
-      )
-      if (countryFilter.kind === 'in')
-        q = q.in('location_country', countryFilter.values)
-      else if (countryFilter.kind === 'or') q = q.or(countryFilter.expression)
-
-      if (params.search) q = q.ilike('note', `%${params.search}%`)
 
       const { data, count, error } = await q
       if (error) throw error
