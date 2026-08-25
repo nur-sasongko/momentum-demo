@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
-import { CalendarIcon, X } from 'lucide-react'
+import { CalendarIcon, Download, Loader2, X } from 'lucide-react'
 import type { DateRange as DayPickerDateRange } from 'react-day-picker'
 
 import { Button } from '#/components/ui/button'
@@ -10,6 +10,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '#/components/ui/popover'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
+import { useFinanceExport } from '../-utils/use-finance-export'
 import { useFinanceFilters } from '../-utils/use-finance-filters'
 
 function toStoreRange(range: DayPickerDateRange) {
@@ -27,6 +34,11 @@ export function FinanceFilters() {
   })
 
   const { dateRange, setDateRange } = useFinanceFilters()
+  const {
+    exportTransactions,
+    isPending: isExporting,
+    isEmpty,
+  } = useFinanceExport()
 
   const hasRange = dateRange.from !== null || dateRange.to !== null
 
@@ -97,6 +109,32 @@ export function FinanceFilters() {
           Clear
         </Button>
       )}
+
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => void exportTransactions()}
+                disabled={isExporting || isEmpty}
+              >
+                {isExporting ? (
+                  <Loader2 className="size-4 animate-spin sm:size-3.5" />
+                ) : (
+                  <Download className="size-4 sm:size-3.5" />
+                )}
+                <span>{isExporting ? 'Exporting…' : 'Export'}</span>
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {isEmpty && !isExporting && (
+            <TooltipContent>No transactions to export</TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
     </div>
   )
 }

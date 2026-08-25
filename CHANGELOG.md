@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [0.0.7] - 2026-08-25
+
+### Added
+
+- Finance: export the filtered transactions as a real `.xlsx` workbook from
+  the `/finance` filter bar — `Transactions`, `Summary`, and `Categories`
+  sheets, with real number and date cells (not text), a signed `Amount`
+  column, and a `Summary` sheet recording the filters, totals, and
+  per-category breakdown the export was taken under. Honors the active date
+  range, type, category, and city filters, and refetches the full filtered
+  set rather than just the visible table page.
+
 ## [0.0.6] - 2026-08-22
 
 ### Added

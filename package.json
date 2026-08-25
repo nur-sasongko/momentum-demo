@@ -1,6 +1,6 @@
 {
   "name": "momentum",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": {
     "name": "Nur Sasongko",
     "email": "sasongko.work@gmail.com",
@@ -82,6 +82,7 @@
     "tailwindcss": "^4.1.18",
     "tiptap-markdown": "^0.9.0",
     "tw-animate-css": "^1.3.6",
+    "write-excel-file": "4.1.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
