@@ -18,6 +18,15 @@ for how and when entries are added.
   (mouse drag or Shift-click through them) to move them together as one
   unit. Read-only notes show no grip and cannot be reordered.
 
+### Fixed
+
+- Second Brain: the `/` command menu no longer stays open after typing a
+  space (e.g. writing "Other / Etc." mid-sentence) — a space now closes it,
+  matching the trigger character.
+- Second Brain: typing a block command like `/heading` partway through a
+  line of existing text no longer converts that whole line — it now leaves
+  the existing text as-is and inserts the new block below it.
+
 ## [0.0.7] - 2026-08-25
 
 ### Added
