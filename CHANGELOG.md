@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [Unreleased]
+
+### Added
+
+- Second Brain: drag any top-level block (paragraph, heading, list, task
+  list, blockquote, image, table, callout, code block) by a grip that
+  appears in the left gutter on hover, and select several adjacent blocks
+  (mouse drag or Shift-click through them) to move them together as one
+  unit. Read-only notes show no grip and cannot be reordered.
+
 ## [0.0.7] - 2026-08-25
 
 ### Added

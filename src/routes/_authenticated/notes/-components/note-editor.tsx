@@ -511,29 +511,35 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
           )}
         >
           <div className="mx-auto w-full max-w-[44rem]">
-            <input
-              ref={titleRef}
-              type="text"
-              value={draft.title}
-              readOnly={note.isReadOnly}
-              onChange={(event) =>
-                setDraft((d) => ({ ...d, title: event.target.value }))
-              }
-              placeholder="Untitled"
-              className={cn(
-                'w-full border-0 bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground',
-                note.isReadOnly && 'cursor-default',
-              )}
-              aria-label="Note title"
-            />
+            {/* `pl-8` matches `.note-tiptap`'s own left padding (styles.css)
+                so the title and byline stay aligned with the body text,
+                which is itself indented to make room for the block drag
+                handle's gutter. */}
+            <div className="pl-8">
+              <input
+                ref={titleRef}
+                type="text"
+                value={draft.title}
+                readOnly={note.isReadOnly}
+                onChange={(event) =>
+                  setDraft((d) => ({ ...d, title: event.target.value }))
+                }
+                placeholder="Untitled"
+                className={cn(
+                  'w-full border-0 bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground',
+                  note.isReadOnly && 'cursor-default',
+                )}
+                aria-label="Note title"
+              />
 
-            <NoteByline
-              note={note}
-              wordCount={wordCount}
-              saveState={saveState}
-              isDirty={isDirty}
-              onTagsChange={handleTagsChange}
-            />
+              <NoteByline
+                note={note}
+                wordCount={wordCount}
+                saveState={saveState}
+                isDirty={isDirty}
+                onTagsChange={handleTagsChange}
+              />
+            </div>
 
             <div className="mt-6">
               <TiptapEditor

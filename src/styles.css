@@ -290,6 +290,14 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
 
 .note-tiptap {
   @apply text-foreground;
+  /* Room for the block drag handle's gutter. This isn't just visual
+     spacing: @tiptap/extension-drag-handle only tracks `mousemove` on this
+     element (the ProseMirror root) itself, so hovering just to the left of
+     the text — outside this box — would never resolve to a block at all
+     without this padding pulling that space inside it. Keep in sync with
+     the matching `pl-8` on the title/byline block in note-editor.tsx so
+     text stays aligned. */
+  @apply pl-8;
 }
 
 .note-tiptap p.is-editor-empty:first-child::before {
@@ -540,6 +548,21 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
 
 .note-tiptap ul[data-type='taskList'] li > div {
   @apply flex-1;
+}
+
+/* Block drag handle (`block-drag-handle.tsx`). The portaled wrapper's
+   position/visibility are set inline by @tiptap/extension-drag-handle; we
+   only style the grip button and the drag/multi-select states. */
+.note-drag-handle button {
+  @apply flex size-6 cursor-grab items-center justify-center rounded-sm border-none bg-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground;
+}
+
+.note-drag-handle[data-dragging='true'] button {
+  @apply cursor-grabbing bg-muted text-foreground;
+}
+
+.note-tiptap .ProseMirror-selectednoderange {
+  @apply rounded-sm bg-primary/10 outline outline-2 -outline-offset-2 outline-primary/30;
 }
 
 .note-tiptap mark {

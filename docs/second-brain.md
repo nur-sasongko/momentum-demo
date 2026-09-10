@@ -236,6 +236,9 @@ Configured in `createContentExtensions()` / `createEditorExtensions()`:
 | Placeholder                  | "Type / for commands…"                                                                                |
 | SlashCommandExtension        | `/` command palette                                                                                   |
 | NoteLinkExtension            | `[[` note typeahead                                                                                   |
+| NodeRange                    | Multi-block range selection (mouse drag or Shift-click across blocks)                                 |
+
+`NodeRange` is added in `createEditorExtensions()` only, not `createContentExtensions()` — the PDF exporter and markdown round-trip never need it (see [`028`](specs/028-notes-block-drag-handles.md)).
 
 ### Markdown-style input rules (WYSIWYG)
 
@@ -263,6 +266,14 @@ Table command opens a **6×6 hover grid** (Notion-style) or custom row/column co
 On non-empty text selection (not in code blocks or tables):
 
 - Bold, italic, strikethrough, inline code, link, highlight colors
+
+### Block drag handles
+
+A grip (`block-drag-handle.tsx`, `GripVertical` icon) appears in the left gutter on hover over any top-level block — paragraph, heading, list, task list, blockquote, image, table, callout, code block — and drags it to a new position. Selecting several adjacent blocks first (mouse drag or Shift-click through them, via the `NodeRange` extension) moves them together as one unit. Hidden entirely in read-only notes.
+
+Built on Tiptap's own `@tiptap/extension-drag-handle-react` / `@tiptap/extension-drag-handle` / `@tiptap/extension-node-range` (open-sourced in the 3.x line, no schema changes needed — the plugin drives the drag manually from the grip element rather than relying on native node `draggable`, so `NoteCodeBlock` and `Callout` move as whole units unmodified).
+
+Implementation note: the plugin only tracks `mousemove` on the ProseMirror root itself, so the gutter has to be real `padding-left` on `.note-tiptap` (`src/styles.css`), not just visual space next to it — otherwise hovering beside the text never resolves to a block. The title/byline block in `note-editor.tsx` carries a matching left padding to stay aligned. See [`028`](specs/028-notes-block-drag-handles.md).
 
 ### Code blocks
 
@@ -357,7 +368,7 @@ Sidebar entry in `src/components/AppSidebar.tsx`:
 
 ## Dependencies (editor)
 
-Tiptap packages (see `package.json`): `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-table` (+ row/cell/header), `@tiptap/extension-task-list`, `@tiptap/extension-highlight`, `@tiptap/extension-link`, `@tiptap/extension-code-block-lowlight`, `@tiptap/extension-placeholder`, `@tiptap/extension-typography`, `@tiptap/extension-image`, `@tiptap/suggestion`, `lowlight`.
+Tiptap packages (see `package.json`): `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-table` (+ row/cell/header), `@tiptap/extension-task-list`, `@tiptap/extension-highlight`, `@tiptap/extension-link`, `@tiptap/extension-code-block-lowlight`, `@tiptap/extension-placeholder`, `@tiptap/extension-typography`, `@tiptap/extension-image`, `@tiptap/extension-drag-handle-react`, `@tiptap/extension-drag-handle`, `@tiptap/extension-node-range`, `@tiptap/suggestion`, `lowlight`, `@floating-ui/dom` (drag handle positioning).
 
 UI: `sonner` via Shadcn `Toaster` in the root layout.
 
@@ -368,6 +379,7 @@ static TTFs from `public/fonts/pdf/` (Inter + IBM Plex Mono, not the app's own
 ## Future improvements
 
 - Automated tests for slash commands, table menus, and read-only guards (`src/routes/_authenticated/notes/-components/__test__/`).
+- Automated and manual test coverage for block drag handles (unit, component, and the manual verification pass) — deferred; see [`028`](specs/028-notes-block-drag-handles.md)'s Test Plan.
 - Automated tests for the PDF export transform and the save-then-export flow (see
   [`026`](specs/026-notes-pdf-export.md)'s Test Plan).
 - Export the current filter or the whole library as one PDF, with a cover page and
