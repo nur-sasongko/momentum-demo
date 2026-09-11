@@ -214,9 +214,15 @@ stays in `TagManagerDialog`, reachable from the list pane's footer.
 - `useEditor` with `createEditorExtensions()` from `tiptap-extensions.ts`
 - `EditorContent` with `note-tiptap prose` classes
 - `EditorBubbleMenu` — text selection only (hidden inside tables and in read-only mode)
-- `TableBubbleMenu` — when cursor is in a table
+- `TableBubbleMenu` — when cursor is in a table; draggable via a grip handle
+  at its left, applied as a CSS transform offset on top of Tiptap's own
+  floating-ui-computed position (clamped to the viewport while dragging).
+  The offset resets to zero the next time the menu re-anchors for a fresh
+  selection — it is a temporary nudge, not a pinned position (see spec 029)
 - Persistent code block language header on each block (not a floating menu)
-- `TableContextMenu` — right-click inside table cells
+- `TableContextMenu` — right-click inside table cells; draggable via a grip
+  handle at its top so it can be moved off content it would otherwise cover,
+  clamped to the viewport while dragging (see spec 029)
 
 ### Extension stack
 

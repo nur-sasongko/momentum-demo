@@ -17,6 +17,13 @@ for how and when entries are added.
   appears in the left gutter on hover, and select several adjacent blocks
   (mouse drag or Shift-click through them) to move them together as one
   unit. Read-only notes show no grip and cannot be reordered.
+- Second Brain: the table right-click context menu (row/column/cell/table
+  actions) now has a drag handle so it can be moved off content it would
+  otherwise cover, clamped to stay fully within the viewport.
+- Second Brain: the persistent table toolbar (bubble menu) can also be
+  dragged by a grip handle at its left, clamped to the viewport, so it can
+  be moved off content it's covering — the nudge resets the next time the
+  toolbar re-anchors for a new selection.
 
 ### Fixed
 
