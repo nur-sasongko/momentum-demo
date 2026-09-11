@@ -1,6 +1,7 @@
 import type { Editor } from '@tiptap/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { GripHorizontal } from 'lucide-react'
 
 import type { TableAlign } from '#/routes/_authenticated/notes/-types/notes-table'
 import { setColumnAlignment } from '#/routes/_authenticated/notes/-utils/table-utils'
@@ -66,6 +67,12 @@ export function TableContextMenu({
   containerRef,
 }: TableContextMenuProps) {
   const [menu, setMenu] = useState<MenuState | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  // Synchronous guards read by the window click/scroll dismiss handlers,
+  // which close over stale state if they relied on React state instead.
+  const isDraggingRef = useRef(false)
+  const suppressClickRef = useRef(false)
 
   useEffect(() => {
     const container = containerRef.current
@@ -87,7 +94,16 @@ export function TableContextMenu({
       setMenu({ x: event.clientX, y: event.clientY })
     }
 
-    const onDismiss = () => setMenu(null)
+    const onDismiss = () => {
+      if (isDraggingRef.current) {
+        return
+      }
+      if (suppressClickRef.current) {
+        suppressClickRef.current = false
+        return
+      }
+      setMenu(null)
+    }
 
     container.addEventListener('contextmenu', onContextMenu)
     window.addEventListener('click', onDismiss)
@@ -104,6 +120,53 @@ export function TableContextMenu({
       window.removeEventListener('scroll', onDismiss, true)
     }
   }, [containerRef, editor])
+
+  const onHandleMouseDown = (event: React.MouseEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (!menu) {
+      return
+    }
+
+    const startX = event.clientX
+    const startY = event.clientY
+    const startMenu = menu
+
+    isDraggingRef.current = true
+    setIsDragging(true)
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const rect = menuRef.current?.getBoundingClientRect()
+      const width = rect?.width ?? 0
+      const height = rect?.height ?? 0
+      const maxX = Math.max(0, window.innerWidth - width)
+      const maxY = Math.max(0, window.innerHeight - height)
+      const deltaX = moveEvent.clientX - startX
+      const deltaY = moveEvent.clientY - startY
+
+      setMenu({
+        x: Math.min(Math.max(startMenu.x + deltaX, 0), maxX),
+        y: Math.min(Math.max(startMenu.y + deltaY, 0), maxY),
+      })
+    }
+
+    const onMouseUp = () => {
+      isDraggingRef.current = false
+      setIsDragging(false)
+      // The click event that follows this mouseup must not dismiss the
+      // menu; consumed by `onDismiss` above, with a timeout fallback in
+      // case the browser doesn't fire a click for this gesture at all.
+      suppressClickRef.current = true
+      window.setTimeout(() => {
+        suppressClickRef.current = false
+      }, 0)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }
 
   if (!menu) {
     return null
@@ -190,11 +253,21 @@ export function TableContextMenu({
 
   return createPortal(
     <div
+      ref={menuRef}
       data-note-editor-portal=""
       className="fixed z-50 min-w-48 rounded-lg border border-border bg-popover p-1 shadow-lg"
       style={{ top: menu.y, left: menu.x }}
       onMouseDown={(event) => event.stopPropagation()}
     >
+      <div
+        className="note-table-context-menu-handle"
+        data-dragging={isDragging ? 'true' : undefined}
+        role="button"
+        aria-label="Drag to move menu"
+        onMouseDown={onHandleMouseDown}
+      >
+        <GripHorizontal className="size-3.5" />
+      </div>
       {sections.map((section) => (
         <div key={section.title} className="py-1">
           <p className="px-2 py-1 text-xs font-medium text-muted-foreground">

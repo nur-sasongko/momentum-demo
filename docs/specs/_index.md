@@ -4,6 +4,8 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                                                                 | Feature | Status      | Created    |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- | ----------- | ---------- |
+| 29  | [Draggable Table Context Menu in the Notes Editor](./029-notes-draggable-table-context-menu.md)                                      | notes   | done        | 2026-09-11 |
+| 28  | [Notion-Style Block Drag Handles in the Notes Editor](./028-notes-block-drag-handles.md)                                             | notes   | done        | 2026-09-10 |
 | 27  | [Export Finance Transactions as a Real Excel Workbook](./027-finance-excel-export.md)                                                | finance | done        | 2026-08-24 |
 | 26  | [Export a Note to PDF: Real Text, Not Screenshots](./026-notes-pdf-export.md)                                                        | notes   | in-progress | 2026-08-22 |
 | 25  | [Second Brain Workspace Layout: Chrome That Does Not Grow](./025-notes-workspace-layout.md)                                          | notes   | in-progress | 2026-08-21 |

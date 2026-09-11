@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [0.0.8] - 2026-09-11
+
+### Added
+
+- Second Brain: drag any top-level block (paragraph, heading, list, task
+  list, blockquote, image, table, callout, code block) by a grip that
+  appears in the left gutter on hover, and select several adjacent blocks
+  (mouse drag or Shift-click through them) to move them together as one
+  unit. Read-only notes show no grip and cannot be reordered.
+- Second Brain: the table right-click context menu (row/column/cell/table
+  actions) now has a drag handle so it can be moved off content it would
+  otherwise cover, clamped to stay fully within the viewport.
+- Second Brain: the persistent table toolbar (bubble menu) can also be
+  dragged by a grip handle at its left, clamped to the viewport, so it can
+  be moved off content it's covering — the nudge resets the next time the
+  toolbar re-anchors for a new selection.
+
+### Fixed
+
+- Second Brain: the `/` command menu no longer stays open after typing a
+  space (e.g. writing "Other / Etc." mid-sentence) — a space now closes it,
+  matching the trigger character.
+- Second Brain: typing a block command like `/heading` partway through a
+  line of existing text no longer converts that whole line — it now leaves
+  the existing text as-is and inserts the new block below it.
+
 ## [0.0.7] - 2026-08-25
 
 ### Added

@@ -1,4 +1,4 @@
-import type { Editor, Range } from '@tiptap/core'
+import type { ChainedCommands, Editor, Range } from '@tiptap/core'
 import { Extension } from '@tiptap/core'
 import { ReactRenderer } from '@tiptap/react'
 import Suggestion from '@tiptap/suggestion'
@@ -42,6 +42,36 @@ function promptForExternalLink(defaultValue = ''): string | null {
   return trimmed.length > 0 ? trimmed : null
 }
 
+// Whether `range` sits at the start of its paragraph, ignoring leading
+// whitespace — i.e. there's no other text the block type change would
+// clobber.
+function isAtLineStart(editor: Editor, range: Range): boolean {
+  const $from = editor.state.doc.resolve(range.from)
+  const textBefore = $from.parent.textBetween(
+    0,
+    $from.parentOffset,
+    undefined,
+    '￼',
+  )
+  return textBefore.trim().length === 0
+}
+
+// Applies a block-type change (heading, list, code block, ...) for a slash
+// command. If the command was typed after existing text, that text stays a
+// paragraph and the new block is inserted below it instead of retyping it.
+function transformBlock(
+  editor: Editor,
+  range: Range,
+  applyNodeChange: (chain: ChainedCommands) => ChainedCommands,
+) {
+  const atLineStart = isAtLineStart(editor, range)
+  let chain = editor.chain().focus().deleteRange(range)
+  if (!atLineStart) {
+    chain = chain.splitBlock()
+  }
+  applyNodeChange(chain).run()
+}
+
 function insertImageFromFile(editor: Editor, range: Range) {
   const input = document.createElement('input')
   input.type = 'file'
@@ -82,7 +112,7 @@ export function buildSlashCommands(
       description: 'Plain paragraph',
       keywords: ['paragraph', 'plain'],
       command: ({ editor, range }) => {
-        editor.chain().focus().deleteRange(range).setParagraph().run()
+        transformBlock(editor, range, (chain) => chain.setParagraph())
       },
     },
     {
@@ -91,12 +121,9 @@ export function buildSlashCommands(
       description: 'Large section heading',
       keywords: ['h1', 'title'],
       command: ({ editor, range }) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setNode('heading', { level: 1 })
-          .run()
+        transformBlock(editor, range, (chain) =>
+          chain.setNode('heading', { level: 1 }),
+        )
       },
     },
     {
@@ -105,12 +132,9 @@ export function buildSlashCommands(
       description: 'Medium section heading',
       keywords: ['h2', 'subtitle'],
       command: ({ editor, range }) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setNode('heading', { level: 2 })
-          .run()
+        transformBlock(editor, range, (chain) =>
+          chain.setNode('heading', { level: 2 }),
+        )
       },
     },
     {
@@ -119,12 +143,9 @@ export function buildSlashCommands(
       description: 'Small section heading',
       keywords: ['h3'],
       command: ({ editor, range }) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setNode('heading', { level: 3 })
-          .run()
+        transformBlock(editor, range, (chain) =>
+          chain.setNode('heading', { level: 3 }),
+        )
       },
     },
     {
@@ -133,7 +154,7 @@ export function buildSlashCommands(
       description: 'Unordered list',
       keywords: ['unordered', 'ul'],
       command: ({ editor, range }) => {
-        editor.chain().focus().deleteRange(range).toggleBulletList().run()
+        transformBlock(editor, range, (chain) => chain.toggleBulletList())
       },
     },
     {
@@ -142,7 +163,7 @@ export function buildSlashCommands(
       description: 'Numbered list',
       keywords: ['numbered', 'ol'],
       command: ({ editor, range }) => {
-        editor.chain().focus().deleteRange(range).toggleOrderedList().run()
+        transformBlock(editor, range, (chain) => chain.toggleOrderedList())
       },
     },
     {
@@ -151,7 +172,7 @@ export function buildSlashCommands(
       description: 'Checklist with checkboxes',
       keywords: ['task', 'checkbox', 'checklist'],
       command: ({ editor, range }) => {
-        editor.chain().focus().deleteRange(range).toggleTaskList().run()
+        transformBlock(editor, range, (chain) => chain.toggleTaskList())
       },
     },
     {
@@ -160,7 +181,7 @@ export function buildSlashCommands(
       description: 'Syntax-highlighted code',
       keywords: ['code', 'snippet'],
       command: ({ editor, range }) => {
-        editor.chain().focus().deleteRange(range).toggleCodeBlock().run()
+        transformBlock(editor, range, (chain) => chain.toggleCodeBlock())
       },
     },
     {
@@ -169,7 +190,7 @@ export function buildSlashCommands(
       description: 'Quoted text',
       keywords: ['quote'],
       command: ({ editor, range }) => {
-        editor.chain().focus().deleteRange(range).toggleBlockquote().run()
+        transformBlock(editor, range, (chain) => chain.toggleBlockquote())
       },
     },
     {
@@ -332,7 +353,7 @@ export const SlashCommandExtension =
         Suggestion<SlashCommandItem, SlashCommandItem>({
           editor: this.editor,
           char: '/',
-          allowSpaces: true,
+          allowSpaces: false,
           startOfLine: false,
           command: ({ editor, range, props }) => {
             props.command({ editor, range })

@@ -3,6 +3,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import type { RefObject } from 'react'
 import { useEffect, useMemo, useRef } from 'react'
 
+import { BlockDragHandle } from '#/routes/_authenticated/notes/-components/block-drag-handle'
 import { EditorBubbleMenu } from '#/routes/_authenticated/notes/-components/bubble-menu'
 import { TableBubbleMenu } from '#/routes/_authenticated/notes/-components/table-bubble-menu'
 import { TableContextMenu } from '#/routes/_authenticated/notes/-components/table-context-menu'
@@ -137,6 +138,7 @@ export function TiptapEditor({
     <div ref={containerRef} className="relative">
       {!isReadOnly ? (
         <>
+          <BlockDragHandle editor={editor} />
           <EditorBubbleMenu editor={editor} />
           <TableBubbleMenu editor={editor} />
           <TableContextMenu editor={editor} containerRef={containerRef} />

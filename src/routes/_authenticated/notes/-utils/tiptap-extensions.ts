@@ -2,6 +2,7 @@ import { NoteCodeBlock } from '#/routes/_authenticated/notes/-components/code-bl
 import Highlight from '@tiptap/extension-highlight'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
+import { NodeRange } from '@tiptap/extension-node-range'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Table } from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
@@ -95,6 +96,12 @@ export interface EditorExtensionOptions {
 export function createEditorExtensions(options: EditorExtensionOptions) {
   return [
     ...createContentExtensions(),
+    // Backs the block drag handle (`block-drag-handle.tsx`): lets a mouse
+    // drag or Shift-click span several top-level blocks so the handle moves
+    // the whole range together. Only meaningful with an interactive editor,
+    // so it stays out of `createContentExtensions()` — the PDF exporter and
+    // markdown round-trip never need it.
+    NodeRange,
     // Parses pasted plain text as Markdown (headings, lists, blockquotes,
     // etc.) instead of dropping it in as one literal blob — input rules only
     // run on typed keystrokes, never on paste, so this is what makes `##`,
