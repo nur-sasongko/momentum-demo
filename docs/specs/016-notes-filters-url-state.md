@@ -4,7 +4,7 @@ title: 'Notes Filters, Sort & Selected Note as URL Search Params'
 status: in-progress
 feature: notes
 created: 2026-08-09
-updated: 2026-08-09
+updated: 2026-10-03
 ---
 
 # Notes Filters, Sort & Selected Note as URL Search Params
@@ -173,3 +173,53 @@ Rationale: one deliberate user decision should cost one Back press. Typing 20 ch
 ## Open Questions
 
 - [x] Should `sortBy` / `favoritesOnly` / `tagFilterMode` stay in `localStorage` alongside the URL? — **No.** Two sources for one value means a shared link renders differently per recipient. Resolved in favor of URL-only; recorded in Non-Goals.
+
+## Amendments
+
+### 2026-10-03 — Note list rows are real links
+
+**What happened:** the selected note lives in the URL (`?note=<id>`), but each
+`NoteListItem` row is a `<button>` whose `onClick` calls `selectNote(id)`. The row
+has no `href`, so Ctrl/Cmd+click, middle-click, right-click → "Open in new tab",
+"Copy link address" and drag-to-tab-bar all do nothing. The URL was made
+shareable by this spec, yet the list never exposed it as a link.
+
+**Decision — rows render as TanStack Router `<Link>`s.**
+
+- `note-list-item.tsx` replaces the `<button>` with
+  `<Link to="/notes" search={(prev) => ({ ...prev, note: note.id })} resetScroll={false}>`,
+  keeping the existing classes and `data-active`. Appearance is unchanged (no
+  underline or link colour).
+- A plain left-click still navigates client-side and pushes a history entry, as
+  `selectNote` does today. Modified/middle clicks are left to the browser and open
+  a new tab.
+- `onSelect` (mobile list → editor switch) fires only on a plain left-click (button 0,
+  no meta/ctrl/shift/alt), never on a modified click.
+- The active row keeps `data-active="true"` and gets `aria-current="page"`.
+- `selectNote` stays for non-row callers (create-note, auto-select-first-note,
+  archived-note fallback).
+- Out of scope: the `[[note link]]` editor extension, and the archived-notes sheet
+  rows.
+
+**Acceptance criteria**
+
+- [ ] Each list row is an `<a>` whose `href` contains `note=<id>`.
+- [ ] Ctrl/Cmd+click or middle-click opens the note in a new tab and leaves the
+      current tab's selection unchanged.
+- [ ] Right-click on a row offers the browser's link context menu.
+- [ ] Plain click selects client-side with no reload and no list scroll jump.
+- [ ] On mobile, a plain tap switches to the editor; a modified click does not.
+- [ ] The active row has `data-active="true"` and `aria-current="page"`.
+
+**Open questions**
+
+- [x] Should the new tab keep the current filters (`q`, `tags`, `fav`, `sort`) in its
+      URL, or open on a clean `/notes?note=<id>`? — **Keep them**, matching
+      in-app navigation today.
+- [x] Should archived-notes sheet rows get the same treatment? — **No**, main
+      list only.
+
+**Test plan:** update `note-list-item.test.tsx` to render inside a minimal router
+(or mock `Link`) instead of mocking `useNotesFilters`; assert `href`, plain-click
+`onSelect`, no `onSelect` on Ctrl/Cmd/middle click, and `data-active`. Manual: new-tab
+click, right-click menu, no scroll jump, mobile tap.
