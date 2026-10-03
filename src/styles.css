@@ -464,6 +464,32 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
   @apply border-l-4 border-primary/40 pl-4 text-muted-foreground italic;
 }
 
+/* Nested ordered lists cycle 1. → a. → i. like Notion/Docs; the typography
+   plugin leaves every depth as decimal. */
+.note-tiptap ol {
+  list-style-type: decimal;
+}
+
+.note-tiptap ol ol {
+  list-style-type: lower-alpha;
+}
+
+.note-tiptap ol ol ol {
+  list-style-type: lower-roman;
+}
+
+.note-tiptap ol ol ol ol {
+  list-style-type: decimal;
+}
+
+.note-tiptap ol ol ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.note-tiptap ol ol ol ol ol ol {
+  list-style-type: lower-roman;
+}
+
 /* A bare <hr> is ~1px tall, so the pointer almost never lands on it: the block
    drag handle never appears and the rule is hard to click-select. Give it a
    taller hit area and paint the visible line with a centered gradient. */
