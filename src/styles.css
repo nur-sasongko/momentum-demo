@@ -464,8 +464,20 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
   @apply border-l-4 border-primary/40 pl-4 text-muted-foreground italic;
 }
 
+/* A bare <hr> is ~1px tall, so the pointer almost never lands on it: the block
+   drag handle never appears and the rule is hard to click-select. Give it a
+   taller hit area and paint the visible line with a centered gradient. */
 .note-tiptap hr {
-  @apply border-border;
+  @apply my-0 h-4 cursor-pointer border-0 bg-transparent;
+  background-image: linear-gradient(var(--border), var(--border));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 1px;
+}
+
+.note-tiptap hr.ProseMirror-selectednode {
+  background-image: linear-gradient(var(--ring), var(--ring));
+  background-size: 100% 2px;
 }
 
 .note-tiptap img {
