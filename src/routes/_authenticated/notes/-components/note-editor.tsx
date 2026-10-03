@@ -109,7 +109,7 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
   const [liveEditor, setLiveEditor] = useState<Editor | null>(null)
   const paneRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const titleRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLTextAreaElement>(null)
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>(
@@ -516,17 +516,23 @@ export function NoteEditor({ note, onBack }: NoteEditorProps) {
                 which is itself indented to make room for the block drag
                 handle's gutter. */}
             <div className="pl-8">
-              <input
+              <textarea
                 ref={titleRef}
-                type="text"
+                rows={1}
                 value={draft.title}
                 readOnly={note.isReadOnly}
                 onChange={(event) =>
-                  setDraft((d) => ({ ...d, title: event.target.value }))
+                  setDraft((d) => ({
+                    ...d,
+                    title: event.target.value.replace(/\n/g, ' '),
+                  }))
                 }
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') event.preventDefault()
+                }}
                 placeholder="Untitled"
                 className={cn(
-                  'w-full border-0 bg-transparent text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground',
+                  'field-sizing-content block w-full resize-none border-0 bg-transparent p-0 text-2xl font-semibold tracking-tight text-foreground outline-none placeholder:text-muted-foreground',
                   note.isReadOnly && 'cursor-default',
                 )}
                 aria-label="Note title"
