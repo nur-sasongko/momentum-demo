@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [Unreleased]
+
+### Changed
+
+- Second Brain: notes in the list are now real links, so Ctrl/Cmd+click,
+  middle-click, or right-click → "Open in new tab" opens a note in a new tab
+  (keeping your current filters). A plain click still opens it in place.
+
 ## [0.0.8] - 2026-09-11
 
 ### Added
