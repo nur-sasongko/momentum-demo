@@ -6,6 +6,7 @@ import {
   PX_TO_PT,
   buildPdfDocument,
   buildPdfFooter,
+  buildPdfStyles,
   pdfPageBreakBefore,
 } from '#/routes/_authenticated/notes/-utils/pdf-document'
 
@@ -137,5 +138,14 @@ describe('pdfPageBreakBefore', () => {
     expect(pdfPageBreakBefore(bodyNode, nodeQueriesWithFollowing(0))).toBe(
       false,
     )
+  })
+})
+
+describe('buildPdfStyles — headings', () => {
+  it('defines an h4 style that is bold and smaller than h3', () => {
+    const styles = buildPdfStyles(FONTS)
+
+    expect(styles.h4).toMatchObject({ bold: true })
+    expect(styles.h4.fontSize).toBeLessThan(styles.h3.fontSize as number)
   })
 })

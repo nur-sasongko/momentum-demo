@@ -39,6 +39,7 @@ export function buildPdfStyles(fonts: {
     h1: { fontSize: 20, bold: true, color: INK_COLOR, margin: [0, 18, 0, 8] },
     h2: { fontSize: 15, bold: true, color: INK_COLOR, margin: [0, 16, 0, 6] },
     h3: { fontSize: 12.5, bold: true, color: INK_COLOR, margin: [0, 14, 0, 6] },
+    h4: { fontSize: 11, bold: true, color: INK_COLOR, margin: [0, 12, 0, 4] },
     paragraph: { margin: [0, 0, 0, 8] },
     muted: { color: MUTED_COLOR },
     link: { color: LINK_COLOR, decoration: 'underline' },

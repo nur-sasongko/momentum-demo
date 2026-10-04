@@ -31,11 +31,12 @@ function isContent(value: Content | null): value is Content {
   return value !== null
 }
 
-function clampHeadingLevel(level: unknown): 1 | 2 | 3 {
+function clampHeadingLevel(level: unknown): 1 | 2 | 3 | 4 {
   const numeric = typeof level === 'number' ? level : 1
   if (numeric <= 1) return 1
   if (numeric === 2) return 2
-  return 3
+  if (numeric === 3) return 3
+  return 4
 }
 
 function collectPlainText(node: JSONContent): string {

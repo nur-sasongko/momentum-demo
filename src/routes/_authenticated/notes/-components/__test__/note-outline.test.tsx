@@ -254,3 +254,60 @@ describe('NoteOutlineMobileMenu', () => {
     expect(screen.queryByText('Env vars')).toBeNull()
   })
 })
+
+describe('outline nesting depth', () => {
+  const NESTED: OutlineEntry[] = [
+    { level: 1, text: 'Part', domIndex: 0 },
+    { level: 2, text: 'Chapter', domIndex: 1 },
+    { level: 3, text: 'Section', domIndex: 2 },
+    { level: 4, text: 'Detail', domIndex: 3 },
+  ]
+
+  it('gives every level its own indent step in the rail', () => {
+    renderOutline({ entries: NESTED })
+    const row = (name: string) => screen.getByRole('button', { name })
+
+    expect(row('Part').className).toContain('pl-1.5')
+    expect(row('Chapter').className).toContain('pl-4')
+    expect(row('Section').className).toContain('pl-6')
+    expect(row('Detail').className).toContain('pl-8')
+  })
+
+  it('measures depth from the shallowest level the note uses', () => {
+    renderOutline({
+      entries: [
+        { level: 2, text: 'Top', domIndex: 0 },
+        { level: 3, text: 'Child', domIndex: 1 },
+        { level: 4, text: 'Grandchild', domIndex: 2 },
+      ],
+    })
+    const row = (name: string) => screen.getByRole('button', { name })
+
+    expect(row('Top').className).toContain('pl-1.5')
+    expect(row('Child').className).toContain('pl-4')
+    expect(row('Grandchild').className).toContain('pl-6')
+  })
+
+  it('uses the long tick for top-level entries and the short tick for nested ones', () => {
+    renderOutline({ entries: NESTED })
+    const tick = (name: string) =>
+      screen.getByRole('button', { name }).querySelector('span[aria-hidden]')
+
+    expect(tick('Part')?.className).toContain('h-4')
+    expect(tick('Chapter')?.className).toContain('h-3')
+    expect(tick('Detail')?.className).toContain('h-3')
+  })
+
+  it('indents the mobile list by depth too', () => {
+    isMobile = true
+    renderMobileMenu({ entries: NESTED })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Outline' }))
+    const row = (name: string) => screen.getByText(name)
+
+    expect(row('Part').className).toContain('pl-2')
+    expect(row('Chapter').className).toContain('pl-5')
+    expect(row('Section').className).toContain('pl-8')
+    expect(row('Detail').className).toContain('pl-11')
+  })
+})

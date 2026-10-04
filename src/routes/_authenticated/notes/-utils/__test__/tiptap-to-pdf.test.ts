@@ -26,9 +26,9 @@ describe('tiptapToPdfContent — headings', () => {
     [1, 'h1'],
     [2, 'h2'],
     [3, 'h3'],
-    [4, 'h3'],
-    [5, 'h3'],
-    [6, 'h3'],
+    [4, 'h4'],
+    [5, 'h4'],
+    [6, 'h4'],
   ])('maps heading level %i to style %s', (level, style) => {
     const { content } = tiptapToPdfContent(
       doc({
@@ -41,7 +41,7 @@ describe('tiptapToPdfContent — headings', () => {
     expect(content).toHaveLength(1)
     expect(content[0]).toMatchObject({
       style,
-      headlineLevel: level <= 1 ? 1 : level === 2 ? 2 : 3,
+      headlineLevel: Math.min(Math.max(level, 1), 4),
     })
   })
 })

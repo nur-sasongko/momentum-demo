@@ -18,6 +18,16 @@ interface OutlineSelectOptions {
   placeCursor?: boolean
 }
 
+// Indexed by nesting depth (level minus the note's shallowest level), so a
+// note whose headings start at H2 doesn't open with an empty indent step.
+const RAIL_INDENT = ['pl-1.5', 'pl-4', 'pl-6', 'pl-8']
+const MOBILE_INDENT = ['pl-2', 'pl-5', 'pl-8', 'pl-11']
+
+function outlineDepths(entries: OutlineEntry[]): number[] {
+  const base = Math.min(...entries.map((entry) => entry.level))
+  return entries.map((entry) => entry.level - base)
+}
+
 interface NoteOutlineProps {
   entries: OutlineEntry[]
   activeIndex: number
@@ -28,6 +38,7 @@ interface NoteOutlineProps {
 
 function OutlineRow({
   entry,
+  depth,
   isActive,
   isPassed,
   isReadOnly,
@@ -35,6 +46,7 @@ function OutlineRow({
   onSelect,
 }: {
   entry: OutlineEntry
+  depth: number
   isActive: boolean
   isPassed: boolean
   isReadOnly: boolean
@@ -48,21 +60,21 @@ function OutlineRow({
       onClick={() => onSelect(entry.domIndex, { placeCursor: !isReadOnly })}
       className={cn(
         'flex h-7 w-full shrink-0 items-center gap-1.5 rounded-sm px-1.5 text-left transition-colors hover:bg-muted focus-visible:bg-muted',
-        entry.level === 3 && 'pl-4',
+        RAIL_INDENT[depth],
       )}
     >
       <span
         aria-hidden="true"
         className={cn(
           'w-0.5 shrink-0 rounded-full transition-colors',
-          entry.level === 3 ? 'h-3' : 'h-4',
+          depth > 0 ? 'h-3' : 'h-4',
           isPassed ? 'bg-primary' : 'bg-border',
         )}
       />
       <TruncatedText
         className={cn(
           'truncate leading-tight',
-          entry.level === 3 ? 'text-xs' : 'text-[13px]',
+          depth > 0 ? 'text-xs' : 'text-[13px]',
           isActive ? 'font-medium text-foreground' : 'text-muted-foreground',
           collapsed &&
             'opacity-0 transition-opacity duration-150 group-hover/outline:opacity-100 group-focus-within/outline:opacity-100',
@@ -100,6 +112,7 @@ export function NoteOutline({
   if (isMobile) return null
 
   const hasEntries = entries.length > 0
+  const depths = outlineDepths(entries)
   const collapsed = !isWide || isOutlineCollapsed || !hasEntries
   const canToggle = isWide && hasEntries
 
@@ -165,6 +178,7 @@ export function NoteOutline({
               <OutlineRow
                 key={entry.domIndex}
                 entry={entry}
+                depth={depths[index]}
                 isActive={index === activeIndex}
                 isPassed={index <= activeIndex}
                 isReadOnly={isReadOnly}
@@ -236,6 +250,8 @@ export function NoteOutlineMobileMenu({
 
   if (!isMobile || entries.length === 0) return null
 
+  const depths = outlineDepths(entries)
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -275,7 +291,7 @@ export function NoteOutlineMobileMenu({
               }}
               className={cn(
                 'line-clamp-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-muted',
-                entry.level === 3 && 'pl-5',
+                MOBILE_INDENT[depths[index]],
                 index === activeIndex
                   ? 'font-medium text-foreground'
                   : 'text-muted-foreground',

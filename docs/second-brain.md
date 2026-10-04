@@ -250,7 +250,7 @@ Configured in `createContentExtensions()` / `createEditorExtensions()`:
 
 Typing these patterns transforms content inline (no preview mode):
 
-- `#` / `##` / `###` + space → headings
+- `#` / `##` / `###` / `####` + space → headings
 - `**text**`, `*text*`, `~~text~~`, `` `code` ``
 - ` ``` ` → code block
 - `- ` / `1. ` → lists; `- [ ]` → todo
@@ -260,7 +260,7 @@ Typing these patterns transforms content inline (no preview mode):
 
 Opens a fuzzy-filtered palette (arrow keys + Enter). Inserts blocks such as:
 
-- Text, Heading 1–3, bullet/ordered/todo lists
+- Text, Heading 2–4, bullet/ordered/todo lists
 - Code block, blockquote, divider
 - Image (URL or upload), table (grid picker), callout
 - Link to another note, external link

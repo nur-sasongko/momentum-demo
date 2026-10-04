@@ -329,8 +329,12 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
   @apply mt-3 mb-1;
 }
 
-.note-tiptap :where(h3, h4) {
+.note-tiptap :where(h3) {
   @apply mt-2 mb-0.5;
+}
+
+.note-tiptap :where(h4) {
+  @apply mt-2 mb-0.5 font-semibold;
 }
 
 .note-tiptap :where(li) {
