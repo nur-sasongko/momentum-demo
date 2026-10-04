@@ -4,6 +4,7 @@ All specs for the Momentum project. Newest first.
 
 | ID  | Spec                                                                                                                                 | Feature | Status      | Created    |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------ | ------- | ----------- | ---------- |
+| 30  | [First-Class Heading 4 in the Notes Editor](./030-notes-heading-4-support.md)                                                        | notes   | in-progress | 2026-10-04 |
 | 29  | [Draggable Table Context Menu in the Notes Editor](./029-notes-draggable-table-context-menu.md)                                      | notes   | done        | 2026-09-11 |
 | 28  | [Notion-Style Block Drag Handles in the Notes Editor](./028-notes-block-drag-handles.md)                                             | notes   | done        | 2026-09-10 |
 | 27  | [Export Finance Transactions as a Real Excel Workbook](./027-finance-excel-export.md)                                                | finance | done        | 2026-08-24 |

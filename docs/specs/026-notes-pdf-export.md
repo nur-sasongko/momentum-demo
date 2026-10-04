@@ -4,7 +4,7 @@ title: 'Export a Note to PDF: Real Text, Not Screenshots'
 status: in-progress
 feature: notes
 created: 2026-08-22
-updated: 2026-08-22
+updated: 2026-10-04
 ---
 
 # Export a Note to PDF: Real Text, Not Screenshots
@@ -891,3 +891,7 @@ here rather than rewritten in place.
   a new `export-note-pdf.test.ts` (mocking `pdfmake/build/pdfmake`'s
   `setFonts`/`createPdf`) that asserts a failed first attempt rebuilds once
   with `PDF_FALLBACK_FONTS` and still downloads a PDF.
+- **2026-10-04 — H4 gets its own style (spec 030).** The `heading` row's _"H4–H6
+  clamp to `h3`"_ and the 20/15/12.5pt heading scale are superseded by
+  [030 — First-Class Heading 4](./030-notes-heading-4-support.md): an `h4` style
+  and `headlineLevel: 4` are added, and H5–H6 clamp to 4 instead of 3.

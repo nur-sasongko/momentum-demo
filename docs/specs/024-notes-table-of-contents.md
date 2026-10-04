@@ -4,7 +4,7 @@ title: 'Note Outline: A Proportional Table of Contents for Second Brain'
 status: in-progress
 feature: notes
 created: 2026-08-20
-updated: 2026-08-21
+updated: 2026-10-04
 ---
 
 # Note Outline: A Proportional Table of Contents for Second Brain
@@ -572,3 +572,7 @@ for `line-clamp-2`.
       reads as intentional in both themes and not as an empty container.
 - [ ] Hover the collapsed gutter at `lg`; confirm the panel floats with a visible
       border and lands on margin, not on prose.
+
+### 2026-10-04 — H4 is now a distinct outline level (see spec 030)
+
+The non-goal _"No new heading levels. H4–H6 remain absent from the slash menu"_ and the depth rule _"H3 (and clamped H4–H6) a half-width one"_ are superseded by [030 — First-Class Heading 4](./030-notes-heading-4-support.md). `OutlineEntry.level` widens to `1 | 2 | 3 | 4`; H4 gets its own indent and tick, and H5–H6 clamp to 4 instead of 3. The derived-from-JSON design and `domIndex` alignment are unchanged.
