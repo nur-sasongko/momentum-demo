@@ -39,15 +39,23 @@ describe('downloadBlob', () => {
   const originalCreateObjectURL = URL.createObjectURL
   const originalRevokeObjectURL = URL.revokeObjectURL
 
+  // jsdom cannot follow the anchor's `blob:` URL and logs "Not implemented:
+  // navigation to another Document" on a real click.
+  let anchorClickSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     URL.createObjectURL = vi.fn(() => 'blob:mock-url')
     URL.revokeObjectURL = vi.fn()
+    anchorClickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {})
     vi.useFakeTimers()
   })
 
   afterEach(() => {
     URL.createObjectURL = originalCreateObjectURL
     URL.revokeObjectURL = originalRevokeObjectURL
+    anchorClickSpy.mockRestore()
     vi.useRealTimers()
   })
 

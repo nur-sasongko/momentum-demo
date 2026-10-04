@@ -173,3 +173,17 @@ describe('pasting Markdown', () => {
     })
   })
 })
+
+describe('pasting Markdown headings', () => {
+  it.each([
+    ['# One', 1],
+    ['#### Four', 4],
+    ['###### Six', 6],
+  ])('keeps %j as a heading of level %i', (text, level) => {
+    const { json } = pasteAndGetTypes({ text })
+
+    expect(json.content.find((node) => node.type === 'heading')).toMatchObject({
+      attrs: { level },
+    })
+  })
+})

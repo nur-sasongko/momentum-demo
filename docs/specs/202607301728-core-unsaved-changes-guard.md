@@ -1,7 +1,8 @@
 ---
-id: 10
+id: 202607301728
+legacy-id: 10
 title: 'Global Unsaved-Changes Guard'
-status: in-progress
+status: done
 feature: core
 related-features: [finance, tasks, habits]
 created: 2026-07-31
@@ -23,7 +24,7 @@ The finance transaction Add/Edit sheet already confirms before discarding unsave
 
 - Not guarding the finance Category Manager's per-row inline edit forms (`CategoryRow`) — each row already has its own scoped Save/Cancel buttons, so there's no sheet-level close action that could discard a row edit silently. Only the sheet-level "Add category" form is guarded.
 - Not guarding small, single-value picker dialogs: the task Deadline picker (`deadline-picker-dialog.tsx`), the transaction Location picker (`location-picker.tsx`), or the Notes tag-rename dialog (`tag-manager-dialog.tsx`). Closing these just loses one quick pick, not a multi-field draft, and they're nested inside forms that are already guarded (or, for tag-rename, hold negligible state).
-- Not changing Notes' full-page note editor — at the time this spec was written it autosaved on every keystroke, so there was no unsaved draft to lose. That's no longer true: spec 17 removes autosave in favor of explicit save (blur/`Ctrl`+`S`/switch/navigate triggers, a `beforeunload` guard, and a floating "Unsaved changes" bar) — see [`docs/specs/017-notes-editor-explicit-save.md`](./017-notes-editor-explicit-save.md). The editor still isn't guarded by `useUnsavedChangesGuard`/`DiscardChangesDialog` from this spec, because a note is saved on navigation rather than discarded.
+- Not changing Notes' full-page note editor — at the time this spec was written it autosaved on every keystroke, so there was no unsaved draft to lose. That's no longer true: spec 17 removes autosave in favor of explicit save (blur/`Ctrl`+`S`/switch/navigate triggers, a `beforeunload` guard, and a floating "Unsaved changes" bar) — see [`docs/specs/202608041548-notes-data-and-saving.md#spec-202608091803`](./202608041548-notes-data-and-saving.md#spec-202608091803). The editor still isn't guarded by `useUnsavedChangesGuard`/`DiscardChangesDialog` from this spec, because a note is saved on navigation rather than discarded.
 
 ## Acceptance Criteria
 

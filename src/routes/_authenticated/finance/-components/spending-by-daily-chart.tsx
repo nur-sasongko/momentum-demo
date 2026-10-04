@@ -31,21 +31,17 @@ import { selectionFromDaySegment } from '../-utils/finance-drilldown'
 
 import type {
   BarRectangleItem,
+  TooltipContentProps,
   TooltipPayloadEntry,
-  TooltipProps,
 } from 'recharts'
 import type {
   DailySpendingPoint,
   DrilldownSelection,
 } from '../-types/finance-chart'
 
-function DailyTooltip({
-  active,
-  payload,
-  label,
-}: TooltipProps<number, string>) {
-  if (!active || !payload?.length) return null
-  const point = payload[0]?.payload as DailySpendingPoint | undefined
+function DailyTooltip({ active, payload, label }: TooltipContentProps) {
+  if (!active || payload.length === 0) return null
+  const point = payload[0].payload as DailySpendingPoint | undefined
   const entries = (payload as TooltipPayloadEntry[]).filter(
     (entry) => Number(entry.value ?? 0) > 0,
   )
@@ -125,7 +121,10 @@ export function SpendingByDailyChart({
           tickFormatter={chartYAxisTickFormatter}
           className="text-muted-foreground"
         />
-        <Tooltip content={<DailyTooltip />} cursor={CHART_TOOLTIP_CURSOR} />
+        <Tooltip
+          content={(props) => <DailyTooltip {...props} />}
+          cursor={CHART_TOOLTIP_CURSOR}
+        />
         <Legend wrapperStyle={{ fontSize: 12 }} />
         {series.map((s, index) => (
           <Bar

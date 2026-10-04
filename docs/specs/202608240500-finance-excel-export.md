@@ -1,5 +1,6 @@
 ---
-id: 27
+id: 202608240500
+legacy-id: 27
 title: 'Export Finance Transactions as a Real Excel Workbook'
 status: done
 feature: finance
@@ -21,7 +22,7 @@ so even copy-paste only escapes with 25 rows at a time — and it drops the cate
 name, the location, and the sign of the amount, which are all rendered rather than
 stored in the cell. [`docs/finance.md`](../finance.md) has listed "Add CSV
 export/import for backups" under future improvements since the Supabase migration,
-and [spec 021](./021-core-data-table-refinement.md) explicitly non-goaled CSV
+and [spec 021](./202608111040-core-design-system.md#spec-202608131622) explicitly non-goaled CSV
 export from the data table. This spec supersedes that line and reopens that
 exclusion — deliberately, and not as CSV.
 
@@ -69,9 +70,9 @@ exclusion — deliberately, and not as CSV.
   widths, number/date formats, wrapped note text. No brand colours, no category
   colour fills, no conditional formatting, no logo.
 - **No server-side generation, no scheduled or emailed exports.** The app is a
-  static SPA ([spec 004](./004-core-remove-ssr.md)); the workbook is built in the
+  static SPA ([spec 004](./202607041542-core-platform.md#spec-202607041635)); the workbook is built in the
   browser and handed to the user via a blob download, exactly as
-  [spec 026](./026-notes-pdf-export.md) does for PDF.
+  [spec 026](./202608221551-notes-pdf-export.md) does for PDF.
 - **No multi-currency handling.** Amounts are plain numbers today —
   [`src/utils/currency.ts`](../../src/utils/currency.ts) formats separators only
   and carries no currency symbol — so the workbook writes plain numbers too.
@@ -115,11 +116,11 @@ exclusion — deliberately, and not as CSV.
 **Store:** `src/stores/finance-store.ts` — none. No new persisted state, no
 `version` bump, no `migrate`. The export reads existing `Transaction` and
 `FinanceCategory` domain types and filter state already living in the URL
-([spec 011](./011-finance-filters-url-state.md)).
+([spec 011](./202608010500-finance-filters-summary.md#spec-202608010500)).
 
 New types go in
 [`-types/finance-export.ts`](../../src/routes/_authenticated/finance/-types/),
-per [spec 019](./019-core-feature-types-folders.md):
+per [spec 019](./202608111038-core-code-organization.md#spec-202608111039):
 
 ```ts
 /** The filter set an export was taken under — drives both the query and the Summary sheet. */
@@ -277,7 +278,7 @@ sheet is the legend, and a backup of the category setup.
   produces a plausible-looking file is the worst possible outcome for a financial
   export.
 - **Timezone.** Transaction `date` is a timestamp
-  ([spec 007](./007-finance-transaction-datetime-and-markdown-note.md)); Excel
+  ([spec 007](./202607241601-finance-transactions.md#spec-202607290500)); Excel
   date serials carry no timezone at all. Dates are written as **local
   wall-clock**, so a cell matches what the table shows on the same machine
   (`formatDateTimeLabel`). A workbook opened in another timezone shows the
@@ -300,7 +301,7 @@ sheet is the legend, and a backup of the category setup.
 - **Concurrent clicks:** the button is disabled while pending, so one click can
   only ever produce one file.
 - **Archived rows** are excluded — the export query applies the same `liveOnly`
-  predicate as the table ([spec 022](./022-core-archive-soft-delete.md)).
+  predicate as the table ([spec 022](./202608151543-core-archive.md#spec-202608151543)).
 
 ## Library choice
 
@@ -324,7 +325,7 @@ knows the library's name.
 
 ## Implementation Notes
 
-Mirrors the shape [spec 026](./026-notes-pdf-export.md) established for the note
+Mirrors the shape [spec 026](./202608221551-notes-pdf-export.md) established for the note
 PDF export: one module owns the runtime, dynamically imported; the transform next
 to it is pure.
 

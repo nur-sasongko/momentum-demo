@@ -15,7 +15,7 @@ interface ArchivedNotesSheetProps {
 }
 
 /**
- * Side panel over the note list — see docs/specs/023-core-in-feature-archive-views.md
+ * Side panel over the note list — see docs/specs/202608151543-core-archive.md#spec-202608151544
  * decision 5. Mounts the same table as `/archive`'s Second Brain tab verbatim.
  */
 export function ArchivedNotesSheet({

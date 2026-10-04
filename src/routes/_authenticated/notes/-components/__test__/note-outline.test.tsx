@@ -90,6 +90,13 @@ describe('NoteOutline', () => {
     expect(container.querySelector('aside')?.className).toContain('w-6')
   })
 
+  it('draws the margin rule, and no button, when a note has no headings', () => {
+    const { container } = renderOutline({ entries: [] })
+
+    expect(container.querySelector('aside > span.w-px')).toBeTruthy()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
   it('carries no title attribute on any row', () => {
     renderOutline()
 
@@ -98,13 +105,32 @@ describe('NoteOutline', () => {
     }
   })
 
-  it('shows a static outline glyph, not a toggle, between md and xl', () => {
+  it('holds a single outline button, with no ticks or labels, between md and xl', () => {
     isWide = false
     const { container } = renderOutline()
 
+    expect(container.querySelector('aside')?.className).toContain('w-6')
+    expect(container.querySelector('aside > span.w-px')).toBeNull()
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.queryByText('Intro')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Hide outline' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Show outline' })).toBeNull()
-    expect(container.querySelector('svg[aria-hidden="true"]')).toBeTruthy()
+  })
+
+  it('opens a popover listing every heading and the progress from the gutter button', () => {
+    isWide = false
+    const { onSelect } = renderOutline()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Outline' }))
+
+    expect(screen.getByText('42%')).toBeTruthy()
+    expect(screen.getByText('Intro')).toBeTruthy()
+    expect(screen.getByText('Env vars')).toBeTruthy()
+
+    fireEvent.click(screen.getByText('Setup'))
+
+    expect(onSelect).toHaveBeenCalledWith(1, { placeCursor: true })
+    expect(screen.queryByText('Setup')).toBeNull()
   })
 
   it('keeps the collapse toggle visible in the gutter head slot once collapsed', () => {
@@ -165,6 +191,14 @@ describe('NoteOutline', () => {
         .getByRole('button', { name: 'Show outline' })
         .getAttribute('aria-expanded'),
     ).toBe('false')
+  })
+
+  it('shows only the Show outline button, no rows, once collapsed at xl', () => {
+    useNotesStore.setState({ isOutlineCollapsed: true })
+    renderOutline()
+
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.queryByText('Intro')).toBeNull()
   })
 
   it('does not render the collapse toggle when the viewport forces the gutter state', () => {
@@ -252,5 +286,73 @@ describe('NoteOutlineMobileMenu', () => {
 
     expect(onSelect).toHaveBeenCalledWith(1, { placeCursor: false })
     expect(screen.queryByText('Env vars')).toBeNull()
+  })
+})
+
+describe('outline nesting depth', () => {
+  const NESTED: OutlineEntry[] = [
+    { level: 1, text: 'Part', domIndex: 0 },
+    { level: 2, text: 'Chapter', domIndex: 1 },
+    { level: 3, text: 'Section', domIndex: 2 },
+    { level: 4, text: 'Detail', domIndex: 3 },
+  ]
+
+  it('gives every level its own indent step in the rail', () => {
+    renderOutline({ entries: NESTED })
+    const row = (name: string) => screen.getByRole('button', { name })
+
+    expect(row('Part').className).toContain('pl-1.5')
+    expect(row('Chapter').className).toContain('pl-4')
+    expect(row('Section').className).toContain('pl-6')
+    expect(row('Detail').className).toContain('pl-8')
+  })
+
+  it('measures depth from the shallowest level the note uses', () => {
+    renderOutline({
+      entries: [
+        { level: 2, text: 'Top', domIndex: 0 },
+        { level: 3, text: 'Child', domIndex: 1 },
+        { level: 4, text: 'Grandchild', domIndex: 2 },
+      ],
+    })
+    const row = (name: string) => screen.getByRole('button', { name })
+
+    expect(row('Top').className).toContain('pl-1.5')
+    expect(row('Child').className).toContain('pl-4')
+    expect(row('Grandchild').className).toContain('pl-6')
+  })
+
+  it('uses the long tick for top-level entries and the short tick for nested ones', () => {
+    renderOutline({ entries: NESTED })
+    const tick = (name: string) =>
+      screen.getByRole('button', { name }).querySelector('span[aria-hidden]')
+
+    expect(tick('Part')?.className).toContain('h-4')
+    expect(tick('Chapter')?.className).toContain('h-3')
+    expect(tick('Detail')?.className).toContain('h-3')
+  })
+
+  it('keeps popover rows from shrinking when the list overflows its max height', () => {
+    isMobile = true
+    renderMobileMenu({ entries: NESTED })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Outline' }))
+
+    for (const text of ['Part', 'Chapter', 'Section', 'Detail']) {
+      expect(screen.getByText(text).className).toContain('shrink-0')
+    }
+  })
+
+  it('indents the mobile list by depth too', () => {
+    isMobile = true
+    renderMobileMenu({ entries: NESTED })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Outline' }))
+    const row = (name: string) => screen.getByText(name)
+
+    expect(row('Part').className).toContain('pl-2')
+    expect(row('Chapter').className).toContain('pl-5')
+    expect(row('Section').className).toContain('pl-8')
+    expect(row('Detail').className).toContain('pl-11')
   })
 })

@@ -30,13 +30,13 @@ describe('extractOutline', () => {
     ])
   })
 
-  it('clamps H4–H6 to level 3', () => {
+  it('keeps H4 and clamps H5–H6 to level 4', () => {
     const doc: JSONContent = {
       type: 'doc',
       content: [heading(4, 'Four'), heading(5, 'Five'), heading(6, 'Six')],
     }
 
-    expect(extractOutline(doc).map((e) => e.level)).toEqual([3, 3, 3])
+    expect(extractOutline(doc).map((e) => e.level)).toEqual([4, 4, 4])
   })
 
   it('skips empty headings but keeps domIndex aligned with the full heading count', () => {

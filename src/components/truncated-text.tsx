@@ -1,13 +1,5 @@
-import {
-  createElement,
-  useEffect,
-  useRef,
-  useState
-  
-  
-  
-} from 'react'
-import type {ElementType, ReactNode, RefObject} from 'react';
+import { useEffect, useRef, useState } from 'react'
+import type { ElementType, ReactNode, RefObject } from 'react'
 
 import {
   Tooltip,
@@ -63,7 +55,6 @@ export function TruncatedText({
   const isClipped = useIsClipped(ref)
 
   const content = (
-    // @ts-expect-error -- `Component` is a runtime-selected intrinsic tag.
     <Component ref={ref} className={className}>
       {children}
     </Component>

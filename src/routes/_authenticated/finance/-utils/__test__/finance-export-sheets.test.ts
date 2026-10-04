@@ -10,6 +10,11 @@ import type {
 
 const EXPORTED_AT = new Date('2026-08-24T14:32:00.000Z')
 
+// Summary spacer rows are `[null]`, so a first cell is not always a string.
+function cellText(cell: ExportCell): string | undefined {
+  return cell?.type === 'string' ? cell.value : undefined
+}
+
 const categories: FinanceCategory[] = [
   {
     id: 'cat-groceries',
@@ -127,17 +132,9 @@ describe('buildFinanceWorkbook', () => {
     )
     const summaryRows = sheetNamed(sheets, 'Summary').rows
 
-    const incomeRow = summaryRows.find(
-      (r) =>
-        (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Income',
-    )!
-    const expenseRow = summaryRows.find(
-      (r) =>
-        (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Expense',
-    )!
-    const netRow = summaryRows.find(
-      (r) => (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Net',
-    )!
+    const incomeRow = summaryRows.find((r) => cellText(r[0]) === 'Income')!
+    const expenseRow = summaryRows.find((r) => cellText(r[0]) === 'Expense')!
+    const netRow = summaryRows.find((r) => cellText(r[0]) === 'Net')!
 
     expect(
       (incomeRow[1] as Extract<ExportCell, { type: 'number' }>).value,
@@ -163,8 +160,7 @@ describe('buildFinanceWorkbook', () => {
     )
     const summaryRows = sheetNamed(sheets, 'Summary').rows
     const breakdownRow = summaryRows.find(
-      (r) =>
-        (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Groceries',
+      (r) => cellText(r[0]) === 'Groceries',
     )!
 
     expect(
@@ -188,14 +184,11 @@ describe('buildFinanceWorkbook', () => {
       EXPORTED_AT,
     )
     const summaryRows = sheetNamed(sheets, 'Summary').rows
-    const netRow = summaryRows.find(
-      (r) => (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Net',
-    )!
+    const netRow = summaryRows.find((r) => cellText(r[0]) === 'Net')!
     expect((netRow[1] as Extract<ExportCell, { type: 'number' }>).value).toBe(0)
     // No rows means no category groups at all — the breakdown table has only its header.
     const headerIndex = summaryRows.findIndex(
-      (r) =>
-        (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Category',
+      (r) => cellText(r[0]) === 'Category',
     )
     expect(summaryRows).toHaveLength(headerIndex + 1)
   })
@@ -209,22 +202,12 @@ describe('buildFinanceWorkbook', () => {
     )
     const summaryRows = sheetNamed(sheets, 'Summary').rows
 
-    const typeRow = summaryRows.find(
-      (r) => (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Type',
-    )!
+    const typeRow = summaryRows.find((r) => cellText(r[0]) === 'Type')!
     const categoriesRow = summaryRows.find(
-      (r) =>
-        (r[0] as Extract<ExportCell, { type: 'string' }>).value ===
-        'Categories',
+      (r) => cellText(r[0]) === 'Categories',
     )!
-    const citiesRow = summaryRows.find(
-      (r) =>
-        (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Cities',
-    )!
-    const searchRow = summaryRows.find(
-      (r) =>
-        (r[0] as Extract<ExportCell, { type: 'string' }>).value === 'Search',
-    )!
+    const citiesRow = summaryRows.find((r) => cellText(r[0]) === 'Cities')!
+    const searchRow = summaryRows.find((r) => cellText(r[0]) === 'Search')!
 
     expect((typeRow[1] as Extract<ExportCell, { type: 'string' }>).value).toBe(
       'All',
@@ -302,9 +285,7 @@ describe('buildFinanceWorkbook', () => {
     )
     const [, ...rows] = sheetNamed(sheets, 'Categories').rows
     expect(rows).toHaveLength(categories.length)
-    expect(
-      rows.map((r) => (r[0] as Extract<ExportCell, { type: 'string' }>).value),
-    ).toEqual(['Groceries', 'Salary'])
+    expect(rows.map((r) => cellText(r[0]))).toEqual(['Groceries', 'Salary'])
   })
 
   it('freezes the header row for Transactions and Categories but not Summary', () => {

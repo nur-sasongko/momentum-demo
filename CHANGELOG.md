@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [0.0.9] - 2026-09-12
+
+### Added
+
+- Second Brain: Heading 4 is now a first-class heading. It is available from the
+  `/` menu, looks distinct from Heading 3 in the editor, and shows at its own
+  depth in the outline and in PDF exports (Heading 5–6 display as Heading 4).
+
+### Changed
+
+- Second Brain: notes in the list are now real links, so Ctrl/Cmd+click,
+  middle-click, or right-click → "Open in new tab" opens a note in a new tab
+  (keeping your current filters). A plain click still opens it in place.
+- Second Brain: the outline now nests every heading level under the one above
+  it, starting from the highest level the note uses.
+- Second Brain: "Heading 1" is no longer in the `/` menu, since the note title
+  already plays that role. Existing Heading 1s and typing `# ` still work.
+
+### Fixed
+
+- Second Brain: on narrower windows, the outline strip is now a single button
+  that opens the heading list, instead of a column of tiny marks. At wide
+  widths, hiding the outline leaves a visible "Show outline" button, and
+  nothing expands on hover any more.
+
 ## [0.0.8] - 2026-09-11
 
 ### Added

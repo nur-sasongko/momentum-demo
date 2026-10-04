@@ -665,7 +665,7 @@ describe('NoteEditor — save state UI', () => {
     typeTitle('Hello')
     pressSaveShortcut()
 
-    const saveButton = screen.getByRole('button', {
+    const saveButton = screen.getByRole<HTMLButtonElement>('button', {
       name: 'Save',
     })
     expect(saveButton.disabled).toBe(true)
@@ -685,7 +685,7 @@ describe('NoteEditor — save state UI', () => {
 
     const bar = screen.getByRole('status')
     expect(within(bar).getByText('Unsaved changes')).toBeTruthy()
-    const saveButton = within(bar).getByRole('button', {
+    const saveButton = within(bar).getByRole<HTMLButtonElement>('button', {
       name: 'Save',
     })
     expect(saveButton.disabled).toBe(false)

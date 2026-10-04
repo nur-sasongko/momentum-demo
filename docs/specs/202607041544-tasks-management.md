@@ -1,7 +1,8 @@
 ---
-id: 3
+id: 202607041544
+legacy-id: 3
 title: 'Tasks Management'
-status: draft
+status: in-progress
 feature: tasks
 created: 2026-07-04
 updated: 2026-07-04

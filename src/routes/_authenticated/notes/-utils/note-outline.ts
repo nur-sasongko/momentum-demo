@@ -2,11 +2,12 @@ import type { JSONContent } from '@tiptap/core'
 
 import type { OutlineEntry } from '#/routes/_authenticated/notes/-types/notes-outline'
 
-function clampLevel(level: unknown): 1 | 2 | 3 {
+function clampLevel(level: unknown): 1 | 2 | 3 | 4 {
   const numeric = typeof level === 'number' ? level : 1
   if (numeric <= 1) return 1
   if (numeric === 2) return 2
-  return 3
+  if (numeric === 3) return 3
+  return 4
 }
 
 function collectText(node: JSONContent): string {

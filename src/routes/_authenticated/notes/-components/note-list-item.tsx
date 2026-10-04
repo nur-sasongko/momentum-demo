@@ -1,8 +1,8 @@
+import { Link } from '@tanstack/react-router'
 import { Lock, Star } from 'lucide-react'
 
 import { TruncatedText } from '#/components/truncated-text'
 import { cn } from '#/libs/utils'
-import { useNotesFilters } from '#/routes/_authenticated/notes/-utils/use-notes-filters'
 import { formatTimeSince } from '#/utils/date'
 import type { NoteSummary } from '#/stores/notes-store'
 
@@ -13,18 +13,29 @@ interface NoteListItemProps {
 }
 
 export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
-  const { selectNote } = useNotesFilters()
-
   return (
-    <button
-      type="button"
+    <Link
+      from="/notes/"
+      to="/notes"
+      search={(prev) => ({ ...prev, note: note.id })}
+      resetScroll={false}
       data-active={isActive}
-      onClick={() => {
-        selectNote(note.id)
+      aria-current={isActive ? 'page' : undefined}
+      onClick={(event) => {
+        // Modified/middle clicks open a new tab; leave them to the browser.
+        if (
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return
+        }
         onSelect?.()
       }}
       className={cn(
-        'mx-2 flex w-[calc(100%-1rem)] flex-col rounded-md px-3 py-2.5 text-left transition-colors',
+        'mx-2 flex w-[calc(100%-1rem)] flex-col rounded-md px-3 py-2.5 text-left no-underline transition-colors',
         'not-data-[active=true]:hover:bg-sidebar-accent',
         'data-[active=true]:bg-sidebar-active data-[active=true]:shadow-xs data-[active=true]:ring-1 data-[active=true]:ring-sidebar-border dark:data-[active=true]:shadow-none dark:data-[active=true]:ring-0',
       )}
@@ -68,6 +79,6 @@ export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
           {[...new Set(note.tags)].map((tag) => `#${tag}`).join(' ')}
         </TruncatedText>
       )}
-    </button>
+    </Link>
   )
 }

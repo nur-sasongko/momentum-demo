@@ -116,17 +116,6 @@ export function buildSlashCommands(
       },
     },
     {
-      id: 'heading-1',
-      title: 'Heading 1',
-      description: 'Large section heading',
-      keywords: ['h1', 'title'],
-      command: ({ editor, range }) => {
-        transformBlock(editor, range, (chain) =>
-          chain.setNode('heading', { level: 1 }),
-        )
-      },
-    },
-    {
       id: 'heading-2',
       title: 'Heading 2',
       description: 'Medium section heading',
@@ -145,6 +134,17 @@ export function buildSlashCommands(
       command: ({ editor, range }) => {
         transformBlock(editor, range, (chain) =>
           chain.setNode('heading', { level: 3 }),
+        )
+      },
+    },
+    {
+      id: 'heading-4',
+      title: 'Heading 4',
+      description: 'Minor section heading',
+      keywords: ['h4'],
+      command: ({ editor, range }) => {
+        transformBlock(editor, range, (chain) =>
+          chain.setNode('heading', { level: 4 }),
         )
       },
     },

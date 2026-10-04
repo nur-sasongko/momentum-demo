@@ -329,8 +329,12 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
   @apply mt-3 mb-1;
 }
 
-.note-tiptap :where(h3, h4) {
+.note-tiptap :where(h3) {
   @apply mt-2 mb-0.5;
+}
+
+.note-tiptap :where(h4) {
+  @apply mt-2 mb-0.5 font-semibold;
 }
 
 .note-tiptap :where(li) {
@@ -464,8 +468,46 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
   @apply border-l-4 border-primary/40 pl-4 text-muted-foreground italic;
 }
 
+/* Nested ordered lists cycle 1. → a. → i. like Notion/Docs; the typography
+   plugin leaves every depth as decimal. */
+.note-tiptap ol {
+  list-style-type: decimal;
+}
+
+.note-tiptap ol ol {
+  list-style-type: lower-alpha;
+}
+
+.note-tiptap ol ol ol {
+  list-style-type: lower-roman;
+}
+
+.note-tiptap ol ol ol ol {
+  list-style-type: decimal;
+}
+
+.note-tiptap ol ol ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.note-tiptap ol ol ol ol ol ol {
+  list-style-type: lower-roman;
+}
+
+/* A bare <hr> is ~1px tall, so the pointer almost never lands on it: the block
+   drag handle never appears and the rule is hard to click-select. Give it a
+   taller hit area and paint the visible line with a centered gradient. */
 .note-tiptap hr {
-  @apply border-border;
+  @apply my-0 h-4 cursor-pointer border-0 bg-transparent;
+  background-image: linear-gradient(var(--border), var(--border));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 1px;
+}
+
+.note-tiptap hr.ProseMirror-selectednode {
+  background-image: linear-gradient(var(--ring), var(--ring));
+  background-size: 100% 2px;
 }
 
 .note-tiptap img {
@@ -573,7 +615,7 @@ gmp-place-autocomplete::part(prediction-item-secondary-text) {
 
 /* Table bubble menu drag handle (`table-bubble-menu.tsx`). Applies a
    transform offset on top of the toolbar's floating-ui-computed position;
-   see the "Amendments" section of docs/specs/029-notes-draggable-table-context-menu.md. */
+   see the "Amendments" section of docs/specs/202609100500-notes-editor-blocks.md#spec-202609110728. */
 .note-table-bubble-menu-handle {
   @apply flex size-8 cursor-grab items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground;
 }

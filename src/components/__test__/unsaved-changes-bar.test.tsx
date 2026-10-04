@@ -8,7 +8,9 @@ describe('UnsavedChangesBar', () => {
     render(<UnsavedChangesBar state="dirty" onSave={vi.fn()} />)
 
     expect(screen.getByText('Unsaved changes')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Save' }).disabled).toBe(false)
+    expect(
+      screen.getByRole<HTMLButtonElement>('button', { name: 'Save' }).disabled,
+    ).toBe(false)
 
     const status = screen.getByRole('status')
     expect(status.getAttribute('aria-live')).toBe('polite')
@@ -18,7 +20,9 @@ describe('UnsavedChangesBar', () => {
     render(<UnsavedChangesBar state="saving" onSave={vi.fn()} />)
 
     expect(screen.getByText('Saving…')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Save' }).disabled).toBe(true)
+    expect(
+      screen.getByRole<HTMLButtonElement>('button', { name: 'Save' }).disabled,
+    ).toBe(true)
   })
 
   it('calls onSave once per click', () => {

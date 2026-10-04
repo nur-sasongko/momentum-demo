@@ -63,7 +63,7 @@ Momentum is a **TanStack Start SSR app** — React 19 with server-side rendering
 - **Feature-first layout** — each feature is a vertical slice colocated with its route (`-components/`, `-utils/`, `-queries/`, etc). See [`docs/architecture/feature-slices.md`](docs/architecture/feature-slices.md).
 - **Data & state** — TanStack Query for server state (SSR-safe via `setupRouterSsrQueryIntegration`), Zustand for persisted client state (`src/stores/`).
 - **Styling** — Tailwind CSS v4 with CSS variables for theming; Shadcn components (new-york style, zinc base color).
-- **Backend** — Supabase (Postgres + Auth). All Supabase access goes through client factories in `src/libs/supabase/` and the auth adapter in `src/libs/auth/auth-adapter.ts` — never import `@supabase/supabase-js` directly elsewhere. See [`docs/specs/001-core-supabase-postgres.md`](docs/specs/001-core-supabase-postgres.md) and [`docs/specs/002-core-auth-login-logout.md`](docs/specs/002-core-auth-login-logout.md).
+- **Backend** — Supabase (Postgres + Auth). All Supabase access goes through client factories in `src/libs/supabase/` and the auth adapter in `src/libs/auth/auth-adapter.ts` — never import `@supabase/supabase-js` directly elsewhere. See [`docs/specs/202607041542-core-platform.md#spec-202607041542`](docs/specs/202607041542-core-platform.md#spec-202607041542) and [`docs/specs/202607041542-core-platform.md#spec-202607041543`](docs/specs/202607041542-core-platform.md#spec-202607041543).
 - **PWA** — see [`docs/architecture/pwa.md`](docs/architecture/pwa.md).
 
 Full guidance for contributing with Claude Code lives in [`CLAUDE.md`](CLAUDE.md).

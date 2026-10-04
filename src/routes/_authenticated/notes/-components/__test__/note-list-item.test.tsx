@@ -1,12 +1,37 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NoteListItem } from '../note-list-item'
 
 import type { NoteSummary } from '#/stores/notes-store'
 
-vi.mock('../../-utils/use-notes-filters', () => ({
-  useNotesFilters: () => ({ selectNote: vi.fn() }),
+// Render `Link` as a plain anchor so the row needs no router context; the
+// `search` callback is resolved against an empty previous search. The default
+// action is cancelled after the row's own handler runs, since jsdom cannot
+// follow a link and logs "Not implemented: navigation to another Document".
+vi.mock('@tanstack/react-router', () => ({
+  Link: ({
+    search,
+    to,
+    from: _from,
+    resetScroll: _resetScroll,
+    onClick,
+    ...props
+  }: {
+    search: (prev: Record<string, unknown>) => Record<string, unknown>
+    to: string
+    from?: string
+    resetScroll?: boolean
+  } & React.ComponentProps<'a'>) => (
+    <a
+      href={`${to}?${new URLSearchParams(search({}) as Record<string, string>)}`}
+      onClick={(event) => {
+        onClick?.(event)
+        event.preventDefault()
+      }}
+      {...props}
+    />
+  ),
 }))
 
 // jsdom has no `ResizeObserver`; `TruncatedText` (title, tag run) needs one.
@@ -75,5 +100,56 @@ describe('NoteListItem', () => {
     )
 
     expect(screen.getByLabelText('Favorited')).toBeTruthy()
+  })
+
+  it('renders as a link whose href carries the note id', () => {
+    render(<NoteListItem note={makeSummary()} isActive={false} />)
+
+    const link = screen.getByRole('link')
+    expect(link.getAttribute('href')).toContain('note=note-1')
+  })
+
+  it('marks the active row with data-active and aria-current', () => {
+    render(<NoteListItem note={makeSummary()} isActive />)
+
+    const link = screen.getByRole('link')
+    expect(link.getAttribute('data-active')).toBe('true')
+    expect(link.getAttribute('aria-current')).toBe('page')
+  })
+
+  it('calls onSelect on a plain click', () => {
+    const onSelect = vi.fn()
+    render(
+      <NoteListItem
+        note={makeSummary()}
+        isActive={false}
+        onSelect={onSelect}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('link'))
+
+    expect(onSelect).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['ctrl', { ctrlKey: true }],
+    ['meta', { metaKey: true }],
+    ['shift', { shiftKey: true }],
+    ['alt', { altKey: true }],
+    ['middle', { button: 1 }],
+  ])('does not call onSelect on a %s click', (_name, init) => {
+    const onSelect = vi.fn()
+    render(
+      <NoteListItem
+        note={makeSummary()}
+        isActive={false}
+        onSelect={onSelect}
+      />,
+    )
+
+    fireEvent.click(screen.getByRole('link'), init)
+
+    expect(onSelect).not.toHaveBeenCalled()
   })
 })

@@ -28,8 +28,8 @@ Related architecture: `docs/architecture/feature-slices.md`.
 ## Current UX at `/notes`
 
 Layout is fixed-height chrome around scrolling content — see
-[`docs/specs/025-notes-workspace-layout.md`](specs/025-notes-workspace-layout.md) for the full
-rationale and [`docs/specs/024-notes-table-of-contents.md`](specs/024-notes-table-of-contents.md)
+[`docs/specs/202608090500-notes-workspace.md#spec-202608211241`](specs/202608090500-notes-workspace.md#spec-202608211241) for the full
+rationale and [`docs/specs/202608200500-notes-outline-headings.md#spec-202608200500`](specs/202608200500-notes-outline-headings.md#spec-202608200500)
 for the outline.
 
 - **Left pane**: one search/filter/new-note row, an optional active-filter summary row, the
@@ -47,7 +47,7 @@ for the outline.
   it to the list's active filter without leaving the note.
 - **Mobile outline**: below `md`, the table-of-contents trigger is a floating action button
   (bottom-right, matching `TaskAddFab`'s geometry) rather than a header icon — see
-  [`024`](specs/024-notes-table-of-contents.md#the-mobile-trigger-is-a-floating-action-button-not-a-header-icon).
+  [`024`](specs/202608200500-notes-outline-headings.md#the-mobile-trigger-is-a-floating-action-button-not-a-header-icon).
   It lifts from `bottom-6` to `bottom-24` while the unsaved-changes bar is visible.
 - **Empty state**: CTA to create the first note when the library is empty.
 - **Delete flow**: soft delete, not destructive. Confirmation dialog ("Move to Archive?") sets
@@ -114,7 +114,7 @@ for the outline.
 ## Data model
 
 Notes are persisted per-user in the `public.notes` Supabase table (see
-[`docs/specs/015-notes-supabase-integration.md`](specs/015-notes-supabase-integration.md) for the
+[`docs/specs/202608041548-notes-data-and-saving.md#spec-202608041548`](specs/202608041548-notes-data-and-saving.md#spec-202608041548) for the
 full migration). Client-side types in `src/stores/notes-store.ts`:
 
 ```ts
@@ -141,7 +141,7 @@ selected note via `useNoteQuery`. New accounts start with zero rows — there is
 
 ## Data Types
 
-`src/routes/_authenticated/notes/-types/` holds types that cross module boundaries within the slice ([`docs/specs/019-core-feature-types-folders.md`](specs/019-core-feature-types-folders.md)):
+`src/routes/_authenticated/notes/-types/` holds types that cross module boundaries within the slice ([`docs/specs/202608111038-core-code-organization.md#spec-202608111039`](specs/202608111038-core-code-organization.md#spec-202608111039)):
 
 - `notes-api.ts` — `NoteRow`, the snake_case Supabase response row mirroring the `notes` table exactly (including `plain_text`/`search_vector`, which the app never reads directly), and `NoteSummaryRow`, a `Pick` of the columns the list/link-target queries select. `transformNote`/`transformNoteSummary` in `-utils/notes-queries.ts` map these onto the camelCase `Note`/`NoteSummary` domain types above. Like the finance row types, this is a compile-time assertion (a typo'd field now fails `tsc`), not a runtime validation of what Postgres actually returns.
 - `notes-query.ts` — `NotesListParams` (the list query's cache key), `NotesTagFilter`/`NotesOrder`/`NotesListQueryDescriptor` (query-building), `NotesListPage`, `NoteTagCount`.
@@ -181,7 +181,7 @@ mistaken for an edit. There is no autosave — a save fires only when the user l
 floating "Unsaved changes" bar that appears at the bottom-center of the pane while the draft is
 dirty. Reloading or closing the tab with unsaved changes triggers the browser's native confirmation
 via `useBeforeUnloadGuard`. See
-[`docs/specs/017-notes-editor-explicit-save.md`](specs/017-notes-editor-explicit-save.md) for the
+[`docs/specs/202608041548-notes-data-and-saving.md#spec-202608091803`](specs/202608041548-notes-data-and-saving.md#spec-202608091803) for the
 full design.
 
 ## Search, tags, and sorting
@@ -244,13 +244,13 @@ Configured in `createContentExtensions()` / `createEditorExtensions()`:
 | NoteLinkExtension            | `[[` note typeahead                                                                                   |
 | NodeRange                    | Multi-block range selection (mouse drag or Shift-click across blocks)                                 |
 
-`NodeRange` is added in `createEditorExtensions()` only, not `createContentExtensions()` — the PDF exporter and markdown round-trip never need it (see [`028`](specs/028-notes-block-drag-handles.md)).
+`NodeRange` is added in `createEditorExtensions()` only, not `createContentExtensions()` — the PDF exporter and markdown round-trip never need it (see [`028`](specs/202609100500-notes-editor-blocks.md#spec-202609100500)).
 
 ### Markdown-style input rules (WYSIWYG)
 
 Typing these patterns transforms content inline (no preview mode):
 
-- `#` / `##` / `###` + space → headings
+- `#` / `##` / `###` / `####` + space → headings
 - `**text**`, `*text*`, `~~text~~`, `` `code` ``
 - ` ``` ` → code block
 - `- ` / `1. ` → lists; `- [ ]` → todo
@@ -260,7 +260,7 @@ Typing these patterns transforms content inline (no preview mode):
 
 Opens a fuzzy-filtered palette (arrow keys + Enter). Inserts blocks such as:
 
-- Text, Heading 1–3, bullet/ordered/todo lists
+- Text, Heading 2–4, bullet/ordered/todo lists
 - Code block, blockquote, divider
 - Image (URL or upload), table (grid picker), callout
 - Link to another note, external link
@@ -279,7 +279,7 @@ A grip (`block-drag-handle.tsx`, `GripVertical` icon) appears in the left gutter
 
 Built on Tiptap's own `@tiptap/extension-drag-handle-react` / `@tiptap/extension-drag-handle` / `@tiptap/extension-node-range` (open-sourced in the 3.x line, no schema changes needed — the plugin drives the drag manually from the grip element rather than relying on native node `draggable`, so `NoteCodeBlock` and `Callout` move as whole units unmodified).
 
-Implementation note: the plugin only tracks `mousemove` on the ProseMirror root itself, so the gutter has to be real `padding-left` on `.note-tiptap` (`src/styles.css`), not just visual space next to it — otherwise hovering beside the text never resolves to a block. The title/byline block in `note-editor.tsx` carries a matching left padding to stay aligned. See [`028`](specs/028-notes-block-drag-handles.md).
+Implementation note: the plugin only tracks `mousemove` on the ProseMirror root itself, so the gutter has to be real `padding-left` on `.note-tiptap` (`src/styles.css`), not just visual space next to it — otherwise hovering beside the text never resolves to a block. The title/byline block in `note-editor.tsx` carries a matching left padding to stay aligned. See [`028`](specs/202609100500-notes-editor-blocks.md#spec-202609100500).
 
 ### Code blocks
 
@@ -332,7 +332,7 @@ Use this when a note is finished and should be read without accidental edits.
 
 The editor's overflow menu (`note-editor.tsx`) has an **Export as PDF** item that
 downloads the open note as a real, selectable-text A4 PDF — no rasterization. See
-[`docs/specs/026-notes-pdf-export.md`](specs/026-notes-pdf-export.md) for the full
+[`docs/specs/202608221551-notes-pdf-export.md`](specs/202608221551-notes-pdf-export.md) for the full
 design; summary of the source of truth:
 
 - `-utils/tiptap-to-pdf.ts` — pure ProseMirror JSON → pdfmake content transform. No
@@ -385,11 +385,11 @@ static TTFs from `public/fonts/pdf/` (Inter + IBM Plex Mono, not the app's own
 ## Future improvements
 
 - Automated tests for slash commands, table menus, and read-only guards (`src/routes/_authenticated/notes/-components/__test__/`).
-- Automated and manual test coverage for block drag handles (unit, component, and the manual verification pass) — deferred; see [`028`](specs/028-notes-block-drag-handles.md)'s Test Plan.
+- Automated and manual test coverage for block drag handles (unit, component, and the manual verification pass) — deferred; see [`028`](specs/202609100500-notes-editor-blocks.md#spec-202609100500)'s Test Plan.
 - Automated tests for the PDF export transform and the save-then-export flow (see
-  [`026`](specs/026-notes-pdf-export.md)'s Test Plan).
+  [`026`](specs/202608221551-notes-pdf-export.md)'s Test Plan).
 - Export the current filter or the whole library as one PDF, with a cover page and
-  table of contents (deferred out of [`026`](specs/026-notes-pdf-export.md)).
+  table of contents (deferred out of [`026`](specs/202608221551-notes-pdf-export.md)).
 - Import of notes (JSON or Markdown).
 - Wiring up `?note=<id>` deep links from `[[` note-link clicks.
 - Tab key navigation between table cells and auto-append row on last cell (Notion-style).

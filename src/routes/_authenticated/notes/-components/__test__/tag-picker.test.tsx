@@ -133,7 +133,7 @@ describe('TagPicker', () => {
     fireEvent.click(screen.getByText('Create "brand-new"'))
 
     expect(onCreate).toHaveBeenCalledWith('brand-new')
-    expect(screen.getByLabelText('Find a tag').value).toBe('')
+    expect(screen.getByLabelText<HTMLInputElement>('Find a tag').value).toBe('')
   })
 
   it('renders the footer content when provided', () => {
