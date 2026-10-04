@@ -90,6 +90,13 @@ describe('NoteOutline', () => {
     expect(container.querySelector('aside')?.className).toContain('w-6')
   })
 
+  it('draws the margin rule, and no button, when a note has no headings', () => {
+    const { container } = renderOutline({ entries: [] })
+
+    expect(container.querySelector('aside > span.w-px')).toBeTruthy()
+    expect(screen.queryByRole('button')).toBeNull()
+  })
+
   it('carries no title attribute on any row', () => {
     renderOutline()
 
@@ -98,13 +105,32 @@ describe('NoteOutline', () => {
     }
   })
 
-  it('shows a static outline glyph, not a toggle, between md and xl', () => {
+  it('holds a single outline button, with no ticks or labels, between md and xl', () => {
     isWide = false
     const { container } = renderOutline()
 
+    expect(container.querySelector('aside')?.className).toContain('w-6')
+    expect(container.querySelector('aside > span.w-px')).toBeNull()
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.queryByText('Intro')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Hide outline' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Show outline' })).toBeNull()
-    expect(container.querySelector('svg[aria-hidden="true"]')).toBeTruthy()
+  })
+
+  it('opens a popover listing every heading and the progress from the gutter button', () => {
+    isWide = false
+    const { onSelect } = renderOutline()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Outline' }))
+
+    expect(screen.getByText('42%')).toBeTruthy()
+    expect(screen.getByText('Intro')).toBeTruthy()
+    expect(screen.getByText('Env vars')).toBeTruthy()
+
+    fireEvent.click(screen.getByText('Setup'))
+
+    expect(onSelect).toHaveBeenCalledWith(1, { placeCursor: true })
+    expect(screen.queryByText('Setup')).toBeNull()
   })
 
   it('keeps the collapse toggle visible in the gutter head slot once collapsed', () => {
@@ -165,6 +191,14 @@ describe('NoteOutline', () => {
         .getByRole('button', { name: 'Show outline' })
         .getAttribute('aria-expanded'),
     ).toBe('false')
+  })
+
+  it('shows only the Show outline button, no rows, once collapsed at xl', () => {
+    useNotesStore.setState({ isOutlineCollapsed: true })
+    renderOutline()
+
+    expect(screen.getAllByRole('button')).toHaveLength(1)
+    expect(screen.queryByText('Intro')).toBeNull()
   })
 
   it('does not render the collapse toggle when the viewport forces the gutter state', () => {
@@ -296,6 +330,17 @@ describe('outline nesting depth', () => {
     expect(tick('Part')?.className).toContain('h-4')
     expect(tick('Chapter')?.className).toContain('h-3')
     expect(tick('Detail')?.className).toContain('h-3')
+  })
+
+  it('keeps popover rows from shrinking when the list overflows its max height', () => {
+    isMobile = true
+    renderMobileMenu({ entries: NESTED })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Outline' }))
+
+    for (const text of ['Part', 'Chapter', 'Section', 'Detail']) {
+      expect(screen.getByText(text).className).toContain('shrink-0')
+    }
   })
 
   it('indents the mobile list by depth too', () => {

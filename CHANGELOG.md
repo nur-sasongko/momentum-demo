@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
-## [Unreleased]
+## [0.0.9] - 2026-09-12
 
 ### Added
 
@@ -25,6 +25,13 @@ for how and when entries are added.
   it, starting from the highest level the note uses.
 - Second Brain: "Heading 1" is no longer in the `/` menu, since the note title
   already plays that role. Existing Heading 1s and typing `# ` still work.
+
+### Fixed
+
+- Second Brain: on narrower windows, the outline strip is now a single button
+  that opens the heading list, instead of a column of tiny marks. At wide
+  widths, hiding the outline leaves a visible "Show outline" button, and
+  nothing expands on hover any more.
 
 ## [0.0.8] - 2026-09-11
 

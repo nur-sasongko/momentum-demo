@@ -597,6 +597,71 @@ for `line-clamp-2`.
 
 The non-goal _"No new heading levels. H4–H6 remain absent from the slash menu"_ and the depth rule _"H3 (and clamped H4–H6) a half-width one"_ are superseded by [030 — First-Class Heading 4](./202608200500-notes-outline-headings.md#spec-202610041316). `OutlineEntry.level` widens to `1 | 2 | 3 | 4`; H4 gets its own indent and tick, and H5–H6 clamp to 4 instead of 3. The derived-from-JSON design and `domIndex` alignment are unchanged.
 
+#### 2026-10-04 — The collapsed rail becomes a button; no tick preview
+
+**What happened:** the 2026-08-21 collapsed gutter (hairline, ticks, hover-to-float
+panel) read as a stray mark floating at the pane's edge: unread ticks merged into
+the hairline, deeper ticks were clipped by the 24px strip, and a first attempt to fit
+them in (4px indent steps, no hairline) still looked wrong. A strip too narrow to
+show structure should not try to preview it.
+
+**Decision — below `xl` and when collapsed, the outline is one button.**
+
+| Viewport          | Note has headings | What renders                                                  |
+| ----------------- | ----------------- | ------------------------------------------------------------- |
+| ≥ `xl`, expanded  | yes               | Labelled panel (`w-56`) with its hide button (unchanged)      |
+| ≥ `xl`, collapsed | yes               | `w-6` gutter holding a "Show outline" button                  |
+| `md`–`xl`         | yes               | `w-6` gutter holding an "Outline" button that opens a popover |
+| ≥ `md`            | no                | `w-6` gutter with the margin rule only (unchanged)            |
+| < `md`            | yes / no          | Floating button + popover / nothing (unchanged)               |
+
+- **No ticks, no hairline, no labels in the gutter** when there are headings. The
+  button is the whole gutter.
+- **`md`–`xl` opens a popover**, the same list the mobile button opens (heading
+  rows with depth indent, active row, read-progress percentage), anchored beside the
+  button (`side="bottom"`, `align="end"`). A 224px inline panel has no room at this
+  width, and a popover floats over the prose without moving it.
+- **The hover and `:focus-within` reveal is removed.** Showing and hiding is an
+  explicit click, on every viewport. This deletes the `group-hover/outline` /
+  `group-focus-within/outline` class stacks from the rail.
+- **The gutter stays structural (`w-6`)** so the prose column still doesn't move
+  between notes, per 2026-08-21.
+- The popover content is shared with `NoteOutlineMobileMenu` rather than copied.
+
+**Supersedes:** the whole 2026-08-21 collapsed-gutter design as it applies to notes
+with headings: the ticks, the hairline behind them, the static `ListTree` glyph, the
+hidden-label fade-in, and the floating hover panel. Its structural-gutter,
+no-headings rule, and `TruncatedText` decisions stand. Also supersedes the
+2026-08-21 acceptance criteria about ticks, `--primary`/`--border` ink, the
+hover-expanded panel, and "no fragment of any heading label visible" (trivially true
+now).
+
+**New acceptance criteria:**
+
+- [ ] Given a note with headings at `md`–`xl`, when it renders, then the gutter holds
+      a single outline button and no ticks, hairline, or label text.
+- [ ] Given the `md`–`xl` button, when clicked, then a popover lists every heading
+      and the read-progress percentage; selecting one scrolls to it and closes the
+      popover.
+- [ ] Given the rail collapsed at `xl`, when it renders, then the gutter holds a
+      visible "Show outline" button and nothing else; clicking it expands the panel.
+- [ ] Given any gutter, when the pointer rests over it, then nothing expands.
+- [ ] Given a note with no headings at `md` and up, when it renders, then the margin
+      rule shows and no button.
+
+**Implementation:** `note-outline.tsx` only. Extract the mobile popover's list into
+a shared component; `NoteOutline` renders it in a `Popover` when `!isWide`. Delete
+`COLLAPSED_INDENT`, `COLLAPSED_REVEAL_INDENT`, and the hover classes. `OutlineRow`
+and `depths` apply only to the expanded panel. Tests: drop the three tick tests added
+earlier today; add the criteria above.
+
+**Manual verification:**
+
+- [ ] At `lg`, click the gutter button; confirm the popover opens over the prose
+      without shifting it, and rows scroll to their headings.
+- [ ] At `xl`, hide and show the panel with its buttons; confirm no hover effects.
+- [ ] Open a no-headings note; confirm the margin rule and no button.
+
 ---
 
 <a id="spec-202610041316"></a>
