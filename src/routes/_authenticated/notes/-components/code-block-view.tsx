@@ -36,7 +36,7 @@ export function CodeBlockView({
         <CodeBlockCopyButton code={codeText} />
       </div>
       <pre className="note-code-block__pre">
-        <NodeViewContent
+        <NodeViewContent<'code'>
           as="code"
           className={cn(codeClassName)}
           style={{ whiteSpace: 'pre' }}

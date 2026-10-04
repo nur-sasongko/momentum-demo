@@ -15,6 +15,7 @@ interface NoteListItemProps {
 export function NoteListItem({ note, isActive, onSelect }: NoteListItemProps) {
   return (
     <Link
+      from="/notes/"
       to="/notes"
       search={(prev) => ({ ...prev, note: note.id })}
       resetScroll={false}

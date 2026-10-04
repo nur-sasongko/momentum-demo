@@ -29,10 +29,7 @@ interface SlashCommandMenuProps {
 export const SlashCommandMenu = forwardRef<
   SlashCommandMenuRef,
   SlashCommandMenuProps
->(function SlashCommandMenu(
-  { items, command, editor, range, clientRect },
-  ref,
-) {
+>(function SlashCommandMenu({ items, command, clientRect }, ref) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [gridPickerItem, setGridPickerItem] = useState<SlashCommandItem | null>(
     null,

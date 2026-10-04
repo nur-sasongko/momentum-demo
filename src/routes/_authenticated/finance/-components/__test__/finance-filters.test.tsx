@@ -47,7 +47,9 @@ afterEach(() => {
 describe('FinanceFilters — Export button', () => {
   it('renders an enabled Export button when there are matching transactions', () => {
     render(<FinanceFilters />)
-    const button = screen.getByRole('button', { name: /export/i })
+    const button = screen.getByRole<HTMLButtonElement>('button', {
+      name: /export/i,
+    })
     expect(button.disabled).toBe(false)
   })
 
@@ -65,14 +67,19 @@ describe('FinanceFilters — Export button', () => {
     mockExport({ isEmpty: true })
     render(<FinanceFilters />)
 
-    expect(screen.getByRole('button', { name: /export/i }).disabled).toBe(true)
+    expect(
+      screen.getByRole<HTMLButtonElement>('button', { name: /export/i })
+        .disabled,
+    ).toBe(true)
   })
 
   it('shows a pending label and disables the button while exporting', () => {
     mockExport({ isPending: true })
     render(<FinanceFilters />)
 
-    const button = screen.getByRole('button', { name: /exporting/i })
+    const button = screen.getByRole<HTMLButtonElement>('button', {
+      name: /exporting/i,
+    })
     expect(button.disabled).toBe(true)
   })
 

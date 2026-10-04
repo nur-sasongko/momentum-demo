@@ -1,6 +1,6 @@
 'use client'
 
-import type { BarRectangleItem, TooltipProps } from 'recharts'
+import type { BarRectangleItem, TooltipContentProps } from 'recharts'
 import {
   Bar,
   BarChart,
@@ -35,17 +35,13 @@ import type {
   DrilldownSelection,
 } from '../-types/finance-chart'
 
-function CategoryTooltip({
-  active,
-  payload,
-  label,
-}: TooltipProps<number, string>) {
-  if (!active || !payload?.length) return null
+function CategoryTooltip({ active, payload, label }: TooltipContentProps) {
+  if (!active || payload.length === 0) return null
   return (
     <div className="rounded-lg border border-border bg-popover px-3 py-2 shadow-md">
       <p className="text-sm font-semibold text-popover-foreground">{label}</p>
       <p className="tabular text-sm text-muted-foreground">
-        {formatNumberWithSeparators(payload[0].value ?? 0)}
+        {formatNumberWithSeparators(Number(payload[0].value ?? 0))}
       </p>
     </div>
   )
@@ -97,7 +93,10 @@ export function SpendingByCategoryChart({
           tickFormatter={chartYAxisTickFormatter}
           className="text-muted-foreground"
         />
-        <Tooltip content={<CategoryTooltip />} cursor={CHART_TOOLTIP_CURSOR} />
+        <Tooltip
+          content={(props) => <CategoryTooltip {...props} />}
+          cursor={CHART_TOOLTIP_CURSOR}
+        />
         <Bar
           dataKey="amount"
           radius={[4, 4, 0, 0]}

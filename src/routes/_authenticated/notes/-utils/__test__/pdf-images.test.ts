@@ -76,7 +76,7 @@ describe('resolvePdfImage — remote URLs', () => {
   const originalFetch = global.fetch
 
   beforeEach(() => {
-    global.fetch = vi.fn()
+    global.fetch = vi.fn() as unknown as typeof fetch
   })
 
   afterEach(() => {

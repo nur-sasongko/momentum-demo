@@ -128,7 +128,7 @@ export function useCreateTaskMutation() {
       addTask(optimisticTask)
       return { optimisticId: id }
     },
-    onError: (error, variables, context) => {
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
     },
     onSuccess: () => {
@@ -401,7 +401,6 @@ export function useToggleSubtaskMutation() {
 
   return useMutation({
     mutationFn: async ({
-      taskId,
       subtaskId,
       completed,
     }: {
@@ -523,7 +522,6 @@ export function useDeleteSubtaskMutation() {
 
   return useMutation({
     mutationFn: async ({
-      taskId,
       subtaskId,
     }: {
       taskId: string

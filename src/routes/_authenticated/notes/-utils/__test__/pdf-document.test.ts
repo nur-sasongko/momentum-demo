@@ -97,7 +97,7 @@ describe('buildPdfDocument — title block', () => {
       FONTS,
     )
     expect(doc.content).toHaveLength(3)
-    expect(doc.content[2]).toBe(transformNode)
+    expect((doc.content as unknown[])[2]).toBe(transformNode)
   })
 })
 
@@ -106,7 +106,11 @@ describe('buildPdfFooter', () => {
     const footer = buildPdfFooter()
     if (typeof footer !== 'function')
       throw new Error('expected a function footer')
-    const rendered = footer(2, 5, []) as { text: string; alignment: string }
+    const rendered = footer(2, 5, {
+      width: 0,
+      height: 0,
+      orientation: 'portrait',
+    }) as { text: string; alignment: string }
     expect(rendered.text).toBe('2 / 5')
     expect(rendered.alignment).toBe('right')
   })
