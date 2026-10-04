@@ -6,20 +6,29 @@ import { NoteListItem } from '../note-list-item'
 import type { NoteSummary } from '#/stores/notes-store'
 
 // Render `Link` as a plain anchor so the row needs no router context; the
-// `search` callback is resolved against an empty previous search.
+// `search` callback is resolved against an empty previous search. The default
+// action is cancelled after the row's own handler runs, since jsdom cannot
+// follow a link and logs "Not implemented: navigation to another Document".
 vi.mock('@tanstack/react-router', () => ({
   Link: ({
     search,
     to,
+    from: _from,
     resetScroll: _resetScroll,
+    onClick,
     ...props
   }: {
     search: (prev: Record<string, unknown>) => Record<string, unknown>
     to: string
+    from?: string
     resetScroll?: boolean
   } & React.ComponentProps<'a'>) => (
     <a
       href={`${to}?${new URLSearchParams(search({}) as Record<string, string>)}`}
+      onClick={(event) => {
+        onClick?.(event)
+        event.preventDefault()
+      }}
       {...props}
     />
   ),

@@ -22,7 +22,11 @@ vi.mock('#/stores/finance-store', () => ({
 
 const fetchAllTransactionsForExportMock = vi.fn()
 
-class MockFinanceExportRowCapError extends Error {}
+// `vi.mock` factories are hoisted above top-level declarations, so the class
+// has to be hoisted with them.
+const { MockFinanceExportRowCapError } = vi.hoisted(() => ({
+  MockFinanceExportRowCapError: class extends Error {},
+}))
 
 vi.mock('../finance-export-query', () => ({
   FinanceExportRowCapError: MockFinanceExportRowCapError,
