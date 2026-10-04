@@ -5,7 +5,7 @@ The Archive module is a soft-delete/recovery system for notes and finance transa
 disappears from every live view, then is either restored or permanently deleted, or auto-purged
 after 30 days.
 
-Built from [spec 022](specs/022-core-archive-soft-delete.md).
+Built from [spec 022](specs/202608151543-core-archive.md#spec-202608151543).
 
 ## Goals
 
@@ -22,7 +22,7 @@ Built from [spec 022](specs/022-core-archive-soft-delete.md).
 - Tab state (URL search param): `src/routes/_authenticated/archive/-utils/archive-search.ts`,
   `-utils/use-archive-tab.ts`
 - Tables live in their own feature slice, not under `archive/` — see
-  [spec 023](specs/023-core-in-feature-archive-views.md):
+  [spec 023](specs/202608151543-core-archive.md#spec-202608151544):
   `src/routes/_authenticated/notes/-components/archived-notes-table.tsx`,
   `src/routes/_authenticated/finance/-components/archived-transactions-table.tsx`
 - Shared row actions: `src/components/archive-row-actions.tsx`

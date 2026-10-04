@@ -87,7 +87,7 @@ A type moves to `-types/` when it describes **data that crosses module boundarie
 
 `-types/` stays one-way-dependent: it may import from `#/stores/` and `#/types/`, never from `-utils/` or `-components/`. A type that would need to reach into `-utils/` (e.g. to reuse a schema-adjacent union) inlines the small piece it needs instead, with a comment explaining why — see `src/routes/_authenticated/finance/-types/finance-query.ts`.
 
-`src/routes/_authenticated/finance/-types/` and `src/routes/_authenticated/notes/-types/` are the reference implementation ([`docs/specs/019-core-feature-types-folders.md`](../specs/019-core-feature-types-folders.md)). Not every feature needs one — `habits` and `tasks` currently export too few slice-local types to justify the folder; add it when the same pressure shows up there.
+`src/routes/_authenticated/finance/-types/` and `src/routes/_authenticated/notes/-types/` are the reference implementation ([`docs/specs/202608111038-core-code-organization.md#spec-202608111039`](../specs/202608111038-core-code-organization.md#spec-202608111039)). Not every feature needs one — `habits` and `tasks` currently export too few slice-local types to justify the folder; add it when the same pressure shows up there.
 
 ### Current examples
 
@@ -103,7 +103,7 @@ Feature utils stay in the route slice. Shared stores currently live in `src/stor
 
 ## Shareable filter state (URL search params)
 
-When a feature needs filters that should be bookmarkable/shareable and undoable via Back, put them in validated route search params instead of a Zustand store, and wrap read/write access in one feature hook (e.g. `useFinanceFilters`) rather than calling `useSearch`/`useNavigate` from every consumer. See `src/routes/_authenticated/finance/-utils/finance-search.ts` and `-utils/use-finance-filters.ts` for the reference implementation ([`docs/specs/011-finance-filters-url-state.md`](../specs/011-finance-filters-url-state.md)), and `src/routes/_authenticated/notes/-utils/notes-route-search.ts` and `-utils/use-notes-filters.ts` for a second implementation of the same pattern ([`docs/specs/016-notes-filters-url-state.md`](../specs/016-notes-filters-url-state.md)). Both hooks share the same `apply(patch, opts)` navigate wrapper and the same array-toggle boundary heuristic — see `toggleArrayValue` in `#/utils/search-params`.
+When a feature needs filters that should be bookmarkable/shareable and undoable via Back, put them in validated route search params instead of a Zustand store, and wrap read/write access in one feature hook (e.g. `useFinanceFilters`) rather than calling `useSearch`/`useNavigate` from every consumer. See `src/routes/_authenticated/finance/-utils/finance-search.ts` and `-utils/use-finance-filters.ts` for the reference implementation ([`docs/specs/202608010500-finance-filters-summary.md#spec-202608010500`](../specs/202608010500-finance-filters-summary.md#spec-202608010500)), and `src/routes/_authenticated/notes/-utils/notes-route-search.ts` and `-utils/use-notes-filters.ts` for a second implementation of the same pattern ([`docs/specs/202608090500-notes-workspace.md#spec-202608090500`](../specs/202608090500-notes-workspace.md#spec-202608090500)). Both hooks share the same `apply(patch, opts)` navigate wrapper and the same array-toggle boundary heuristic — see `toggleArrayValue` in `#/utils/search-params`.
 
 ## Route file responsibilities
 

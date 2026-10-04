@@ -233,7 +233,7 @@ interface NoteOutlineMobileMenuProps extends Pick<
  * Floating-action-button entry point for narrow viewports, where the rail's
  * 224px column has nowhere to go. Deliberately not a header icon — see
  * "The mobile trigger is a floating action button, not a header icon" in
- * `024-notes-table-of-contents.md`: a control whose entire job is mid-read
+ * `202608200500-notes-outline-headings.md#spec-202608200500`: a control whose entire job is mid-read
  * navigation belongs in thumb reach, not the top corner. Geometry matches
  * `task-add-fab.tsx` so it reads as the app's one floating-button convention.
  */

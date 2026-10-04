@@ -44,7 +44,7 @@ The page composes:
 - `type: 'income' | 'expense'`
 - `amount: number`
 - `category: FinanceCategory`
-- `date: string` — ISO datetime string; time-of-day is optional (local midnight means no explicit time was set, displayed as a bare date via `formatDateTimeLabel` in `#/utils/date`). See [`docs/specs/007-finance-transaction-datetime-and-markdown-note.md`](./specs/007-finance-transaction-datetime-and-markdown-note.md).
+- `date: string` — ISO datetime string; time-of-day is optional (local midnight means no explicit time was set, displayed as a bare date via `formatDateTimeLabel` in `#/utils/date`). See [`docs/specs/202607241601-finance-transactions.md#spec-202607290500`](./specs/202607241601-finance-transactions.md#spec-202607290500).
 - `note: string` — markdown-capable (up to 5000 chars), edited via a live WYSIWYG editor (`MarkdownEditor`, `#/components/markdown/markdown-editor`) in the Add/Edit form. The transactions table's Note column renders the same markdown as a compact preview and opens the same editor in a popover for editing (`MarkdownEditorCell`, `#/components/markdown/markdown-editor-cell`).
 - `location: TransactionLocation | null` — optional place attached to the transaction (see [Location Tracking](#location-tracking))
 
@@ -52,7 +52,7 @@ The page composes:
 
 ## Data Types
 
-`src/routes/_authenticated/finance/-types/` holds types that cross module boundaries within the slice, split by concern ([`docs/specs/019-core-feature-types-folders.md`](./specs/019-core-feature-types-folders.md)):
+`src/routes/_authenticated/finance/-types/` holds types that cross module boundaries within the slice, split by concern ([`docs/specs/202608111038-core-code-organization.md#spec-202608111039`](./specs/202608111038-core-code-organization.md#spec-202608111039)):
 
 - `finance-api.ts` — snake_case Supabase response rows (`FinanceCategoryRow`, `TransactionRow`, `AggregateRow`), mirroring the `finance_categories`/`finance_transactions` table columns. `transformCategory`/`transformTransaction` in `-utils/finance-queries.ts` map these onto the camelCase `FinanceCategory`/`Transaction` domain types in `#/stores/finance-store`. These row types are a compile-time assertion, not a runtime validation — a column rename in Postgres still yields `undefined` at runtime, but a typo'd field name in the transformer now fails `tsc`.
 - `finance-query.ts` — query params/results (`TransactionQueryParams`, `TransactionPage`, `CityFilter`) and `FinanceFiltersPatch`, the batched patch `useFinanceFilters().setFilters` accepts.
@@ -70,7 +70,7 @@ Component `Props`, chart-zoom internals (`chart-zoom.ts`, `use-chart-zoom.ts`), 
 - Persisted slice: `isBalanceHidden` only
 - `categories`, `isAddTransactionOpen`, `editingTransactionId`, `editingTransaction` are in-memory only
 
-Date range, transaction type, selected categories, selected cities, and the active Chart/Table tab live in the URL instead of the store — see [URL Search Params](#url-search-params). See [`docs/specs/011-finance-filters-url-state.md`](./specs/011-finance-filters-url-state.md).
+Date range, transaction type, selected categories, selected cities, and the active Chart/Table tab live in the URL instead of the store — see [URL Search Params](#url-search-params). See [`docs/specs/202608010500-finance-filters-summary.md#spec-202608010500`](./specs/202608010500-finance-filters-summary.md#spec-202608010500).
 
 ### Store Actions
 
@@ -123,7 +123,7 @@ Two cards:
 
 Three Recharts bar charts — category, location, and daily — share `<ChartCard>` (`-components/chart-card.tsx`). Each shows an empty state when no expenses exist in the selected date range.
 
-Every category/location/day gets a labelled X-axis tick — no Recharts `interval`-based dropping. Ticks are angled at −35° (`AngledCategoryTick`, `-components/chart-axis-tick.tsx`) and truncated with an ellipsis only when they still don't fit; each chart carries a zoom control (`-components/chart-zoom-controls.tsx`) in the top-right of its plot area that widens the bars, revealing more of any truncated label. See [`docs/specs/014-finance-chart-zoom-pan.md`](./specs/014-finance-chart-zoom-pan.md) for the full spec. Summary:
+Every category/location/day gets a labelled X-axis tick — no Recharts `interval`-based dropping. Ticks are angled at −35° (`AngledCategoryTick`, `-components/chart-axis-tick.tsx`) and truncated with an ellipsis only when they still don't fit; each chart carries a zoom control (`-components/chart-zoom-controls.tsx`) in the top-right of its plot area that widens the bars, revealing more of any truncated label. See [`docs/specs/202607300500-finance-charts.md#spec-202608020844`](./specs/202607300500-finance-charts.md#spec-202608020844) for the full spec. Summary:
 
 - `-utils/chart-zoom.ts` — pure sizing/geometry helpers (`clampZoom`, `getContentSize`, `getMaxTickChars`, `truncateLabel`, pinch geometry), unit-tested without a DOM.
 - `-utils/use-chart-zoom.ts` — the stateful hook: `ResizeObserver`-measured viewport, zoom state, mouse drag-to-pan and two-finger pinch (both anchored so the gesture's centre/midpoint stays in place), and a manually-registered non-passive Ctrl/⌘+wheel listener for zoom (JSX `onWheel` is passive and can't `preventDefault()`).
@@ -172,7 +172,7 @@ Form fields: type, amount, category, date, note. Validated with `react-hook-form
 
 ## Chart Click-to-Drilldown
 
-See [`docs/specs/012-finance-chart-drilldown.md`](./specs/012-finance-chart-drilldown.md) for the full spec. Summary:
+See [`docs/specs/202607300500-finance-charts.md#spec-202608010501`](./specs/202607300500-finance-charts.md#spec-202608010501) for the full spec. Summary:
 
 - Every bar in all three finance charts (`spending-by-category-chart.tsx`, `spending-by-daily-chart.tsx`, `spending-by-location-chart.tsx`) is clickable — the click payload is converted into a `DrilldownSelection` (`src/routes/_authenticated/finance/-utils/finance-drilldown.ts`) via `selectionFromCategoryBar` / `selectionFromDaySegment` / `selectionFromCityBar` / `selectionFromCountryBar`. `selectionFromDaySegment` returns `null` for a zero-amount segment, so clicking empty space opens nothing.
 - `useDrilldown()` (`-utils/use-drilldown.ts`) holds the sheet's ephemeral `{ state, open, close }` — never persisted, never in the URL.
@@ -184,7 +184,7 @@ See [`docs/specs/012-finance-chart-drilldown.md`](./specs/012-finance-chart-dril
 
 ## Filtered Transaction Summary
 
-See [`docs/specs/013-finance-filtered-summary.md`](./specs/013-finance-filtered-summary.md) for the full spec. Summary:
+See [`docs/specs/202608010500-finance-filters-summary.md#spec-202608020735`](./specs/202608010500-finance-filters-summary.md#spec-202608020735) for the full spec. Summary:
 
 - `<FilteredSummaryBar>` (`-components/filtered-summary-bar.tsx`), rendered inside `transactions-table.tsx` between the heading and `<DataTable>`, shows the aggregate money for the Table tab's active type/category/city filters. It's a Table-tab-only element — the shared stat cards above the tabs deliberately stay date-range-only (see spec 12 Non-Goals), and wiring table filters into them would make the cards and this bar disagree.
 - Hidden unless at least one type/category/city filter is active (a bare date range is already covered by the stat cards), and hidden entirely while the note-search box is non-empty, since `useFinanceAggregateQuery()`'s rows don't carry `note` and can't reproduce a search-narrowed row set.
@@ -195,7 +195,7 @@ See [`docs/specs/013-finance-filtered-summary.md`](./specs/013-finance-filtered-
 
 ## Location Tracking
 
-See [`docs/specs/006-finance-location-tracking.md`](./specs/006-finance-location-tracking.md) for the full spec. Summary:
+See [`docs/specs/202607241601-finance-transactions.md#spec-202607260925`](./specs/202607241601-finance-transactions.md#spec-202607260925) for the full spec. Summary:
 
 - Each transaction can optionally carry a `TransactionLocation` (`placeName`, `address`, `city`, `country`, `mapsUrl`), denormalized directly onto `finance_transactions` as five nullable columns (`location_place_name`, `location_address`, `location_city`, `location_country`, `location_maps_url`) — no separate lookup table, since a place is a one-off fact per transaction rather than a reusable/managed entity like a category.
 - `src/routes/_authenticated/finance/-components/location-picker.tsx` — a dialog with an embedded Google Map (`@vis.gl/react-google-maps`) and Places Autocomplete search. Selecting a place auto-fills the location fields; the fields remain editable afterward in `transaction-form.tsx`.
@@ -207,7 +207,7 @@ See [`docs/specs/006-finance-location-tracking.md`](./specs/006-finance-location
 
 ## Excel Export
 
-See [`docs/specs/027-finance-excel-export.md`](./specs/027-finance-excel-export.md) for the full spec. Summary:
+See [`docs/specs/202608240500-finance-excel-export.md`](./specs/202608240500-finance-excel-export.md) for the full spec. Summary:
 
 - The **Export** button in `-components/finance-filters.tsx` downloads the currently filtered transactions as a real `.xlsx` workbook — `Transactions`, `Summary`, and `Categories` sheets, built client-side with no server round trip. Disabled (with a tooltip) when the active filters match zero transactions.
 - `-utils/finance-export-sheets.ts` — a **pure** `buildFinanceWorkbook(rows, categories, filters, exportedAt)` transform: rows in, a library-agnostic `ExportSheet[]` out (`-types/finance-export.ts`). No DOM, no network, no writer-library import — unit-tested without mocking anything.

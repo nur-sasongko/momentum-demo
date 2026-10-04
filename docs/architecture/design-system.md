@@ -1,14 +1,14 @@
 # Design System
 
 Tokens live in `src/styles.css` (`:root` for light, `.dark` for dark). See
-[`docs/specs/020-core-design-system-refresh.md`](../specs/020-core-design-system-refresh.md)
+[`docs/specs/202608111040-core-design-system.md#spec-202608111040`](../specs/202608111040-core-design-system.md#spec-202608111040)
 for the contrast ratios and rationale behind every value below — this doc is
 the current-state reference; the spec is the historical record.
 
 Related docs:
 
 - `docs/architecture/feature-slices.md` for where feature UI lives
-- `docs/specs/020-core-design-system-refresh.md` for the full token derivation
+- `docs/specs/202608111040-core-design-system.md#spec-202608111040` for the full token derivation
 
 ## Two materials, not one inverted theme
 
@@ -36,7 +36,7 @@ where its chroma is legible against the surface instead of competing with
 it. A background wash at the brand hue on a surface with a different hue
 has near-zero lightness separation from the field and reads as a decal
 rather than a state — this was a real defect in the shipped sidebar (see
-[the spec's derivation](../specs/020-core-design-system-refresh.md#interaction-states-are-made-of-the-field-not-painted-onto-it)).
+[the spec's derivation](../specs/202608111040-core-design-system.md#interaction-states-are-made-of-the-field-not-painted-onto-it)).
 
 **Rule: hover and selected are different tokens.** They communicate
 different things — transient pointer feedback vs. persistent selection —
@@ -136,7 +136,7 @@ touched by this rule.
 table's layout, density, or interaction model should be decided — feature
 code declares intent through column `meta`, never through ad-hoc cell
 classes. See
-[`docs/specs/021-core-data-table-refinement.md`](../specs/021-core-data-table-refinement.md)
+[`docs/specs/202608111040-core-design-system.md#spec-202608131622`](../specs/202608111040-core-design-system.md#spec-202608131622)
 for the full rationale.
 
 **Layout is fixed, not auto.** Every `DataTable` uses `table-layout: fixed`

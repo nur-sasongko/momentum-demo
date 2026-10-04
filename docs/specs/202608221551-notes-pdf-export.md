@@ -1,5 +1,6 @@
 ---
-id: 26
+id: 202608221551
+legacy-id: 26
 title: 'Export a Note to PDF: Real Text, Not Screenshots'
 status: in-progress
 feature: notes
@@ -68,7 +69,7 @@ never been specified.
   checkboxes. The note's title, tags, and edited date always print; that is one
   fewer dialog and one fewer thing to persist.
 - **No server-side rendering service.** The app is a static SPA with no backend of
-  its own ([`004`](./004-core-remove-ssr.md)); a headless-Chrome PDF service would
+  its own ([`004`](./202607041542-core-platform.md#spec-202607041635)); a headless-Chrome PDF service would
   reintroduce one.
 - **No pixel-perfect reproduction of the editor.** The PDF is a print document with
   its own page geometry, measure, and type scale. Screen chrome (bubble menus, the
@@ -86,7 +87,7 @@ never been specified.
   separate spec.
 - **No data model changes.** No migration, no new column, no store version bump.
 - **No changes to the save model.** Explicit save
-  ([`017`](./017-notes-editor-explicit-save.md)) is respected, not bypassed: export
+  ([`017`](./202608041548-notes-data-and-saving.md#spec-202608091803)) is respected, not bypassed: export
   triggers the same content mutation the editor already uses, and never writes
   anything the user did not confirm.
 - **No export from `/archive`.** Archived notes are not open in the editor, so they
@@ -115,7 +116,7 @@ unchanged.
 ### Save first, then export
 
 The export must never produce a file that disagrees with the stored note. Under
-explicit save ([`017`](./017-notes-editor-explicit-save.md)) the on-screen draft and
+explicit save ([`017`](./202608041548-notes-data-and-saving.md#spec-202608091803)) the on-screen draft and
 the saved row can differ for as long as the user keeps typing, so export starts by
 resolving that difference rather than picking a side:
 
@@ -142,7 +143,7 @@ Three properties this buys:
 - **The file always matches the database.** Whatever is in the PDF was saved to
   Postgres first, so "the PDF I sent" and "the note I have" can never drift.
 - **Export never writes without consent.** Silently saving as a side effect of
-  export would be exactly the phantom write [`017`](./017-notes-editor-explicit-save.md)
+  export would be exactly the phantom write [`017`](./202608041548-notes-data-and-saving.md#spec-202608091803)
   exists to prevent. The user is asked, in the dialog, in those words.
 
 `isDirty` already exists in `NoteEditor` (`note-editor.tsx:135`) and is already
@@ -893,5 +894,5 @@ here rather than rewritten in place.
   with `PDF_FALLBACK_FONTS` and still downloads a PDF.
 - **2026-10-04 — H4 gets its own style (spec 030).** The `heading` row's _"H4–H6
   clamp to `h3`"_ and the 20/15/12.5pt heading scale are superseded by
-  [030 — First-Class Heading 4](./030-notes-heading-4-support.md): an `h4` style
+  [030 — First-Class Heading 4](./202608200500-notes-outline-headings.md#spec-202610041316): an `h4` style
   and `headlineLevel: 4` are added, and H5–H6 clamp to 4 instead of 3.

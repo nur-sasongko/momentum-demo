@@ -4,7 +4,7 @@ import { stringArrayParam } from '#/utils/search-params'
 
 import type { TransactionType } from '#/stores/finance-store'
 
-/** Active tab on the finance page. Defined here, not in the store — see docs/specs/011-finance-filters-url-state.md. */
+/** Active tab on the finance page. Defined here, not in the store — see docs/specs/202608010500-finance-filters-summary.md#spec-202608010500. */
 export type FinanceView = 'chart' | 'table' | 'archive'
 
 export const FINANCE_ROUTE_ID = '/_authenticated/finance/' as const

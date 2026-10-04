@@ -15,6 +15,8 @@
     "dev": "vite dev",
     "build": "vite build && bun run generate-sw",
     "generate-sw": "bun scripts/generate-sw.ts",
+    "specs:index": "bun scripts/generate-spec-index.ts",
+    "specs:check": "bun scripts/generate-spec-index.ts --check",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

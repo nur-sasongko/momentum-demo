@@ -26,7 +26,7 @@ Examples: "habit streak freeze" → `habit-streak-freeze`, "Recurring Transactio
 
 ## Step 3: Determine the next id
 
-Read `docs/specs/_index.md` and find the current max `id` in the table. The new id is that max plus one, zero-padded to 3 digits (e.g. `016`).
+Run `date -u +%Y%m%d%H%M` and use its output as the id: a 12-digit UTC timestamp, e.g. `202610041316`. Do not derive it from `_index.md`; ids are timestamps so parallel branches never collide.
 
 Final filename: `docs/specs/<id>-<feature>-<slug>.md`
 
@@ -34,11 +34,13 @@ Final filename: `docs/specs/<id>-<feature>-<slug>.md`
 
 Read `docs/specs/_template.md` to use as the base content.
 
-## Step 5: Create the spec file
+## Step 5: Create the spec file (or append a part)
+
+First, list `docs/specs/` and check whether "$ARGUMENTS" extends a theme that already has a spec file (e.g. a new finance chart → `202607300500-finance-charts.md`; an editor block feature → `202609100500-notes-editor-blocks.md`). If one clearly fits, **append a new part to that file** instead of creating a new one, following the "Consolidated spec files" section of `docs/architecture/spec-workflow.md`: an `<a id="spec-<id>"></a>` anchor, a `## <id> — Title` heading, a `**Status:** draft · **Created:** … · **Updated:** …` line, then the template sections demoted one level (`###`). Bump the file's `updated` date (Step 6 regenerates its `consolidates`, `status` and part table). Report which file you chose and why. If no file clearly fits, create a new file:
 
 Write `docs/specs/<id>-<feature>-<slug>.md` using the template content with these frontmatter values filled in:
 
-- `id`: the integer from Step 3 (no zero-padding in frontmatter, e.g. `16`)
+- `id`: the timestamp from Step 3 (e.g. `202610041316`)
 - `title`: title-case version of "$ARGUMENTS"
 - `status`: `draft`
 - `feature`: the derived feature area
@@ -51,17 +53,13 @@ If `docs/specs/<id>-<feature>-<slug>.md` already exists, stop and report the con
 
 ## Step 6: Update the spec index
 
-Read `docs/specs/_index.md` and add a new row at the TOP of the table body (directly below the header row):
-
-```
-| <id> | [Title](./<id>-feature-slug.md) | feature | draft | YYYY-MM-DD |
-```
+`docs/specs/_index.md` is generated, so never edit it by hand. Run `bun --bun run specs:index`, which rebuilds it (and any part tables) from the specs' frontmatter. If the script reports a validation error, fix the spec and re-run it.
 
 ## Step 7: Report back
 
 After creating the file and updating the index, report:
 
-1. The full path of the new spec: `docs/specs/<id>-<feature>-<slug>.md`
+1. The full path of the new spec (or the existing file plus `#spec-<id>` anchor if appended as a part)
 2. The feature area chosen and why (one sentence)
 3. Next step: "Open the file and fill in Problem Statement, Goals, Non-Goals, and Acceptance Criteria to complete the draft."
 4. The commit message to use when ready: `docs(spec): add <feature>-<slug> spec`

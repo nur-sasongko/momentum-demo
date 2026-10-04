@@ -1,5 +1,5 @@
 ---
-id: 0 # next sequential integer — see docs/specs/_index.md for the current max
+id: YYYYMMDDHHmm # UTC creation timestamp: `date -u +%Y%m%d%H%M` — must match the filename prefix
 title: ''
 status: draft
 feature: habits
