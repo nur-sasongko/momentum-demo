@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 See [`docs/architecture/changelog-workflow.md`](docs/architecture/changelog-workflow.md)
 for how and when entries are added.
 
+## [Unreleased]
+
+### Fixed
+
+- Finance: the empty "Add location" button in the Location column now matches
+  the size, spacing and icon of filled location entries.
+
 ## [0.0.9] - 2026-09-12
 
 ### Added
