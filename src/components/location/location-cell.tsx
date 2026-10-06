@@ -1,7 +1,6 @@
 import { MapPin } from 'lucide-react'
 import { useState } from 'react'
 
-import { Button } from '#/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -53,16 +52,14 @@ export function LocationCell({ location, onSave }: LocationCellProps) {
   if (!location) {
     return (
       <>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
-          className="h-auto justify-start gap-1.5 px-1 py-0.5 text-muted-foreground hover:text-foreground"
+          className="inline-flex max-w-40 items-center gap-1 rounded px-1 py-0.5 text-left text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
           onClick={() => setPickerOpen(true)}
         >
-          <MapPin className="size-3.5" />
-          Add location
-        </Button>
+          <MapPin className="size-3 shrink-0" />
+          <span className="truncate">Add location</span>
+        </button>
         <LocationPickerDialog
           open={pickerOpen}
           onOpenChange={setPickerOpen}
